@@ -1,0 +1,80 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "intellitex-t5-220m",
+  "rows": [
+    {
+      "label": "15 LatexGen items, greedy, fresh page per bucket",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "e2e",
+      "newPromptMs": 146.2,
+      "stages": {
+        "encoderIsolatedL32": 4.7,
+        "encoderIsolatedL64": 5.5,
+        "encoderIsolatedL128": 4.9,
+        "decodeStep0IsolatedL32": 5.2
+      },
+      "runs": 20,
+      "statistic": "median over the 15 LatexGen items of one greedy pass each (encoder + decode to eos); the harness uses a fresh page per length bucket. Isolated encoder/decode numbers are 5 warmup + 5 timed runs.",
+      "buildOnceMs": {
+        "decode-L32": 7176,
+        "encoder-L32": 5719.1,
+        "decode-L64": 7305.2,
+        "encoder-L64": 5727.8,
+        "decode-L128": 7312.1,
+        "encoder-L128": 6054.3
+      },
+      "quality": {
+        "tokensIdentical": "15/15",
+        "encoderMaxAbsVsFp32": 0.019094400107860565
+      },
+      "source": "webnn-workbench-intellitex-catalog/bench/webnn/intellitex/catalog/measurements.json"
+    }
+  ],
+  "baselines": {
+    "latexgenOrtWebgpuInt4": {
+      "perItemMs": 450,
+      "runtime": "ONNX Runtime Web WebGPU EP, int4, as LatexGen ships (docs/benchmarks.md)",
+      "ratioToOurs": 3.1
+    },
+    "latexgenOrtCpuInt8": {
+      "perItemMs": 1280,
+      "runtime": "ONNX Runtime Web WASM/CPU, int8, as LatexGen ships",
+      "ratioToOurs": 8.8
+    }
+  },
+  "floor": {
+    "perTokenMs": 4.318,
+    "reasoning": "Decode is a one-row matmul per step against ~285 MiB of fp16 constants. Encoder is ~5 ms independent of bucket. The long tail is token count (circle-area 12 tokens / 47 ms, analysis-classics 89 tokens / 410 ms).",
+    "source": "webnn-workbench bench/results/webnn-intellitex-e2e-pass2.json, docs/results.md"
+  },
+  "history": [
+    {
+      "label": "pass one (rel-bias gather on the wrong axis)",
+      "medianItemMs": 275,
+      "greedy": "0/15"
+    },
+    {
+      "label": "pass two (gather axis 2, this entry)",
+      "medianItemMs": 146.2,
+      "greedy": "15/15"
+    }
+  ],
+  "sources": [
+    "webnn-workbench docs/results.md",
+    "webnn-workbench bench/results/webnn-intellitex-e2e-pass2.json",
+    "webnn-workbench bench/results/intellitex-fp16-range.md"
+  ],
+  "caveat": "Absolute numbers move with machine load. The 146.2 ms median was noisier than an earlier 124.4 ms run of the same graph (analysis-classics 312 → 410 ms). Interleaved deltas were not taken; the headline is this JSON."
+}

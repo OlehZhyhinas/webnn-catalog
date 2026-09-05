@@ -228,27 +228,101 @@ const context = await chromium.launchPersistentContext(args.profileDir, {
   args: CHROME_ARGS,
   viewport: { width: 1100, height: 900 },
 });
-const page = await context.newPage();
 const consoleLines = [];
-page.on("console", (m) => {
-  const line = `[page:${m.type()}] ${m.text()}`;
-  consoleLines.push(line);
-  if (m.type() === "error" || m.text().startsWith("[verify]")) console.log(line);
-});
-page.on("pageerror", (e) => { consoleLines.push(`[pageerror] ${e.stack ?? e.message}`); console.error("[pageerror]", e.message); });
+function attachPage(page) {
+  page.setDefaultTimeout(args.timeoutMs);
+  page.on("console", (m) => {
+    const line = `[page:${m.type()}] ${m.text()}`;
+    consoleLines.push(line);
+    if (m.type() === "error" || m.text().startsWith("[verify]")) console.log(line);
+  });
+  page.on("pageerror", (e) => { consoleLines.push(`[pageerror] ${e.stack ?? e.message}`); console.error("[pageerror]", e.message); });
+}
+
+function median(a) {
+  const s = [...a].sort((x, y) => x - y);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function mergeTokenParts(parts) {
+  const R = {
+    kind: "tokens",
+    errors: parts.flatMap((p) => p.errors ?? []),
+    fingerprint: parts[0].fingerprint,
+    checks: {
+      tokens: { cases: 0, identical: 0, detail: [], pass: false },
+      stableAcrossRuns: parts.every((p) => p.checks.stableAcrossRuns),
+      opSupport: Object.assign({}, ...parts.map((p) => p.checks.opSupport ?? {})),
+    },
+    timings: { perCase: {}, encoderByBucket: {} },
+    graphStats: {},
+    opCoverage: {},
+  };
+  for (const p of parts) {
+    R.checks.tokens.detail.push(...p.checks.tokens.detail);
+    R.checks.tokens.cases += p.checks.tokens.cases;
+    R.checks.tokens.identical += p.checks.tokens.identical;
+    Object.assign(R.timings.perCase, p.timings.perCase);
+    Object.assign(R.graphStats, p.graphStats);
+    Object.assign(R.opCoverage, p.opCoverage);
+    if (p.opts?.onlyBucket) R.timings.encoderByBucket[p.opts.onlyBucket] = p.timings.encoder;
+    if (p.checks.tokenizer) {
+      R.checks.tokenizer ??= { parity: 0, cases: 0 };
+      R.checks.tokenizer.parity += p.checks.tokenizer.parity;
+      R.checks.tokenizer.cases += p.checks.tokenizer.cases;
+    }
+  }
+  R.checks.tokens.pass = R.checks.tokens.identical === R.checks.tokens.cases;
+  const meds = Object.values(R.timings.perCase);
+  R.timings.newPrompt = {
+    medianMs: +median(meds).toFixed(2),
+    minMs: +Math.min(...meds).toFixed(2),
+    maxMs: +Math.max(...meds).toFixed(2),
+    meanMs: +(meds.reduce((a, x) => a + x, 0) / meds.length).toFixed(2),
+    n: parts[0].timings.newPrompt?.n ?? null,
+    note: "median over all cases of each case's median (fresh page per length bucket)",
+  };
+  R.timings.encoder = parts[0].timings.encoder;
+  R.timings.tokensPerRun = parts.reduce((a, p) => a + (p.timings.tokensPerRun ?? 0), 0);
+  R.timings.msPerToken = +(meds.reduce((a, x) => a + x, 0) / R.timings.tokensPerRun).toFixed(4);
+  if (!R.checks.stableAcrossRuns) R.errors.push("tokens drifted across runs");
+  return R;
+}
 
 const chromeVersion = context.browser()?.version() ?? "unknown";
 console.log(`[verify] chrome ${chromeVersion}`);
 
+const family = readJson(path.join(ROOT, row.familyFile));
+const expected0 = readJson(path.join(ROOT, entryDir, "verification", "expected.json"));
+const bucketKeys = expected0.kind === "tokens" && family.contract?.chaining?.buckets
+  ? Object.keys(family.contract.chaining.buckets)
+  : null;
+
 let result, failure = null;
 try {
-  await page.goto(`${ORIGIN}/scripts/verify-page.html`);
-  await page.waitForFunction(() => window.__verifyReady === true, null, { timeout: 60000 });
-  console.log(`[verify] building graphs (about 45 s of Core ML compilation; there is no cache)\n`);
-  result = await page.evaluate(
-    (o) => window.__verifyRun(o),
-    { runs: args.runs, warmup: args.warmup, weightsBase: "/weights", chunkMB: args.chunkMB, prompt: args.prompt, entryPath: `/${entryDir}` },
-  );
+  const runPage = async (extra) => {
+    const page = await context.newPage();
+    attachPage(page);
+    await page.goto(`${ORIGIN}/scripts/verify-page.html`);
+    await page.waitForFunction(() => window.__verifyReady === true, null, { timeout: 60000 });
+    const r = await page.evaluate(
+      (o) => window.__verifyRun(o),
+      { runs: args.runs, warmup: args.warmup, weightsBase: "/weights", chunkMB: args.chunkMB, prompt: args.prompt, entryPath: `/${entryDir}`, ...extra },
+    );
+    await page.close();
+    return r;
+  };
+  if (bucketKeys) {
+    const parts = [];
+    for (const b of bucketKeys) {
+      console.log(`\n[verify] bucket ${b} (fresh page; compiling several decode graphs in one context kills Chrome)\n`);
+      parts.push(await runPage({ onlyBucket: b }));
+    }
+    result = mergeTokenParts(parts);
+  } else {
+    console.log(`[verify] building graphs (Core ML compilation; there is no cache)\n`);
+    result = await runPage({});
+  }
 } catch (e) {
   failure = e;
   console.error(`\n[verify] FAILED: ${e.message}`);

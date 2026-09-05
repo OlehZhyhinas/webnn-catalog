@@ -1,0 +1,2973 @@
+{
+ "id": "intellitex-t5-220m",
+ "name": "IntelliTeX (CodeT5+ 220M T5), greedy English-to-LaTeX",
+ "summary": "LatexGen's plain-English-to-LaTeX specialist: a T5 encoder-decoder (12+12 layers, d_model 768, 12 heads × 64, vocab 32100) as static WebNN graphs. Three encoder/decode-step pairs, one per input-length bucket (32/64/128). A tokenised prompt goes in; greedy token ids come out.",
+ "task": "text-to-latex",
+ "source": {
+  "model": "duanxianpi/IntelliTex",
+  "revision": null,
+  "components": {
+   "encoder": {
+    "model": "T5Stack, 12 layers, d_model 768, 12 heads × 64, d_ff 3072 ReLU, RMSNorm eps 1e-6, relative attention bias 32 buckets / max distance 128, bidirectional",
+    "revision": null,
+    "role": "token encoder; hoists decoder EncDecAttention K/V"
+   },
+   "decoder": {
+    "model": "T5Stack, 12 layers, causal self-attention, cross-attention over the encoder, tied lm_head",
+    "revision": null,
+    "role": "autoregressive LaTeX token decoder, one step per dispatch, cache 256"
+   }
+  },
+  "precision": "float16 constants; RMSNorm variance in float32. Greedy tokens identical to fp32 Hugging Face on 15/15 LatexGen items.",
+  "resolution": null,
+  "steps": null
+ },
+ "contract": {
+  "graphs": {
+   "encoder32": {
+    "role": "T5 encoder, static padded length 32, plus hoisted decoder EncDecAttention K/V",
+    "inputs": {
+     "input_ids": {
+      "dataType": "int32",
+      "shape": [
+       1,
+       32
+      ],
+      "source": "T5 SentencePiece ids of the LatexGen prefix plus the user's text, padded to L with pad id 0"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       32
+      ],
+      "source": "fp16 additive bias: 0 on real tokens, -1e4 on pad; write the same tensor into the matching decode graph"
+     }
+    },
+    "outputs": {
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": true,
+      "note": "readable so readTensor() can fence the encoder"
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     }
+    }
+   },
+   "decode32": {
+    "role": "T5 decode-step for encoder length 32, cache length 256, one greedy token per dispatch",
+    "inputs": {
+     "token": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "decoder_start 0 at step 0, then the previous step's token_out"
+     },
+     "step": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "0-based decode position"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       32
+      ]
+     },
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       32,
+       64
+      ]
+     },
+     "self11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     }
+    },
+    "outputs": {
+     "token_out": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "role": "argMax token of this decode step, int32 [1]; the only output a consumer reads",
+      "readable": true
+     },
+     "self0_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_k after this step; bind as the next dispatch's self0_k",
+      "readable": false
+     },
+     "self0_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_v after this step; bind as the next dispatch's self0_v",
+      "readable": false
+     },
+     "self1_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_k after this step; bind as the next dispatch's self1_k",
+      "readable": false
+     },
+     "self1_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_v after this step; bind as the next dispatch's self1_v",
+      "readable": false
+     },
+     "self2_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_k after this step; bind as the next dispatch's self2_k",
+      "readable": false
+     },
+     "self2_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_v after this step; bind as the next dispatch's self2_v",
+      "readable": false
+     },
+     "self3_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_k after this step; bind as the next dispatch's self3_k",
+      "readable": false
+     },
+     "self3_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_v after this step; bind as the next dispatch's self3_v",
+      "readable": false
+     },
+     "self4_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_k after this step; bind as the next dispatch's self4_k",
+      "readable": false
+     },
+     "self4_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_v after this step; bind as the next dispatch's self4_v",
+      "readable": false
+     },
+     "self5_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_k after this step; bind as the next dispatch's self5_k",
+      "readable": false
+     },
+     "self5_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_v after this step; bind as the next dispatch's self5_v",
+      "readable": false
+     },
+     "self6_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_k after this step; bind as the next dispatch's self6_k",
+      "readable": false
+     },
+     "self6_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_v after this step; bind as the next dispatch's self6_v",
+      "readable": false
+     },
+     "self7_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_k after this step; bind as the next dispatch's self7_k",
+      "readable": false
+     },
+     "self7_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_v after this step; bind as the next dispatch's self7_v",
+      "readable": false
+     },
+     "self8_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_k after this step; bind as the next dispatch's self8_k",
+      "readable": false
+     },
+     "self8_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_v after this step; bind as the next dispatch's self8_v",
+      "readable": false
+     },
+     "self9_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_k after this step; bind as the next dispatch's self9_k",
+      "readable": false
+     },
+     "self9_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_v after this step; bind as the next dispatch's self9_v",
+      "readable": false
+     },
+     "self10_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_k after this step; bind as the next dispatch's self10_k",
+      "readable": false
+     },
+     "self10_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_v after this step; bind as the next dispatch's self10_v",
+      "readable": false
+     },
+     "self11_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_k after this step; bind as the next dispatch's self11_k",
+      "readable": false
+     },
+     "self11_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_v after this step; bind as the next dispatch's self11_v",
+      "readable": false
+     }
+    }
+   },
+   "encoder64": {
+    "role": "T5 encoder, static padded length 64, plus hoisted decoder EncDecAttention K/V",
+    "inputs": {
+     "input_ids": {
+      "dataType": "int32",
+      "shape": [
+       1,
+       64
+      ],
+      "source": "T5 SentencePiece ids of the LatexGen prefix plus the user's text, padded to L with pad id 0"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       64
+      ],
+      "source": "fp16 additive bias: 0 on real tokens, -1e4 on pad; write the same tensor into the matching decode graph"
+     }
+    },
+    "outputs": {
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": true,
+      "note": "readable so readTensor() can fence the encoder"
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     }
+    }
+   },
+   "decode64": {
+    "role": "T5 decode-step for encoder length 64, cache length 256, one greedy token per dispatch",
+    "inputs": {
+     "token": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "decoder_start 0 at step 0, then the previous step's token_out"
+     },
+     "step": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "0-based decode position"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       64
+      ]
+     },
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       64,
+       64
+      ]
+     },
+     "self11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     }
+    },
+    "outputs": {
+     "token_out": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "role": "argMax token of this decode step, int32 [1]; the only output a consumer reads",
+      "readable": true
+     },
+     "self0_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_k after this step; bind as the next dispatch's self0_k",
+      "readable": false
+     },
+     "self0_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_v after this step; bind as the next dispatch's self0_v",
+      "readable": false
+     },
+     "self1_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_k after this step; bind as the next dispatch's self1_k",
+      "readable": false
+     },
+     "self1_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_v after this step; bind as the next dispatch's self1_v",
+      "readable": false
+     },
+     "self2_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_k after this step; bind as the next dispatch's self2_k",
+      "readable": false
+     },
+     "self2_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_v after this step; bind as the next dispatch's self2_v",
+      "readable": false
+     },
+     "self3_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_k after this step; bind as the next dispatch's self3_k",
+      "readable": false
+     },
+     "self3_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_v after this step; bind as the next dispatch's self3_v",
+      "readable": false
+     },
+     "self4_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_k after this step; bind as the next dispatch's self4_k",
+      "readable": false
+     },
+     "self4_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_v after this step; bind as the next dispatch's self4_v",
+      "readable": false
+     },
+     "self5_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_k after this step; bind as the next dispatch's self5_k",
+      "readable": false
+     },
+     "self5_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_v after this step; bind as the next dispatch's self5_v",
+      "readable": false
+     },
+     "self6_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_k after this step; bind as the next dispatch's self6_k",
+      "readable": false
+     },
+     "self6_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_v after this step; bind as the next dispatch's self6_v",
+      "readable": false
+     },
+     "self7_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_k after this step; bind as the next dispatch's self7_k",
+      "readable": false
+     },
+     "self7_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_v after this step; bind as the next dispatch's self7_v",
+      "readable": false
+     },
+     "self8_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_k after this step; bind as the next dispatch's self8_k",
+      "readable": false
+     },
+     "self8_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_v after this step; bind as the next dispatch's self8_v",
+      "readable": false
+     },
+     "self9_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_k after this step; bind as the next dispatch's self9_k",
+      "readable": false
+     },
+     "self9_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_v after this step; bind as the next dispatch's self9_v",
+      "readable": false
+     },
+     "self10_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_k after this step; bind as the next dispatch's self10_k",
+      "readable": false
+     },
+     "self10_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_v after this step; bind as the next dispatch's self10_v",
+      "readable": false
+     },
+     "self11_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_k after this step; bind as the next dispatch's self11_k",
+      "readable": false
+     },
+     "self11_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_v after this step; bind as the next dispatch's self11_v",
+      "readable": false
+     }
+    }
+   },
+   "encoder128": {
+    "role": "T5 encoder, static padded length 128, plus hoisted decoder EncDecAttention K/V",
+    "inputs": {
+     "input_ids": {
+      "dataType": "int32",
+      "shape": [
+       1,
+       128
+      ],
+      "source": "T5 SentencePiece ids of the LatexGen prefix plus the user's text, padded to L with pad id 0"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       128
+      ],
+      "source": "fp16 additive bias: 0 on real tokens, -1e4 on pad; write the same tensor into the matching decode graph"
+     }
+    },
+    "outputs": {
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": true,
+      "note": "readable so readTensor() can fence the encoder"
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention K for this decoder layer, chained into the decode graph",
+      "readable": false
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ],
+      "role": "cross-attention V for this decoder layer, chained into the decode graph",
+      "readable": false
+     }
+    }
+   },
+   "decode128": {
+    "role": "T5 decode-step for encoder length 128, cache length 256, one greedy token per dispatch",
+    "inputs": {
+     "token": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "decoder_start 0 at step 0, then the previous step's token_out"
+     },
+     "step": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "source": "0-based decode position"
+     },
+     "pad_bias": {
+      "dataType": "float16",
+      "shape": [
+       1,
+       1,
+       1,
+       128
+      ]
+     },
+     "dec0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self0_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self0_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self1_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self1_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self2_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self2_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self3_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self3_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self4_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self4_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self5_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self5_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self6_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self6_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self7_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self7_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self8_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self8_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self9_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self9_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self10_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self10_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "dec11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "dec11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       128,
+       64
+      ]
+     },
+     "self11_k": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     },
+     "self11_v": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ]
+     }
+    },
+    "outputs": {
+     "token_out": {
+      "dataType": "int32",
+      "shape": [
+       1
+      ],
+      "role": "argMax token of this decode step, int32 [1]; the only output a consumer reads",
+      "readable": true
+     },
+     "self0_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_k after this step; bind as the next dispatch's self0_k",
+      "readable": false
+     },
+     "self0_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self0_v after this step; bind as the next dispatch's self0_v",
+      "readable": false
+     },
+     "self1_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_k after this step; bind as the next dispatch's self1_k",
+      "readable": false
+     },
+     "self1_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self1_v after this step; bind as the next dispatch's self1_v",
+      "readable": false
+     },
+     "self2_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_k after this step; bind as the next dispatch's self2_k",
+      "readable": false
+     },
+     "self2_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self2_v after this step; bind as the next dispatch's self2_v",
+      "readable": false
+     },
+     "self3_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_k after this step; bind as the next dispatch's self3_k",
+      "readable": false
+     },
+     "self3_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self3_v after this step; bind as the next dispatch's self3_v",
+      "readable": false
+     },
+     "self4_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_k after this step; bind as the next dispatch's self4_k",
+      "readable": false
+     },
+     "self4_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self4_v after this step; bind as the next dispatch's self4_v",
+      "readable": false
+     },
+     "self5_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_k after this step; bind as the next dispatch's self5_k",
+      "readable": false
+     },
+     "self5_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self5_v after this step; bind as the next dispatch's self5_v",
+      "readable": false
+     },
+     "self6_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_k after this step; bind as the next dispatch's self6_k",
+      "readable": false
+     },
+     "self6_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self6_v after this step; bind as the next dispatch's self6_v",
+      "readable": false
+     },
+     "self7_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_k after this step; bind as the next dispatch's self7_k",
+      "readable": false
+     },
+     "self7_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self7_v after this step; bind as the next dispatch's self7_v",
+      "readable": false
+     },
+     "self8_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_k after this step; bind as the next dispatch's self8_k",
+      "readable": false
+     },
+     "self8_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self8_v after this step; bind as the next dispatch's self8_v",
+      "readable": false
+     },
+     "self9_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_k after this step; bind as the next dispatch's self9_k",
+      "readable": false
+     },
+     "self9_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self9_v after this step; bind as the next dispatch's self9_v",
+      "readable": false
+     },
+     "self10_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_k after this step; bind as the next dispatch's self10_k",
+      "readable": false
+     },
+     "self10_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self10_v after this step; bind as the next dispatch's self10_v",
+      "readable": false
+     },
+     "self11_k_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_k after this step; bind as the next dispatch's self11_k",
+      "readable": false
+     },
+     "self11_v_out": {
+      "dataType": "float16",
+      "shape": [
+       12,
+       256,
+       64
+      ],
+      "role": "self-attention self11_v after this step; bind as the next dispatch's self11_v",
+      "readable": false
+     }
+    }
+   }
+  },
+  "chaining": {
+   "contexts": "ONE MLContext per length bucket. Compiling three decode graphs in one context kills Chrome; a consumer (and scripts/verify.mjs) builds one encoder+decode pair at a time, on a fresh page or a fresh context.",
+   "buckets": {
+    "32": {
+     "encoder": "encoder32",
+     "decode": "decode32"
+    },
+    "64": {
+     "encoder": "encoder64",
+     "decode": "decode64"
+    },
+    "128": {
+     "encoder": "encoder128",
+     "decode": "decode128"
+    }
+   },
+   "copyInputsToDecode": [
+    "pad_bias"
+   ],
+   "pattern": [
+    "1. Pick the smallest bucket L that fits the padded prompt length (32, 64, or 128).",
+    "2. writeTensor(input_ids) and writeTensor(pad_bias) on the encoder; write the same pad_bias into the decode graph.",
+    "3. Allocate TWO sets of the 24 self-attention cache tensors (A and B). Zero set A.",
+    "4. dispatch(encoder). No await: dispatch is ordered on one pipe. The 24 K/V outputs are the decode graph's decN_k / decN_v inputs (chain links).",
+    "5. tok = 0 (decoder_start), step = 0. Loop: writeTensor(tok), writeTensor(step); dispatch(decode, caches from A, {token_out, caches into B}); await readTensor(token_out); append; stop on eos 2 or step 256; else tok = that token, step++, swap A and B."
+   ],
+   "autoregressive": {
+    "graph": "decode",
+    "tokenInput": "token",
+    "positionInput": "step",
+    "tokensOutput": "token_out",
+    "caches": [
+     [
+      "self0_k",
+      "self0_k_out"
+     ],
+     [
+      "self0_v",
+      "self0_v_out"
+     ],
+     [
+      "self1_k",
+      "self1_k_out"
+     ],
+     [
+      "self1_v",
+      "self1_v_out"
+     ],
+     [
+      "self2_k",
+      "self2_k_out"
+     ],
+     [
+      "self2_v",
+      "self2_v_out"
+     ],
+     [
+      "self3_k",
+      "self3_k_out"
+     ],
+     [
+      "self3_v",
+      "self3_v_out"
+     ],
+     [
+      "self4_k",
+      "self4_k_out"
+     ],
+     [
+      "self4_v",
+      "self4_v_out"
+     ],
+     [
+      "self5_k",
+      "self5_k_out"
+     ],
+     [
+      "self5_v",
+      "self5_v_out"
+     ],
+     [
+      "self6_k",
+      "self6_k_out"
+     ],
+     [
+      "self6_v",
+      "self6_v_out"
+     ],
+     [
+      "self7_k",
+      "self7_k_out"
+     ],
+     [
+      "self7_v",
+      "self7_v_out"
+     ],
+     [
+      "self8_k",
+      "self8_k_out"
+     ],
+     [
+      "self8_v",
+      "self8_v_out"
+     ],
+     [
+      "self9_k",
+      "self9_k_out"
+     ],
+     [
+      "self9_v",
+      "self9_v_out"
+     ],
+     [
+      "self10_k",
+      "self10_k_out"
+     ],
+     [
+      "self10_v",
+      "self10_v_out"
+     ],
+     [
+      "self11_k",
+      "self11_k_out"
+     ],
+     [
+      "self11_v",
+      "self11_v_out"
+     ]
+    ],
+    "zeroCachesPerSequence": true,
+    "bos": 0,
+    "eos": 2,
+    "maxNewTokens": 256,
+    "note": "runtime/loader.js autoregressive() implements the loop from these fields once `graph` is rewritten to the bucket's decode graph. k=1 (token_out shape [1])."
+   },
+   "everyOutputMustBeBound": "WebNN requires every declared output to be bound at dispatch. Cache outputs are the second tensor set."
+  }
+ },
+ "tokenizer": {
+  "algorithm": "T5 SentencePiece / Hugging Face tokenizers.json Unigram, 32100 entries. Encoding stays the consumer's transformers.js (or equivalent) T5 tokenizer; this family ships the files so a consumer can load the same vocab. Verification is token-id identity, not string decode.",
+  "files": [
+   "tokenizer/tokenizer.json",
+   "tokenizer/tokenizer_config.json"
+  ],
+  "module": null,
+  "class": null,
+  "maxLength": 128,
+  "produces": "encoderL.input_ids (padded). decodeL.token_out is what it would DECODE.",
+  "parity": "15/15 greedy token sequences match fp32 Hugging Face generate() after stripping the leading decoder_start 0 (webnn-workbench bench/results/webnn-intellitex-e2e-pass2.json)"
+ },
+ "constants": {
+  "scope": "per-entry",
+  "note": "Each encoder/decode pair has its own recorded blob. Encoder blobs differ by the baked length-L relative bias; decode blobs are the same weights with encoder-side K/V input shapes baked per L. A future v2 can share one canonical blob."
+ },
+ "verification": {
+  "case": "LatexGen's 15 text-to-LaTeX items (public/bench.html / bench/judge.py), prefix 'Convert natural-language math into a STRICT LaTeX equation\\n', greedy, max_new_tokens 256",
+  "reference": "fp32 Hugging Face generate() on duanxianpi/IntelliTex (export_intellitex.py)",
+  "bar": "greedy token ids identical to the reference on every item (leading decoder_start 0 stripped); encoder K/V max abs within 2× the fp16 floor",
+  "runner": "scripts/verify.mjs --entry intellitex-t5-220m/<id>  (fresh page per length bucket)"
+ },
+ "notes": "Pass one matched step 0 on every item and then drifted: the baked decoder rel-bias is HF layout [1, heads, query, key]; gather must use axis 2. A reshape to [N, heads, N] is not a transpose. RMSNorm variance is a float32 island because a naive fp16 sum-of-squares of 1403×768 overflows."
+}
