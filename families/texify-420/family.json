@@ -1,0 +1,771 @@
+{
+  "id": "texify-420",
+  "name": "Texify, 420×420, Donut-Swin + mBART",
+  "summary": "LatexGen's second-pass equation OCR (vikp/texify, ~300M): a Donut-Swin encoder on 420×420 RGB and an 8-layer mBART greedy decode-step, cache 384. float16 throughout. A preprocessed image goes in; greedy token ids come out.",
+  "task": "image-to-latex",
+  "source": {
+    "model": "vikp/texify",
+    "revision": null,
+    "precision": "float16 throughout; LayerNorm is the native WebNN op because a naive fp16 sum-of-squares overflows at Donut-Swin stage 2",
+    "resolution": 420,
+    "steps": null
+  },
+  "contract": {
+    "graphs": {
+      "encoder": {
+        "role": "Donut-Swin encoder, 420×420, hoisted decoder cross-attention K/V for 8 layers",
+        "inputs": {
+          "pixel_values": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              3,
+              420,
+              420
+            ],
+            "layout": "nchw",
+            "source": "Donut-preprocessed RGB, already ImageNet-normalised"
+          }
+        },
+        "outputs": {
+          "dec0_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 0 cross-attention K [1,16,196,64]",
+            "readable": true
+          },
+          "dec0_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 0 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec1_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 1 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec1_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 1 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec2_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 2 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec2_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 2 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec3_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 3 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec3_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 3 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec4_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 4 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec4_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 4 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec5_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 5 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec5_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 5 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec6_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 6 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec6_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 6 cross-attention V [1,16,196,64]",
+            "readable": false
+          },
+          "dec7_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 7 cross-attention K [1,16,196,64]",
+            "readable": false
+          },
+          "dec7_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "role": "decoder layer 7 cross-attention V [1,16,196,64]",
+            "readable": false
+          }
+        }
+      },
+      "decode": {
+        "role": "mBART decode-step, cache length 384, in-graph argMax, on-device KV ping-pong",
+        "inputs": {
+          "token": {
+            "dataType": "int32",
+            "shape": [
+              1
+            ],
+            "source": "decoder_start (0) on step 0, then the previous argMax"
+          },
+          "step": {
+            "dataType": "int32",
+            "shape": [
+              1
+            ],
+            "source": "0-based step index, int32 [1]"
+          },
+          "dec0_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec0_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self0_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self0_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec1_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec1_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self1_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self1_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec2_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec2_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self2_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self2_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec3_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec3_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self3_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self3_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec4_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec4_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self4_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self4_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec5_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec5_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self5_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self5_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec6_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec6_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self6_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self6_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "dec7_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "dec7_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              196,
+              64
+            ],
+            "source": "encoder graph output of the same name, same MLTensor"
+          },
+          "self7_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          },
+          "self7_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "source": "zeros on step 0, then the previous decode dispatch's matching output"
+          }
+        },
+        "outputs": {
+          "token": {
+            "dataType": "int32",
+            "shape": [
+              1
+            ],
+            "role": "argMax next-token id, int32 [1]; the only output a consumer reads",
+            "readable": true
+          },
+          "self0_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self0_k)",
+            "readable": false
+          },
+          "self0_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self1_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self1_k)",
+            "readable": false
+          },
+          "self1_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self2_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self2_k)",
+            "readable": false
+          },
+          "self2_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self3_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self3_k)",
+            "readable": false
+          },
+          "self3_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self4_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self4_k)",
+            "readable": false
+          },
+          "self4_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self5_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self5_k)",
+            "readable": false
+          },
+          "self5_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self6_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self6_k)",
+            "readable": false
+          },
+          "self6_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          },
+          "self7_k": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention K cache after this step (bind as next dispatch's self7_k)",
+            "readable": false
+          },
+          "self7_v": {
+            "dataType": "float16",
+            "shape": [
+              1,
+              16,
+              384,
+              64
+            ],
+            "role": "self-attention V cache after this step",
+            "readable": false
+          }
+        }
+      }
+    },
+    "chaining": {
+      "contexts": "ONE MLContext for both graphs. navigator.ml.createContext({deviceType: 'gpu'}).",
+      "pattern": [
+        "1. dispatch(encoder, {pixel_values}, {dec0_k..dec7_v}). Bind those 16 tensors as the decode graph's matching inputs.",
+        "2. Zero the 16 self-attention cache tensors once per image (writable).",
+        "3. For step = 0..383: write token and step; dispatch(decode, {token, step, encoder K/V, cacheIn}, {token, cacheOut}); read token; swap cacheIn/cacheOut; stop on EOS 2.",
+        "4. If step hits 383 without EOS, the last token is forced EOS 2 (HuggingFace forced_eos_token_id).",
+        "5. Do not emit logits on the timed graph."
+      ],
+      "everyOutputMustBeBound": "WebNN requires every declared output bound at dispatch. Allocate caches as non-readable except token."
+    }
+  },
+  "tokenizer": {
+    "algorithm": "HuggingFace tokenizers (Donut/mBART byte-level BPE), vocab 50000",
+    "files": [
+      "tokenizer/tokenizer.json",
+      "tokenizer/tokenizer_config.json",
+      "tokenizer/special_tokens_map.json"
+    ],
+    "module": null,
+    "class": null,
+    "maxLength": 384,
+    "produces": "decode.token (consumed as the next step's input; the family does not run the tokenizer in-graph)",
+    "parity": "export_texify.py greedy ids vs transformers AutoTokenizer on vikp/texify"
+  },
+  "constants": {
+    "scope": "per-entry",
+    "note": "Encoder ~174 MiB, decode-step ~423 MiB (lm_head is ~100 MiB). Build times are tens of seconds."
+  },
+  "verification": {
+    "images": 18,
+    "source": "LatexGen/public/bench-images/",
+    "tokens": "identical to fp32 Hugging Face generate() on the same preprocessed bytes, 18/18",
+    "preprocess": "Donut 4.36 thumbnail+pad, not in-graph"
+  },
+  "notes": "Issue path models/texify-420 maps onto families/texify-420 in this catalog. Preprocessing (thumbnail and pad) stays in the consumer."
+}

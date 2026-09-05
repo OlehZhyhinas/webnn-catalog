@@ -1,0 +1,8845 @@
+{
+ "version": 1,
+ "label": "texify-420/decode",
+ "recordedLabel": "decode",
+ "layout": "nchw",
+ "constantsBlob": "texify-decode.bin",
+ "provenance": {
+  "summary": "Texify mBART decoder (8 layers, d_model 1024, 16×64, FFN 4096, vocab 50000) as one static decode-step graph, cache length 384. Learned positions gathered at step+2; embed scale folded into the token table; on-device A/B KV ping-pong; in-graph argMax. Timed graph does not emit logits. HuggingFace forced_eos_token_id=2 is applied in the harness at max_new_tokens.",
+  "source": {
+   "model": "vikp/texify",
+   "precision": "float16 throughout; LayerNorm is the native WebNN op (a naive fp16 sum-of-squares overflows at Donut-Swin stage 2)",
+   "weightsExport": "bench/webnn/texify/export_texify.py from the fp32 Hugging Face checkpoint"
+  },
+  "recordedFrom": {
+   "repo": "webnn-workbench",
+   "commit": "97140a1",
+   "recorder": "bench/webnn/ir-record.js (Proxy around MLGraphBuilder; shapes are the backend's)",
+   "label": "decode",
+   "harness": "node bench/webnn/texify/run.mjs --dump-ir texify-decode",
+   "recordedAt": "2026-09-05",
+   "constantBytes": 443707464
+  },
+  "folds": [
+   "sqrt(d_model)=32 embedding scale into the token table",
+   "1/sqrt(64) attention scale into the Q third of packed QKV",
+   "mBART position offset 2 as add(step, 2) then gather on axis 0 of [1538,1024]",
+   "causal mask row and cache one-hot row gathered by step",
+   "untied lm_head [50000,1024] transposed to [1024,50000]"
+  ]
+ },
+ "emitterConfig": {
+  "stats": {
+   "ops": 545,
+   "opHisto": {
+    "input": 34,
+    "constant": 162,
+    "add": 98,
+    "gather": 4,
+    "layerNormalization": 26,
+    "reshape": 51,
+    "matmul": 81,
+    "split": 8,
+    "mul": 24,
+    "transpose": 32,
+    "softmax": 16,
+    "gelu": 8,
+    "argMax": 1
+   }
+  }
+ },
+ "note": "One operand namespace: graph inputs keep their names, constants are k<N>, op results v<N>. Multi-output ops (split) list every result in `outputs`.",
+ "inputs": [
+  {
+   "name": "token",
+   "dataType": "int32",
+   "shape": [
+    1
+   ]
+  },
+  {
+   "name": "step",
+   "dataType": "int32",
+   "shape": [
+    1
+   ]
+  },
+  {
+   "name": "dec0_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec0_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self0_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self0_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec1_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec1_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self1_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self1_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec2_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec2_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self2_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self2_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec3_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec3_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self3_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self3_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec4_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec4_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self4_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self4_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec5_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec5_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self5_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self5_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec6_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec6_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self6_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self6_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "dec7_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "dec7_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    196,
+    64
+   ]
+  },
+  {
+   "name": "self7_k",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  },
+  {
+   "name": "self7_v",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ]
+  }
+ ],
+ "outputs": [
+  {
+   "name": "token",
+   "operand": "v364",
+   "dataType": "int32",
+   "shape": [
+    1
+   ],
+   "role": "argMax next-token id, int32 [1]; the only output a consumer reads"
+  },
+  {
+   "name": "self0_k",
+   "operand": "v19",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self0_k)"
+  },
+  {
+   "name": "self0_v",
+   "operand": "v21",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self1_k",
+   "operand": "v63",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self1_k)"
+  },
+  {
+   "name": "self1_v",
+   "operand": "v65",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self2_k",
+   "operand": "v107",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self2_k)"
+  },
+  {
+   "name": "self2_v",
+   "operand": "v109",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self3_k",
+   "operand": "v151",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self3_k)"
+  },
+  {
+   "name": "self3_v",
+   "operand": "v153",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self4_k",
+   "operand": "v195",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self4_k)"
+  },
+  {
+   "name": "self4_v",
+   "operand": "v197",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self5_k",
+   "operand": "v239",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self5_k)"
+  },
+  {
+   "name": "self5_v",
+   "operand": "v241",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self6_k",
+   "operand": "v283",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self6_k)"
+  },
+  {
+   "name": "self6_v",
+   "operand": "v285",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  },
+  {
+   "name": "self7_k",
+   "operand": "v327",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention K cache after this step (bind as next dispatch's self7_k)"
+  },
+  {
+   "name": "self7_v",
+   "operand": "v329",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "role": "self-attention V cache after this step"
+  }
+ ],
+ "constants": {
+  "k0": {
+   "dataType": "int32",
+   "shape": [
+    1
+   ],
+   "byteOffset": 0,
+   "byteLength": 4,
+   "tag": "embeddings"
+  },
+  "k1": {
+   "dataType": "float16",
+   "shape": [
+    50000,
+    1024
+   ],
+   "byteOffset": 8,
+   "byteLength": 102400000,
+   "tag": "embeddings"
+  },
+  "k2": {
+   "dataType": "float16",
+   "shape": [
+    1538,
+    1024
+   ],
+   "byteOffset": 102400008,
+   "byteLength": 3149824,
+   "tag": "embeddings"
+  },
+  "k3": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 105549832,
+   "byteLength": 2048,
+   "tag": "embeddings"
+  },
+  "k4": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 105551880,
+   "byteLength": 2048,
+   "tag": "embeddings"
+  },
+  "k5": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384
+   ],
+   "byteOffset": 105553928,
+   "byteLength": 294912,
+   "tag": "embeddings"
+  },
+  "k6": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384
+   ],
+   "byteOffset": 105848840,
+   "byteLength": 294912,
+   "tag": "embeddings"
+  },
+  "k7": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 106143752,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k8": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 106145800,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k9": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 106147848,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k10": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 112439304,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k11": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 112445448,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k12": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 114542600,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  "k13": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 114544648,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k14": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 114546696,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k15": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 114548744,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k16": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 116645896,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k17": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 116647944,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k18": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 116647952,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k19": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 118745104,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  "k20": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 118747152,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k21": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 118749200,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k22": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 118751248,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k23": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 127139856,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k24": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 127148048,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k25": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 135536656,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  "k26": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 135538704,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k27": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 135540752,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k28": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 135542800,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k29": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 141834256,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k30": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 141840400,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k31": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 143937552,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  "k32": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 143939600,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k33": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 143941648,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k34": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 143943696,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k35": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 146040848,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k36": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 146042896,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k37": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 146042904,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k38": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 148140056,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  "k39": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 148142104,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k40": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 148144152,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k41": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 148146200,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k42": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 156534808,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k43": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 156543000,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k44": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 164931608,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  "k45": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 164933656,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k46": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 164935704,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k47": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 164937752,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k48": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 171229208,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k49": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 171235352,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k50": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 173332504,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  "k51": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 173334552,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k52": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 173336600,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k53": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 173338648,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k54": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 175435800,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k55": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 175437848,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k56": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 175437856,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k57": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 177535008,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  "k58": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 177537056,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k59": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 177539104,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k60": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 177541152,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k61": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 185929760,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k62": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 185937952,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k63": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 194326560,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  "k64": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 194328608,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k65": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 194330656,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k66": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 194332704,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k67": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 200624160,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k68": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 200630304,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k69": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 202727456,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  "k70": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 202729504,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k71": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 202731552,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k72": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 202733600,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k73": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 204830752,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k74": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 204832800,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k75": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 204832808,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k76": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 206929960,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  "k77": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 206932008,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k78": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 206934056,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k79": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 206936104,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k80": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 215324712,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k81": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 215332904,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k82": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 223721512,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  "k83": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 223723560,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k84": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 223725608,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k85": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 223727656,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k86": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 230019112,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k87": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 230025256,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k88": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 232122408,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  "k89": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 232124456,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k90": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 232126504,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k91": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 232128552,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k92": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 234225704,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k93": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 234227752,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k94": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 234227760,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k95": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 236324912,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  "k96": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 236326960,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k97": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 236329008,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k98": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 236331056,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k99": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 244719664,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k100": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 244727856,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k101": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 253116464,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  "k102": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 253118512,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k103": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 253120560,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k104": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 253122608,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k105": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 259414064,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k106": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 259420208,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k107": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 261517360,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  "k108": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 261519408,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k109": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 261521456,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k110": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 261523504,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k111": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 263620656,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k112": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 263622704,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k113": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 263622712,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k114": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 265719864,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  "k115": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 265721912,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k116": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 265723960,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k117": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 265726008,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k118": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 274114616,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k119": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 274122808,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k120": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 282511416,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  "k121": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 282513464,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k122": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 282515512,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k123": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 282517560,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k124": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 288809016,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k125": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 288815160,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k126": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 290912312,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  "k127": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 290914360,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k128": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 290916408,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k129": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 290918456,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k130": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 293015608,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k131": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 293017656,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k132": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 293017664,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k133": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 295114816,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  "k134": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 295116864,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k135": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 295118912,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k136": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 295120960,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k137": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 303509568,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k138": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 303517760,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k139": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 311906368,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  "k140": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 311908416,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k141": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 311910464,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k142": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3072
+   ],
+   "byteOffset": 311912512,
+   "byteLength": 6291456,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k143": {
+   "dataType": "float16",
+   "shape": [
+    3072
+   ],
+   "byteOffset": 318203968,
+   "byteLength": 6144,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k144": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 318210112,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k145": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 320307264,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  "k146": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 320309312,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k147": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 320311360,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k148": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 320313408,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k149": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 322410560,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k150": {
+   "dataType": "float16",
+   "shape": [
+    1
+   ],
+   "byteOffset": 322412608,
+   "byteLength": 2,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k151": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1024
+   ],
+   "byteOffset": 322412616,
+   "byteLength": 2097152,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k152": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 324509768,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  "k153": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 324511816,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k154": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 324513864,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k155": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    4096
+   ],
+   "byteOffset": 324515912,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k156": {
+   "dataType": "float16",
+   "shape": [
+    4096
+   ],
+   "byteOffset": 332904520,
+   "byteLength": 8192,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k157": {
+   "dataType": "float16",
+   "shape": [
+    4096,
+    1024
+   ],
+   "byteOffset": 332912712,
+   "byteLength": 8388608,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k158": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 341301320,
+   "byteLength": 2048,
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  "k159": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 341303368,
+   "byteLength": 2048,
+   "tag": "lm_head"
+  },
+  "k160": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 341305416,
+   "byteLength": 2048,
+   "tag": "lm_head"
+  },
+  "k161": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    50000
+   ],
+   "byteOffset": 341307464,
+   "byteLength": 102400000,
+   "tag": "lm_head"
+  }
+ },
+ "ops": [
+  {
+   "id": 0,
+   "type": "add",
+   "inputs": [
+    "step",
+    "k0"
+   ],
+   "output": "v0",
+   "outputShape": [
+    1
+   ],
+   "outputDataType": "int32",
+   "options": {},
+   "tag": "embeddings"
+  },
+  {
+   "id": 1,
+   "type": "gather",
+   "inputs": [
+    "k1",
+    "token"
+   ],
+   "output": "v1",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 0
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 2,
+   "type": "gather",
+   "inputs": [
+    "k2",
+    "v0"
+   ],
+   "output": "v2",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 0
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 3,
+   "type": "add",
+   "inputs": [
+    "v1",
+    "v2"
+   ],
+   "output": "v3",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "embeddings"
+  },
+  {
+   "id": 4,
+   "type": "layerNormalization",
+   "inputs": [
+    "v3",
+    "k3",
+    "k4"
+   ],
+   "output": "v4",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k3",
+    "bias": "k4"
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 5,
+   "type": "gather",
+   "inputs": [
+    "k5",
+    "step"
+   ],
+   "output": "v5",
+   "outputShape": [
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 0
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 6,
+   "type": "reshape",
+   "inputs": [
+    "v5"
+   ],
+   "output": "v6",
+   "outputShape": [
+    1,
+    1,
+    384,
+    1
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1,
+     384,
+     1
+    ]
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 7,
+   "type": "gather",
+   "inputs": [
+    "k6",
+    "step"
+   ],
+   "output": "v7",
+   "outputShape": [
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 0
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 8,
+   "type": "reshape",
+   "inputs": [
+    "v7"
+   ],
+   "output": "v8",
+   "outputShape": [
+    1,
+    1,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1,
+     1,
+     384
+    ]
+   },
+   "tag": "embeddings"
+  },
+  {
+   "id": 9,
+   "type": "layerNormalization",
+   "inputs": [
+    "v4",
+    "k7",
+    "k8"
+   ],
+   "output": "v9",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k7",
+    "bias": "k8"
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 10,
+   "type": "matmul",
+   "inputs": [
+    "v9",
+    "k9"
+   ],
+   "output": "v10",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 11,
+   "type": "add",
+   "inputs": [
+    "v10",
+    "k10"
+   ],
+   "output": "v11",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 12,
+   "type": "split",
+   "inputs": [
+    "v11"
+   ],
+   "output": "v12",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn",
+   "outputs": [
+    "v12",
+    "v13",
+    "v14"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 13,
+   "type": "reshape",
+   "inputs": [
+    "v12"
+   ],
+   "output": "v15",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 14,
+   "type": "reshape",
+   "inputs": [
+    "v13"
+   ],
+   "output": "v16",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 15,
+   "type": "reshape",
+   "inputs": [
+    "v14"
+   ],
+   "output": "v17",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 16,
+   "type": "mul",
+   "inputs": [
+    "v16",
+    "v6"
+   ],
+   "output": "v18",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 17,
+   "type": "add",
+   "inputs": [
+    "self0_k",
+    "v18"
+   ],
+   "output": "v19",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 18,
+   "type": "mul",
+   "inputs": [
+    "v17",
+    "v6"
+   ],
+   "output": "v20",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 19,
+   "type": "add",
+   "inputs": [
+    "self0_v",
+    "v20"
+   ],
+   "output": "v21",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 20,
+   "type": "transpose",
+   "inputs": [
+    "v19"
+   ],
+   "output": "v22",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 21,
+   "type": "matmul",
+   "inputs": [
+    "v15",
+    "v22"
+   ],
+   "output": "v23",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 22,
+   "type": "add",
+   "inputs": [
+    "v23",
+    "v8"
+   ],
+   "output": "v24",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 23,
+   "type": "softmax",
+   "inputs": [
+    "v24"
+   ],
+   "output": "v25",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 24,
+   "type": "matmul",
+   "inputs": [
+    "v25",
+    "v21"
+   ],
+   "output": "v26",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 25,
+   "type": "transpose",
+   "inputs": [
+    "v26"
+   ],
+   "output": "v27",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 26,
+   "type": "reshape",
+   "inputs": [
+    "v27"
+   ],
+   "output": "v28",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 27,
+   "type": "matmul",
+   "inputs": [
+    "v28",
+    "k11"
+   ],
+   "output": "v29",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 28,
+   "type": "add",
+   "inputs": [
+    "v29",
+    "k12"
+   ],
+   "output": "v30",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 29,
+   "type": "add",
+   "inputs": [
+    "v4",
+    "v30"
+   ],
+   "output": "v31",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.self_attn"
+  },
+  {
+   "id": 30,
+   "type": "layerNormalization",
+   "inputs": [
+    "v31",
+    "k13",
+    "k14"
+   ],
+   "output": "v32",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k13",
+    "bias": "k14"
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 31,
+   "type": "matmul",
+   "inputs": [
+    "v32",
+    "k15"
+   ],
+   "output": "v33",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 32,
+   "type": "mul",
+   "inputs": [
+    "k16",
+    "k17"
+   ],
+   "output": "v34",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 33,
+   "type": "add",
+   "inputs": [
+    "v33",
+    "v34"
+   ],
+   "output": "v35",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 34,
+   "type": "reshape",
+   "inputs": [
+    "v35"
+   ],
+   "output": "v36",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 35,
+   "type": "transpose",
+   "inputs": [
+    "dec0_k"
+   ],
+   "output": "v37",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 36,
+   "type": "matmul",
+   "inputs": [
+    "v36",
+    "v37"
+   ],
+   "output": "v38",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 37,
+   "type": "softmax",
+   "inputs": [
+    "v38"
+   ],
+   "output": "v39",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 38,
+   "type": "matmul",
+   "inputs": [
+    "v39",
+    "dec0_v"
+   ],
+   "output": "v40",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 39,
+   "type": "transpose",
+   "inputs": [
+    "v40"
+   ],
+   "output": "v41",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 40,
+   "type": "reshape",
+   "inputs": [
+    "v41"
+   ],
+   "output": "v42",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 41,
+   "type": "matmul",
+   "inputs": [
+    "v42",
+    "k18"
+   ],
+   "output": "v43",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 42,
+   "type": "add",
+   "inputs": [
+    "v43",
+    "k19"
+   ],
+   "output": "v44",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 43,
+   "type": "add",
+   "inputs": [
+    "v31",
+    "v44"
+   ],
+   "output": "v45",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.encoder_attn"
+  },
+  {
+   "id": 44,
+   "type": "layerNormalization",
+   "inputs": [
+    "v45",
+    "k20",
+    "k21"
+   ],
+   "output": "v46",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k20",
+    "bias": "k21"
+   },
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 45,
+   "type": "matmul",
+   "inputs": [
+    "v46",
+    "k22"
+   ],
+   "output": "v47",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 46,
+   "type": "add",
+   "inputs": [
+    "v47",
+    "k23"
+   ],
+   "output": "v48",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 47,
+   "type": "gelu",
+   "inputs": [
+    "v48"
+   ],
+   "output": "v49",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 48,
+   "type": "matmul",
+   "inputs": [
+    "v49",
+    "k24"
+   ],
+   "output": "v50",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 49,
+   "type": "add",
+   "inputs": [
+    "v50",
+    "k25"
+   ],
+   "output": "v51",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 50,
+   "type": "add",
+   "inputs": [
+    "v45",
+    "v51"
+   ],
+   "output": "v52",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.0.ff"
+  },
+  {
+   "id": 51,
+   "type": "layerNormalization",
+   "inputs": [
+    "v52",
+    "k26",
+    "k27"
+   ],
+   "output": "v53",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k26",
+    "bias": "k27"
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 52,
+   "type": "matmul",
+   "inputs": [
+    "v53",
+    "k28"
+   ],
+   "output": "v54",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 53,
+   "type": "add",
+   "inputs": [
+    "v54",
+    "k29"
+   ],
+   "output": "v55",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 54,
+   "type": "split",
+   "inputs": [
+    "v55"
+   ],
+   "output": "v56",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn",
+   "outputs": [
+    "v56",
+    "v57",
+    "v58"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 55,
+   "type": "reshape",
+   "inputs": [
+    "v56"
+   ],
+   "output": "v59",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 56,
+   "type": "reshape",
+   "inputs": [
+    "v57"
+   ],
+   "output": "v60",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 57,
+   "type": "reshape",
+   "inputs": [
+    "v58"
+   ],
+   "output": "v61",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 58,
+   "type": "mul",
+   "inputs": [
+    "v60",
+    "v6"
+   ],
+   "output": "v62",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 59,
+   "type": "add",
+   "inputs": [
+    "self1_k",
+    "v62"
+   ],
+   "output": "v63",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 60,
+   "type": "mul",
+   "inputs": [
+    "v61",
+    "v6"
+   ],
+   "output": "v64",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 61,
+   "type": "add",
+   "inputs": [
+    "self1_v",
+    "v64"
+   ],
+   "output": "v65",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 62,
+   "type": "transpose",
+   "inputs": [
+    "v63"
+   ],
+   "output": "v66",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 63,
+   "type": "matmul",
+   "inputs": [
+    "v59",
+    "v66"
+   ],
+   "output": "v67",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 64,
+   "type": "add",
+   "inputs": [
+    "v67",
+    "v8"
+   ],
+   "output": "v68",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 65,
+   "type": "softmax",
+   "inputs": [
+    "v68"
+   ],
+   "output": "v69",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 66,
+   "type": "matmul",
+   "inputs": [
+    "v69",
+    "v65"
+   ],
+   "output": "v70",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 67,
+   "type": "transpose",
+   "inputs": [
+    "v70"
+   ],
+   "output": "v71",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 68,
+   "type": "reshape",
+   "inputs": [
+    "v71"
+   ],
+   "output": "v72",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 69,
+   "type": "matmul",
+   "inputs": [
+    "v72",
+    "k30"
+   ],
+   "output": "v73",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 70,
+   "type": "add",
+   "inputs": [
+    "v73",
+    "k31"
+   ],
+   "output": "v74",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 71,
+   "type": "add",
+   "inputs": [
+    "v52",
+    "v74"
+   ],
+   "output": "v75",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.self_attn"
+  },
+  {
+   "id": 72,
+   "type": "layerNormalization",
+   "inputs": [
+    "v75",
+    "k32",
+    "k33"
+   ],
+   "output": "v76",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k32",
+    "bias": "k33"
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 73,
+   "type": "matmul",
+   "inputs": [
+    "v76",
+    "k34"
+   ],
+   "output": "v77",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 74,
+   "type": "mul",
+   "inputs": [
+    "k35",
+    "k36"
+   ],
+   "output": "v78",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 75,
+   "type": "add",
+   "inputs": [
+    "v77",
+    "v78"
+   ],
+   "output": "v79",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 76,
+   "type": "reshape",
+   "inputs": [
+    "v79"
+   ],
+   "output": "v80",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 77,
+   "type": "transpose",
+   "inputs": [
+    "dec1_k"
+   ],
+   "output": "v81",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 78,
+   "type": "matmul",
+   "inputs": [
+    "v80",
+    "v81"
+   ],
+   "output": "v82",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 79,
+   "type": "softmax",
+   "inputs": [
+    "v82"
+   ],
+   "output": "v83",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 80,
+   "type": "matmul",
+   "inputs": [
+    "v83",
+    "dec1_v"
+   ],
+   "output": "v84",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 81,
+   "type": "transpose",
+   "inputs": [
+    "v84"
+   ],
+   "output": "v85",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 82,
+   "type": "reshape",
+   "inputs": [
+    "v85"
+   ],
+   "output": "v86",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 83,
+   "type": "matmul",
+   "inputs": [
+    "v86",
+    "k37"
+   ],
+   "output": "v87",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 84,
+   "type": "add",
+   "inputs": [
+    "v87",
+    "k38"
+   ],
+   "output": "v88",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 85,
+   "type": "add",
+   "inputs": [
+    "v75",
+    "v88"
+   ],
+   "output": "v89",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.encoder_attn"
+  },
+  {
+   "id": 86,
+   "type": "layerNormalization",
+   "inputs": [
+    "v89",
+    "k39",
+    "k40"
+   ],
+   "output": "v90",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k39",
+    "bias": "k40"
+   },
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 87,
+   "type": "matmul",
+   "inputs": [
+    "v90",
+    "k41"
+   ],
+   "output": "v91",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 88,
+   "type": "add",
+   "inputs": [
+    "v91",
+    "k42"
+   ],
+   "output": "v92",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 89,
+   "type": "gelu",
+   "inputs": [
+    "v92"
+   ],
+   "output": "v93",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 90,
+   "type": "matmul",
+   "inputs": [
+    "v93",
+    "k43"
+   ],
+   "output": "v94",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 91,
+   "type": "add",
+   "inputs": [
+    "v94",
+    "k44"
+   ],
+   "output": "v95",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 92,
+   "type": "add",
+   "inputs": [
+    "v89",
+    "v95"
+   ],
+   "output": "v96",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.1.ff"
+  },
+  {
+   "id": 93,
+   "type": "layerNormalization",
+   "inputs": [
+    "v96",
+    "k45",
+    "k46"
+   ],
+   "output": "v97",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k45",
+    "bias": "k46"
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 94,
+   "type": "matmul",
+   "inputs": [
+    "v97",
+    "k47"
+   ],
+   "output": "v98",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 95,
+   "type": "add",
+   "inputs": [
+    "v98",
+    "k48"
+   ],
+   "output": "v99",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 96,
+   "type": "split",
+   "inputs": [
+    "v99"
+   ],
+   "output": "v100",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn",
+   "outputs": [
+    "v100",
+    "v101",
+    "v102"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 97,
+   "type": "reshape",
+   "inputs": [
+    "v100"
+   ],
+   "output": "v103",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 98,
+   "type": "reshape",
+   "inputs": [
+    "v101"
+   ],
+   "output": "v104",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 99,
+   "type": "reshape",
+   "inputs": [
+    "v102"
+   ],
+   "output": "v105",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 100,
+   "type": "mul",
+   "inputs": [
+    "v104",
+    "v6"
+   ],
+   "output": "v106",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 101,
+   "type": "add",
+   "inputs": [
+    "self2_k",
+    "v106"
+   ],
+   "output": "v107",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 102,
+   "type": "mul",
+   "inputs": [
+    "v105",
+    "v6"
+   ],
+   "output": "v108",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 103,
+   "type": "add",
+   "inputs": [
+    "self2_v",
+    "v108"
+   ],
+   "output": "v109",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 104,
+   "type": "transpose",
+   "inputs": [
+    "v107"
+   ],
+   "output": "v110",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 105,
+   "type": "matmul",
+   "inputs": [
+    "v103",
+    "v110"
+   ],
+   "output": "v111",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 106,
+   "type": "add",
+   "inputs": [
+    "v111",
+    "v8"
+   ],
+   "output": "v112",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 107,
+   "type": "softmax",
+   "inputs": [
+    "v112"
+   ],
+   "output": "v113",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 108,
+   "type": "matmul",
+   "inputs": [
+    "v113",
+    "v109"
+   ],
+   "output": "v114",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 109,
+   "type": "transpose",
+   "inputs": [
+    "v114"
+   ],
+   "output": "v115",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 110,
+   "type": "reshape",
+   "inputs": [
+    "v115"
+   ],
+   "output": "v116",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 111,
+   "type": "matmul",
+   "inputs": [
+    "v116",
+    "k49"
+   ],
+   "output": "v117",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 112,
+   "type": "add",
+   "inputs": [
+    "v117",
+    "k50"
+   ],
+   "output": "v118",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 113,
+   "type": "add",
+   "inputs": [
+    "v96",
+    "v118"
+   ],
+   "output": "v119",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.self_attn"
+  },
+  {
+   "id": 114,
+   "type": "layerNormalization",
+   "inputs": [
+    "v119",
+    "k51",
+    "k52"
+   ],
+   "output": "v120",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k51",
+    "bias": "k52"
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 115,
+   "type": "matmul",
+   "inputs": [
+    "v120",
+    "k53"
+   ],
+   "output": "v121",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 116,
+   "type": "mul",
+   "inputs": [
+    "k54",
+    "k55"
+   ],
+   "output": "v122",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 117,
+   "type": "add",
+   "inputs": [
+    "v121",
+    "v122"
+   ],
+   "output": "v123",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 118,
+   "type": "reshape",
+   "inputs": [
+    "v123"
+   ],
+   "output": "v124",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 119,
+   "type": "transpose",
+   "inputs": [
+    "dec2_k"
+   ],
+   "output": "v125",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 120,
+   "type": "matmul",
+   "inputs": [
+    "v124",
+    "v125"
+   ],
+   "output": "v126",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 121,
+   "type": "softmax",
+   "inputs": [
+    "v126"
+   ],
+   "output": "v127",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 122,
+   "type": "matmul",
+   "inputs": [
+    "v127",
+    "dec2_v"
+   ],
+   "output": "v128",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 123,
+   "type": "transpose",
+   "inputs": [
+    "v128"
+   ],
+   "output": "v129",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 124,
+   "type": "reshape",
+   "inputs": [
+    "v129"
+   ],
+   "output": "v130",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 125,
+   "type": "matmul",
+   "inputs": [
+    "v130",
+    "k56"
+   ],
+   "output": "v131",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 126,
+   "type": "add",
+   "inputs": [
+    "v131",
+    "k57"
+   ],
+   "output": "v132",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 127,
+   "type": "add",
+   "inputs": [
+    "v119",
+    "v132"
+   ],
+   "output": "v133",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.encoder_attn"
+  },
+  {
+   "id": 128,
+   "type": "layerNormalization",
+   "inputs": [
+    "v133",
+    "k58",
+    "k59"
+   ],
+   "output": "v134",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k58",
+    "bias": "k59"
+   },
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 129,
+   "type": "matmul",
+   "inputs": [
+    "v134",
+    "k60"
+   ],
+   "output": "v135",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 130,
+   "type": "add",
+   "inputs": [
+    "v135",
+    "k61"
+   ],
+   "output": "v136",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 131,
+   "type": "gelu",
+   "inputs": [
+    "v136"
+   ],
+   "output": "v137",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 132,
+   "type": "matmul",
+   "inputs": [
+    "v137",
+    "k62"
+   ],
+   "output": "v138",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 133,
+   "type": "add",
+   "inputs": [
+    "v138",
+    "k63"
+   ],
+   "output": "v139",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 134,
+   "type": "add",
+   "inputs": [
+    "v133",
+    "v139"
+   ],
+   "output": "v140",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.2.ff"
+  },
+  {
+   "id": 135,
+   "type": "layerNormalization",
+   "inputs": [
+    "v140",
+    "k64",
+    "k65"
+   ],
+   "output": "v141",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k64",
+    "bias": "k65"
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 136,
+   "type": "matmul",
+   "inputs": [
+    "v141",
+    "k66"
+   ],
+   "output": "v142",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 137,
+   "type": "add",
+   "inputs": [
+    "v142",
+    "k67"
+   ],
+   "output": "v143",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 138,
+   "type": "split",
+   "inputs": [
+    "v143"
+   ],
+   "output": "v144",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn",
+   "outputs": [
+    "v144",
+    "v145",
+    "v146"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 139,
+   "type": "reshape",
+   "inputs": [
+    "v144"
+   ],
+   "output": "v147",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 140,
+   "type": "reshape",
+   "inputs": [
+    "v145"
+   ],
+   "output": "v148",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 141,
+   "type": "reshape",
+   "inputs": [
+    "v146"
+   ],
+   "output": "v149",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 142,
+   "type": "mul",
+   "inputs": [
+    "v148",
+    "v6"
+   ],
+   "output": "v150",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 143,
+   "type": "add",
+   "inputs": [
+    "self3_k",
+    "v150"
+   ],
+   "output": "v151",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 144,
+   "type": "mul",
+   "inputs": [
+    "v149",
+    "v6"
+   ],
+   "output": "v152",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 145,
+   "type": "add",
+   "inputs": [
+    "self3_v",
+    "v152"
+   ],
+   "output": "v153",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 146,
+   "type": "transpose",
+   "inputs": [
+    "v151"
+   ],
+   "output": "v154",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 147,
+   "type": "matmul",
+   "inputs": [
+    "v147",
+    "v154"
+   ],
+   "output": "v155",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 148,
+   "type": "add",
+   "inputs": [
+    "v155",
+    "v8"
+   ],
+   "output": "v156",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 149,
+   "type": "softmax",
+   "inputs": [
+    "v156"
+   ],
+   "output": "v157",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 150,
+   "type": "matmul",
+   "inputs": [
+    "v157",
+    "v153"
+   ],
+   "output": "v158",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 151,
+   "type": "transpose",
+   "inputs": [
+    "v158"
+   ],
+   "output": "v159",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 152,
+   "type": "reshape",
+   "inputs": [
+    "v159"
+   ],
+   "output": "v160",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 153,
+   "type": "matmul",
+   "inputs": [
+    "v160",
+    "k68"
+   ],
+   "output": "v161",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 154,
+   "type": "add",
+   "inputs": [
+    "v161",
+    "k69"
+   ],
+   "output": "v162",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 155,
+   "type": "add",
+   "inputs": [
+    "v140",
+    "v162"
+   ],
+   "output": "v163",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.self_attn"
+  },
+  {
+   "id": 156,
+   "type": "layerNormalization",
+   "inputs": [
+    "v163",
+    "k70",
+    "k71"
+   ],
+   "output": "v164",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k70",
+    "bias": "k71"
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 157,
+   "type": "matmul",
+   "inputs": [
+    "v164",
+    "k72"
+   ],
+   "output": "v165",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 158,
+   "type": "mul",
+   "inputs": [
+    "k73",
+    "k74"
+   ],
+   "output": "v166",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 159,
+   "type": "add",
+   "inputs": [
+    "v165",
+    "v166"
+   ],
+   "output": "v167",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 160,
+   "type": "reshape",
+   "inputs": [
+    "v167"
+   ],
+   "output": "v168",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 161,
+   "type": "transpose",
+   "inputs": [
+    "dec3_k"
+   ],
+   "output": "v169",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 162,
+   "type": "matmul",
+   "inputs": [
+    "v168",
+    "v169"
+   ],
+   "output": "v170",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 163,
+   "type": "softmax",
+   "inputs": [
+    "v170"
+   ],
+   "output": "v171",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 164,
+   "type": "matmul",
+   "inputs": [
+    "v171",
+    "dec3_v"
+   ],
+   "output": "v172",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 165,
+   "type": "transpose",
+   "inputs": [
+    "v172"
+   ],
+   "output": "v173",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 166,
+   "type": "reshape",
+   "inputs": [
+    "v173"
+   ],
+   "output": "v174",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 167,
+   "type": "matmul",
+   "inputs": [
+    "v174",
+    "k75"
+   ],
+   "output": "v175",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 168,
+   "type": "add",
+   "inputs": [
+    "v175",
+    "k76"
+   ],
+   "output": "v176",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 169,
+   "type": "add",
+   "inputs": [
+    "v163",
+    "v176"
+   ],
+   "output": "v177",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.encoder_attn"
+  },
+  {
+   "id": 170,
+   "type": "layerNormalization",
+   "inputs": [
+    "v177",
+    "k77",
+    "k78"
+   ],
+   "output": "v178",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k77",
+    "bias": "k78"
+   },
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 171,
+   "type": "matmul",
+   "inputs": [
+    "v178",
+    "k79"
+   ],
+   "output": "v179",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 172,
+   "type": "add",
+   "inputs": [
+    "v179",
+    "k80"
+   ],
+   "output": "v180",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 173,
+   "type": "gelu",
+   "inputs": [
+    "v180"
+   ],
+   "output": "v181",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 174,
+   "type": "matmul",
+   "inputs": [
+    "v181",
+    "k81"
+   ],
+   "output": "v182",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 175,
+   "type": "add",
+   "inputs": [
+    "v182",
+    "k82"
+   ],
+   "output": "v183",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 176,
+   "type": "add",
+   "inputs": [
+    "v177",
+    "v183"
+   ],
+   "output": "v184",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.3.ff"
+  },
+  {
+   "id": 177,
+   "type": "layerNormalization",
+   "inputs": [
+    "v184",
+    "k83",
+    "k84"
+   ],
+   "output": "v185",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k83",
+    "bias": "k84"
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 178,
+   "type": "matmul",
+   "inputs": [
+    "v185",
+    "k85"
+   ],
+   "output": "v186",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 179,
+   "type": "add",
+   "inputs": [
+    "v186",
+    "k86"
+   ],
+   "output": "v187",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 180,
+   "type": "split",
+   "inputs": [
+    "v187"
+   ],
+   "output": "v188",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn",
+   "outputs": [
+    "v188",
+    "v189",
+    "v190"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 181,
+   "type": "reshape",
+   "inputs": [
+    "v188"
+   ],
+   "output": "v191",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 182,
+   "type": "reshape",
+   "inputs": [
+    "v189"
+   ],
+   "output": "v192",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 183,
+   "type": "reshape",
+   "inputs": [
+    "v190"
+   ],
+   "output": "v193",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 184,
+   "type": "mul",
+   "inputs": [
+    "v192",
+    "v6"
+   ],
+   "output": "v194",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 185,
+   "type": "add",
+   "inputs": [
+    "self4_k",
+    "v194"
+   ],
+   "output": "v195",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 186,
+   "type": "mul",
+   "inputs": [
+    "v193",
+    "v6"
+   ],
+   "output": "v196",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 187,
+   "type": "add",
+   "inputs": [
+    "self4_v",
+    "v196"
+   ],
+   "output": "v197",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 188,
+   "type": "transpose",
+   "inputs": [
+    "v195"
+   ],
+   "output": "v198",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 189,
+   "type": "matmul",
+   "inputs": [
+    "v191",
+    "v198"
+   ],
+   "output": "v199",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 190,
+   "type": "add",
+   "inputs": [
+    "v199",
+    "v8"
+   ],
+   "output": "v200",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 191,
+   "type": "softmax",
+   "inputs": [
+    "v200"
+   ],
+   "output": "v201",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 192,
+   "type": "matmul",
+   "inputs": [
+    "v201",
+    "v197"
+   ],
+   "output": "v202",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 193,
+   "type": "transpose",
+   "inputs": [
+    "v202"
+   ],
+   "output": "v203",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 194,
+   "type": "reshape",
+   "inputs": [
+    "v203"
+   ],
+   "output": "v204",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 195,
+   "type": "matmul",
+   "inputs": [
+    "v204",
+    "k87"
+   ],
+   "output": "v205",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 196,
+   "type": "add",
+   "inputs": [
+    "v205",
+    "k88"
+   ],
+   "output": "v206",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 197,
+   "type": "add",
+   "inputs": [
+    "v184",
+    "v206"
+   ],
+   "output": "v207",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.self_attn"
+  },
+  {
+   "id": 198,
+   "type": "layerNormalization",
+   "inputs": [
+    "v207",
+    "k89",
+    "k90"
+   ],
+   "output": "v208",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k89",
+    "bias": "k90"
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 199,
+   "type": "matmul",
+   "inputs": [
+    "v208",
+    "k91"
+   ],
+   "output": "v209",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 200,
+   "type": "mul",
+   "inputs": [
+    "k92",
+    "k93"
+   ],
+   "output": "v210",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 201,
+   "type": "add",
+   "inputs": [
+    "v209",
+    "v210"
+   ],
+   "output": "v211",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 202,
+   "type": "reshape",
+   "inputs": [
+    "v211"
+   ],
+   "output": "v212",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 203,
+   "type": "transpose",
+   "inputs": [
+    "dec4_k"
+   ],
+   "output": "v213",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 204,
+   "type": "matmul",
+   "inputs": [
+    "v212",
+    "v213"
+   ],
+   "output": "v214",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 205,
+   "type": "softmax",
+   "inputs": [
+    "v214"
+   ],
+   "output": "v215",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 206,
+   "type": "matmul",
+   "inputs": [
+    "v215",
+    "dec4_v"
+   ],
+   "output": "v216",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 207,
+   "type": "transpose",
+   "inputs": [
+    "v216"
+   ],
+   "output": "v217",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 208,
+   "type": "reshape",
+   "inputs": [
+    "v217"
+   ],
+   "output": "v218",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 209,
+   "type": "matmul",
+   "inputs": [
+    "v218",
+    "k94"
+   ],
+   "output": "v219",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 210,
+   "type": "add",
+   "inputs": [
+    "v219",
+    "k95"
+   ],
+   "output": "v220",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 211,
+   "type": "add",
+   "inputs": [
+    "v207",
+    "v220"
+   ],
+   "output": "v221",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.encoder_attn"
+  },
+  {
+   "id": 212,
+   "type": "layerNormalization",
+   "inputs": [
+    "v221",
+    "k96",
+    "k97"
+   ],
+   "output": "v222",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k96",
+    "bias": "k97"
+   },
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 213,
+   "type": "matmul",
+   "inputs": [
+    "v222",
+    "k98"
+   ],
+   "output": "v223",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 214,
+   "type": "add",
+   "inputs": [
+    "v223",
+    "k99"
+   ],
+   "output": "v224",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 215,
+   "type": "gelu",
+   "inputs": [
+    "v224"
+   ],
+   "output": "v225",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 216,
+   "type": "matmul",
+   "inputs": [
+    "v225",
+    "k100"
+   ],
+   "output": "v226",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 217,
+   "type": "add",
+   "inputs": [
+    "v226",
+    "k101"
+   ],
+   "output": "v227",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 218,
+   "type": "add",
+   "inputs": [
+    "v221",
+    "v227"
+   ],
+   "output": "v228",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.4.ff"
+  },
+  {
+   "id": 219,
+   "type": "layerNormalization",
+   "inputs": [
+    "v228",
+    "k102",
+    "k103"
+   ],
+   "output": "v229",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k102",
+    "bias": "k103"
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 220,
+   "type": "matmul",
+   "inputs": [
+    "v229",
+    "k104"
+   ],
+   "output": "v230",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 221,
+   "type": "add",
+   "inputs": [
+    "v230",
+    "k105"
+   ],
+   "output": "v231",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 222,
+   "type": "split",
+   "inputs": [
+    "v231"
+   ],
+   "output": "v232",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn",
+   "outputs": [
+    "v232",
+    "v233",
+    "v234"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 223,
+   "type": "reshape",
+   "inputs": [
+    "v232"
+   ],
+   "output": "v235",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 224,
+   "type": "reshape",
+   "inputs": [
+    "v233"
+   ],
+   "output": "v236",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 225,
+   "type": "reshape",
+   "inputs": [
+    "v234"
+   ],
+   "output": "v237",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 226,
+   "type": "mul",
+   "inputs": [
+    "v236",
+    "v6"
+   ],
+   "output": "v238",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 227,
+   "type": "add",
+   "inputs": [
+    "self5_k",
+    "v238"
+   ],
+   "output": "v239",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 228,
+   "type": "mul",
+   "inputs": [
+    "v237",
+    "v6"
+   ],
+   "output": "v240",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 229,
+   "type": "add",
+   "inputs": [
+    "self5_v",
+    "v240"
+   ],
+   "output": "v241",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 230,
+   "type": "transpose",
+   "inputs": [
+    "v239"
+   ],
+   "output": "v242",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 231,
+   "type": "matmul",
+   "inputs": [
+    "v235",
+    "v242"
+   ],
+   "output": "v243",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 232,
+   "type": "add",
+   "inputs": [
+    "v243",
+    "v8"
+   ],
+   "output": "v244",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 233,
+   "type": "softmax",
+   "inputs": [
+    "v244"
+   ],
+   "output": "v245",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 234,
+   "type": "matmul",
+   "inputs": [
+    "v245",
+    "v241"
+   ],
+   "output": "v246",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 235,
+   "type": "transpose",
+   "inputs": [
+    "v246"
+   ],
+   "output": "v247",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 236,
+   "type": "reshape",
+   "inputs": [
+    "v247"
+   ],
+   "output": "v248",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 237,
+   "type": "matmul",
+   "inputs": [
+    "v248",
+    "k106"
+   ],
+   "output": "v249",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 238,
+   "type": "add",
+   "inputs": [
+    "v249",
+    "k107"
+   ],
+   "output": "v250",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 239,
+   "type": "add",
+   "inputs": [
+    "v228",
+    "v250"
+   ],
+   "output": "v251",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.self_attn"
+  },
+  {
+   "id": 240,
+   "type": "layerNormalization",
+   "inputs": [
+    "v251",
+    "k108",
+    "k109"
+   ],
+   "output": "v252",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k108",
+    "bias": "k109"
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 241,
+   "type": "matmul",
+   "inputs": [
+    "v252",
+    "k110"
+   ],
+   "output": "v253",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 242,
+   "type": "mul",
+   "inputs": [
+    "k111",
+    "k112"
+   ],
+   "output": "v254",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 243,
+   "type": "add",
+   "inputs": [
+    "v253",
+    "v254"
+   ],
+   "output": "v255",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 244,
+   "type": "reshape",
+   "inputs": [
+    "v255"
+   ],
+   "output": "v256",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 245,
+   "type": "transpose",
+   "inputs": [
+    "dec5_k"
+   ],
+   "output": "v257",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 246,
+   "type": "matmul",
+   "inputs": [
+    "v256",
+    "v257"
+   ],
+   "output": "v258",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 247,
+   "type": "softmax",
+   "inputs": [
+    "v258"
+   ],
+   "output": "v259",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 248,
+   "type": "matmul",
+   "inputs": [
+    "v259",
+    "dec5_v"
+   ],
+   "output": "v260",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 249,
+   "type": "transpose",
+   "inputs": [
+    "v260"
+   ],
+   "output": "v261",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 250,
+   "type": "reshape",
+   "inputs": [
+    "v261"
+   ],
+   "output": "v262",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 251,
+   "type": "matmul",
+   "inputs": [
+    "v262",
+    "k113"
+   ],
+   "output": "v263",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 252,
+   "type": "add",
+   "inputs": [
+    "v263",
+    "k114"
+   ],
+   "output": "v264",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 253,
+   "type": "add",
+   "inputs": [
+    "v251",
+    "v264"
+   ],
+   "output": "v265",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.encoder_attn"
+  },
+  {
+   "id": 254,
+   "type": "layerNormalization",
+   "inputs": [
+    "v265",
+    "k115",
+    "k116"
+   ],
+   "output": "v266",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k115",
+    "bias": "k116"
+   },
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 255,
+   "type": "matmul",
+   "inputs": [
+    "v266",
+    "k117"
+   ],
+   "output": "v267",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 256,
+   "type": "add",
+   "inputs": [
+    "v267",
+    "k118"
+   ],
+   "output": "v268",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 257,
+   "type": "gelu",
+   "inputs": [
+    "v268"
+   ],
+   "output": "v269",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 258,
+   "type": "matmul",
+   "inputs": [
+    "v269",
+    "k119"
+   ],
+   "output": "v270",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 259,
+   "type": "add",
+   "inputs": [
+    "v270",
+    "k120"
+   ],
+   "output": "v271",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 260,
+   "type": "add",
+   "inputs": [
+    "v265",
+    "v271"
+   ],
+   "output": "v272",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.5.ff"
+  },
+  {
+   "id": 261,
+   "type": "layerNormalization",
+   "inputs": [
+    "v272",
+    "k121",
+    "k122"
+   ],
+   "output": "v273",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k121",
+    "bias": "k122"
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 262,
+   "type": "matmul",
+   "inputs": [
+    "v273",
+    "k123"
+   ],
+   "output": "v274",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 263,
+   "type": "add",
+   "inputs": [
+    "v274",
+    "k124"
+   ],
+   "output": "v275",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 264,
+   "type": "split",
+   "inputs": [
+    "v275"
+   ],
+   "output": "v276",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn",
+   "outputs": [
+    "v276",
+    "v277",
+    "v278"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 265,
+   "type": "reshape",
+   "inputs": [
+    "v276"
+   ],
+   "output": "v279",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 266,
+   "type": "reshape",
+   "inputs": [
+    "v277"
+   ],
+   "output": "v280",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 267,
+   "type": "reshape",
+   "inputs": [
+    "v278"
+   ],
+   "output": "v281",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 268,
+   "type": "mul",
+   "inputs": [
+    "v280",
+    "v6"
+   ],
+   "output": "v282",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 269,
+   "type": "add",
+   "inputs": [
+    "self6_k",
+    "v282"
+   ],
+   "output": "v283",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 270,
+   "type": "mul",
+   "inputs": [
+    "v281",
+    "v6"
+   ],
+   "output": "v284",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 271,
+   "type": "add",
+   "inputs": [
+    "self6_v",
+    "v284"
+   ],
+   "output": "v285",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 272,
+   "type": "transpose",
+   "inputs": [
+    "v283"
+   ],
+   "output": "v286",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 273,
+   "type": "matmul",
+   "inputs": [
+    "v279",
+    "v286"
+   ],
+   "output": "v287",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 274,
+   "type": "add",
+   "inputs": [
+    "v287",
+    "v8"
+   ],
+   "output": "v288",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 275,
+   "type": "softmax",
+   "inputs": [
+    "v288"
+   ],
+   "output": "v289",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 276,
+   "type": "matmul",
+   "inputs": [
+    "v289",
+    "v285"
+   ],
+   "output": "v290",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 277,
+   "type": "transpose",
+   "inputs": [
+    "v290"
+   ],
+   "output": "v291",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 278,
+   "type": "reshape",
+   "inputs": [
+    "v291"
+   ],
+   "output": "v292",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 279,
+   "type": "matmul",
+   "inputs": [
+    "v292",
+    "k125"
+   ],
+   "output": "v293",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 280,
+   "type": "add",
+   "inputs": [
+    "v293",
+    "k126"
+   ],
+   "output": "v294",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 281,
+   "type": "add",
+   "inputs": [
+    "v272",
+    "v294"
+   ],
+   "output": "v295",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.self_attn"
+  },
+  {
+   "id": 282,
+   "type": "layerNormalization",
+   "inputs": [
+    "v295",
+    "k127",
+    "k128"
+   ],
+   "output": "v296",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k127",
+    "bias": "k128"
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 283,
+   "type": "matmul",
+   "inputs": [
+    "v296",
+    "k129"
+   ],
+   "output": "v297",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 284,
+   "type": "mul",
+   "inputs": [
+    "k130",
+    "k131"
+   ],
+   "output": "v298",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 285,
+   "type": "add",
+   "inputs": [
+    "v297",
+    "v298"
+   ],
+   "output": "v299",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 286,
+   "type": "reshape",
+   "inputs": [
+    "v299"
+   ],
+   "output": "v300",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 287,
+   "type": "transpose",
+   "inputs": [
+    "dec6_k"
+   ],
+   "output": "v301",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 288,
+   "type": "matmul",
+   "inputs": [
+    "v300",
+    "v301"
+   ],
+   "output": "v302",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 289,
+   "type": "softmax",
+   "inputs": [
+    "v302"
+   ],
+   "output": "v303",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 290,
+   "type": "matmul",
+   "inputs": [
+    "v303",
+    "dec6_v"
+   ],
+   "output": "v304",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 291,
+   "type": "transpose",
+   "inputs": [
+    "v304"
+   ],
+   "output": "v305",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 292,
+   "type": "reshape",
+   "inputs": [
+    "v305"
+   ],
+   "output": "v306",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 293,
+   "type": "matmul",
+   "inputs": [
+    "v306",
+    "k132"
+   ],
+   "output": "v307",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 294,
+   "type": "add",
+   "inputs": [
+    "v307",
+    "k133"
+   ],
+   "output": "v308",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 295,
+   "type": "add",
+   "inputs": [
+    "v295",
+    "v308"
+   ],
+   "output": "v309",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.encoder_attn"
+  },
+  {
+   "id": 296,
+   "type": "layerNormalization",
+   "inputs": [
+    "v309",
+    "k134",
+    "k135"
+   ],
+   "output": "v310",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k134",
+    "bias": "k135"
+   },
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 297,
+   "type": "matmul",
+   "inputs": [
+    "v310",
+    "k136"
+   ],
+   "output": "v311",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 298,
+   "type": "add",
+   "inputs": [
+    "v311",
+    "k137"
+   ],
+   "output": "v312",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 299,
+   "type": "gelu",
+   "inputs": [
+    "v312"
+   ],
+   "output": "v313",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 300,
+   "type": "matmul",
+   "inputs": [
+    "v313",
+    "k138"
+   ],
+   "output": "v314",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 301,
+   "type": "add",
+   "inputs": [
+    "v314",
+    "k139"
+   ],
+   "output": "v315",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 302,
+   "type": "add",
+   "inputs": [
+    "v309",
+    "v315"
+   ],
+   "output": "v316",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.6.ff"
+  },
+  {
+   "id": 303,
+   "type": "layerNormalization",
+   "inputs": [
+    "v316",
+    "k140",
+    "k141"
+   ],
+   "output": "v317",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k140",
+    "bias": "k141"
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 304,
+   "type": "matmul",
+   "inputs": [
+    "v317",
+    "k142"
+   ],
+   "output": "v318",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 305,
+   "type": "add",
+   "inputs": [
+    "v318",
+    "k143"
+   ],
+   "output": "v319",
+   "outputShape": [
+    1,
+    3072
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 306,
+   "type": "split",
+   "inputs": [
+    "v319"
+   ],
+   "output": "v320",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "splits": 3,
+    "axis": 1
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn",
+   "outputs": [
+    "v320",
+    "v321",
+    "v322"
+   ],
+   "outputShapes": [
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ],
+    [
+     1,
+     1024
+    ]
+   ]
+  },
+  {
+   "id": 307,
+   "type": "reshape",
+   "inputs": [
+    "v320"
+   ],
+   "output": "v323",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 308,
+   "type": "reshape",
+   "inputs": [
+    "v321"
+   ],
+   "output": "v324",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 309,
+   "type": "reshape",
+   "inputs": [
+    "v322"
+   ],
+   "output": "v325",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 310,
+   "type": "mul",
+   "inputs": [
+    "v324",
+    "v6"
+   ],
+   "output": "v326",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 311,
+   "type": "add",
+   "inputs": [
+    "self7_k",
+    "v326"
+   ],
+   "output": "v327",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 312,
+   "type": "mul",
+   "inputs": [
+    "v325",
+    "v6"
+   ],
+   "output": "v328",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 313,
+   "type": "add",
+   "inputs": [
+    "self7_v",
+    "v328"
+   ],
+   "output": "v329",
+   "outputShape": [
+    1,
+    16,
+    384,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 314,
+   "type": "transpose",
+   "inputs": [
+    "v327"
+   ],
+   "output": "v330",
+   "outputShape": [
+    1,
+    16,
+    64,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 315,
+   "type": "matmul",
+   "inputs": [
+    "v323",
+    "v330"
+   ],
+   "output": "v331",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 316,
+   "type": "add",
+   "inputs": [
+    "v331",
+    "v8"
+   ],
+   "output": "v332",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 317,
+   "type": "softmax",
+   "inputs": [
+    "v332"
+   ],
+   "output": "v333",
+   "outputShape": [
+    1,
+    16,
+    1,
+    384
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 318,
+   "type": "matmul",
+   "inputs": [
+    "v333",
+    "v329"
+   ],
+   "output": "v334",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 319,
+   "type": "transpose",
+   "inputs": [
+    "v334"
+   ],
+   "output": "v335",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 320,
+   "type": "reshape",
+   "inputs": [
+    "v335"
+   ],
+   "output": "v336",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 321,
+   "type": "matmul",
+   "inputs": [
+    "v336",
+    "k144"
+   ],
+   "output": "v337",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 322,
+   "type": "add",
+   "inputs": [
+    "v337",
+    "k145"
+   ],
+   "output": "v338",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 323,
+   "type": "add",
+   "inputs": [
+    "v316",
+    "v338"
+   ],
+   "output": "v339",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.self_attn"
+  },
+  {
+   "id": 324,
+   "type": "layerNormalization",
+   "inputs": [
+    "v339",
+    "k146",
+    "k147"
+   ],
+   "output": "v340",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k146",
+    "bias": "k147"
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 325,
+   "type": "matmul",
+   "inputs": [
+    "v340",
+    "k148"
+   ],
+   "output": "v341",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 326,
+   "type": "mul",
+   "inputs": [
+    "k149",
+    "k150"
+   ],
+   "output": "v342",
+   "outputShape": [
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 327,
+   "type": "add",
+   "inputs": [
+    "v341",
+    "v342"
+   ],
+   "output": "v343",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 328,
+   "type": "reshape",
+   "inputs": [
+    "v343"
+   ],
+   "output": "v344",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     1,
+     64
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 329,
+   "type": "transpose",
+   "inputs": [
+    "dec7_k"
+   ],
+   "output": "v345",
+   "outputShape": [
+    1,
+    16,
+    64,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 330,
+   "type": "matmul",
+   "inputs": [
+    "v344",
+    "v345"
+   ],
+   "output": "v346",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 331,
+   "type": "softmax",
+   "inputs": [
+    "v346"
+   ],
+   "output": "v347",
+   "outputShape": [
+    1,
+    16,
+    1,
+    196
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 3
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 332,
+   "type": "matmul",
+   "inputs": [
+    "v347",
+    "dec7_v"
+   ],
+   "output": "v348",
+   "outputShape": [
+    1,
+    16,
+    1,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 333,
+   "type": "transpose",
+   "inputs": [
+    "v348"
+   ],
+   "output": "v349",
+   "outputShape": [
+    1,
+    1,
+    16,
+    64
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 334,
+   "type": "reshape",
+   "inputs": [
+    "v349"
+   ],
+   "output": "v350",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     1024
+    ]
+   },
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 335,
+   "type": "matmul",
+   "inputs": [
+    "v350",
+    "k151"
+   ],
+   "output": "v351",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 336,
+   "type": "add",
+   "inputs": [
+    "v351",
+    "k152"
+   ],
+   "output": "v352",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 337,
+   "type": "add",
+   "inputs": [
+    "v339",
+    "v352"
+   ],
+   "output": "v353",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.encoder_attn"
+  },
+  {
+   "id": 338,
+   "type": "layerNormalization",
+   "inputs": [
+    "v353",
+    "k153",
+    "k154"
+   ],
+   "output": "v354",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k153",
+    "bias": "k154"
+   },
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 339,
+   "type": "matmul",
+   "inputs": [
+    "v354",
+    "k155"
+   ],
+   "output": "v355",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 340,
+   "type": "add",
+   "inputs": [
+    "v355",
+    "k156"
+   ],
+   "output": "v356",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 341,
+   "type": "gelu",
+   "inputs": [
+    "v356"
+   ],
+   "output": "v357",
+   "outputShape": [
+    1,
+    4096
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 342,
+   "type": "matmul",
+   "inputs": [
+    "v357",
+    "k157"
+   ],
+   "output": "v358",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 343,
+   "type": "add",
+   "inputs": [
+    "v358",
+    "k158"
+   ],
+   "output": "v359",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 344,
+   "type": "add",
+   "inputs": [
+    "v353",
+    "v359"
+   ],
+   "output": "v360",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "decoder.model.decoder.layers.7.ff"
+  },
+  {
+   "id": 345,
+   "type": "layerNormalization",
+   "inputs": [
+    "v360",
+    "k159",
+    "k160"
+   ],
+   "output": "v361",
+   "outputShape": [
+    1,
+    1024
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axes": [
+     1
+    ],
+    "epsilon": 0.00001,
+    "scale": "k159",
+    "bias": "k160"
+   },
+   "tag": "lm_head"
+  },
+  {
+   "id": 346,
+   "type": "matmul",
+   "inputs": [
+    "v361",
+    "k161"
+   ],
+   "output": "v362",
+   "outputShape": [
+    1,
+    50000
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "lm_head"
+  },
+  {
+   "id": 347,
+   "type": "argMax",
+   "inputs": [
+    "v362"
+   ],
+   "output": "v363",
+   "outputShape": [
+    1
+   ],
+   "outputDataType": "int32",
+   "options": {
+    "axis": 1,
+    "keepDimensions": false,
+    "outputDataType": "int32"
+   },
+   "tag": "lm_head"
+  },
+  {
+   "id": 348,
+   "type": "reshape",
+   "inputs": [
+    "v363"
+   ],
+   "output": "v364",
+   "outputShape": [
+    1
+   ],
+   "outputDataType": "int32",
+   "options": {
+    "newShape": [
+     1
+    ]
+   },
+   "tag": "lm_head"
+  }
+ ]
+}
