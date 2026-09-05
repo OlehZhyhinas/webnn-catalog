@@ -1,0 +1,452 @@
+{
+  "id": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "texo-384",
+  "variant": "exact",
+  "created": "2026-09-05",
+  "producedBy": {
+    "workbench": "webnn-workbench@233e460",
+    "date": "2026-09-05",
+    "recorder": "bench/webnn/ir-record.js"
+  },
+  "title": "Texo (FormulaNet, 20M): WebNN / Core ML on Apple M5 Pro",
+  "summary": "HGNetv2 encoder with the cross-attention K/V hoisted in, and an mBART decoder unrolled 16 greedy steps per dispatch over static caches. 22.7 ms median per LatexGen benchmark image on a quiet machine (25.9 at load 5), tokens identical to fp32 ONNX Runtime on 18/18.",
+  "target": {
+    "generatedAt": "2026-09-05T18:55:21.800Z",
+    "tool": "webnn-catalog scripts/probe-target.mjs",
+    "backend": {
+      "name": "coreml",
+      "deviceType": "gpu",
+      "fingerprint": {
+        "preferredInputLayout": "nchw",
+        "inputRankMax": 5,
+        "inputDataTypes": [
+          "float32",
+          "float16",
+          "int32"
+        ]
+      },
+      "byDeviceType": {
+        "gpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "npu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "cpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        }
+      },
+      "observable": "browser"
+    },
+    "browser": {
+      "name": "Chrome",
+      "version": "152.0.7977.77",
+      "major": 152,
+      "engine": "Chromium 152.0.7977.77",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "flags": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=WebMachineLearningNeuralNetwork,WebMachineLearningNeuralNetworkExperimentalFeatures,WebNNCoreML,WebGPUExperimentalFeatures",
+        "--enable-dawn-features=allow_unsafe_apis"
+      ],
+      "profile": "persistent",
+      "observable": "browser"
+    },
+    "os": {
+      "name": "macOS",
+      "version": "26.6.2",
+      "major": 26,
+      "build": "25G83",
+      "browserReported": {
+        "platform": "macOS",
+        "platformVersion": "26.6.2",
+        "architecture": "arm",
+        "bitness": "64",
+        "note": "What a page can see on its own. `version` and `build` above are the host reading, which is authoritative where the two disagree: userAgentData's platformVersion is capped or coarsened on some platforms and browser builds."
+      },
+      "observable": "browser(partial)/host"
+    },
+    "gpu": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": "",
+      "subgroupMinSize": 32,
+      "subgroupMaxSize": 32,
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxBindGroups": 4,
+        "maxStorageBuffersPerShaderStage": 10
+      },
+      "observable": "browser"
+    },
+    "host": {
+      "platform": "darwin",
+      "chip": "Apple M5 Pro",
+      "gpuCores": 20,
+      "memoryGB": 64,
+      "cpuThreads": 18,
+      "loadAvg": [
+        4.29,
+        5.09,
+        9.52
+      ],
+      "unavailable": [],
+      "observable": "host"
+    },
+    "perfClass": {
+      "f16TflopsMeasured": 5.69,
+      "method": "WGSL tiled f16 matmul 2048x2048x2048, 128x128 workgroup tile, 8x8 per invocation, f32 accumulate, 53 dispatches over ~200 ms. A LOWER BOUND on this machine's f16 throughput, not its peak.",
+      "shape": [
+        2048,
+        2048,
+        2048
+      ],
+      "iterations": 53,
+      "elapsedMs": 160,
+      "checked": true,
+      "error": null,
+      "observable": "browser(probe)"
+    }
+  },
+  "compat": {
+    "requires": {
+      "backend.name": "coreml"
+    },
+    "ops": [
+      "add",
+      "argMax",
+      "concat",
+      "conv2d",
+      "gather",
+      "gelu",
+      "layerNormalization",
+      "matmul",
+      "maxPool2d",
+      "mul",
+      "pad",
+      "relu",
+      "reshape",
+      "slice",
+      "softmax",
+      "split",
+      "transpose"
+    ],
+    "notes": "Facts, not policy. `requires` is what must hold for these graphs to build and compute correctly; `target` additionally records where they were tuned and timed, which is a weaker claim. Timings apply only to the hosts measurements.json names."
+  },
+  "graphs": {
+    "encoder": {
+      "recipe": "recipe.encoder.json",
+      "constants": "encoder",
+      "role": "HGNetv2 encoder + hoisted cross-attention K/V for both decoder layers",
+      "layout": "nchw",
+      "ops": 155,
+      "opTypes": 8,
+      "constantCount": 168,
+      "inputs": [
+        {
+          "name": "image",
+          "dataType": "float16",
+          "shape": [
+            1,
+            1,
+            384,
+            384
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enc_kT0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            144
+          ],
+          "role": "cross-attention K^T, layer 0, per head",
+          "readable": true
+        },
+        {
+          "name": "enc_v0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            144,
+            24
+          ],
+          "role": "cross-attention V, layer 0, per head",
+          "readable": false
+        },
+        {
+          "name": "enc_kT1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            144
+          ],
+          "role": "cross-attention K^T, layer 1",
+          "readable": false
+        },
+        {
+          "name": "enc_v1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            144,
+            24
+          ],
+          "role": "cross-attention V, layer 1",
+          "readable": false
+        }
+      ]
+    },
+    "decoder": {
+      "recipe": "recipe.decoder.json",
+      "constants": "decoder",
+      "role": "mBART decoder, 16 greedy steps per dispatch, static KV caches",
+      "layout": "nchw",
+      "ops": 1363,
+      "opTypes": 12,
+      "constantCount": 44,
+      "inputs": [
+        {
+          "name": "tok",
+          "dataType": "int32",
+          "shape": [
+            1
+          ]
+        },
+        {
+          "name": "step",
+          "dataType": "int32",
+          "shape": [
+            1
+          ]
+        },
+        {
+          "name": "cache_kT0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            512
+          ]
+        },
+        {
+          "name": "cache_v0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            512,
+            24
+          ]
+        },
+        {
+          "name": "cache_kT1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            512
+          ]
+        },
+        {
+          "name": "cache_v1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            512,
+            24
+          ]
+        },
+        {
+          "name": "enc_kT0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            144
+          ]
+        },
+        {
+          "name": "enc_v0",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            144,
+            24
+          ]
+        },
+        {
+          "name": "enc_kT1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            144
+          ]
+        },
+        {
+          "name": "enc_v1",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            144,
+            24
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tokens",
+          "dataType": "int32",
+          "shape": [
+            16
+          ],
+          "role": "argMax token of each unrolled step, int32 [k]; the only output a consumer reads",
+          "readable": true
+        },
+        {
+          "name": "cache_kT0_out",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            512
+          ],
+          "role": "K^T cache after k steps (bind as next dispatch's cache_kT0)",
+          "readable": false
+        },
+        {
+          "name": "cache_v0_out",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            512,
+            24
+          ],
+          "role": "V cache after k steps",
+          "readable": false
+        },
+        {
+          "name": "cache_kT1_out",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            24,
+            512
+          ],
+          "role": "K^T cache after k steps",
+          "readable": false
+        },
+        {
+          "name": "cache_v1_out",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            512,
+            24
+          ],
+          "role": "V cache after k steps",
+          "readable": false
+        }
+      ]
+    },
+    "chain": [
+      [
+        "encoder.enc_kT0",
+        "decoder.enc_kT0"
+      ],
+      [
+        "encoder.enc_v0",
+        "decoder.enc_v0"
+      ],
+      [
+        "encoder.enc_kT1",
+        "decoder.enc_kT1"
+      ],
+      [
+        "encoder.enc_v1",
+        "decoder.enc_v1"
+      ]
+    ]
+  },
+  "constants": "manifest.json",
+  "verification": "verification/",
+  "measurements": "measurements.json",
+  "provenance": "provenance.md",
+  "tokenizerFromFamily": true
+}

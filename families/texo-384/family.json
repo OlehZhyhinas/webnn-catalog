@@ -1,0 +1,111 @@
+{
+  "id": "texo-384",
+  "name": "Texo (FormulaNet, 20M), 384x384 equation OCR",
+  "summary": "Texo, the ~20M-parameter formula-recognition model LatexGen uses as its first-pass equation OCR: an HGNetv2 CNN encoder over a 384x384 grayscale image and a 2-layer mBART decoder that emits LaTeX tokens greedily. Two WebNN graphs: the encoder, which also computes the decoder's cross-attention K/V once per image, and a decode graph that runs k greedy steps per dispatch over static self-attention caches. float16 throughout. A preprocessed image goes in, a token sequence comes out.",
+  "task": "image-to-latex",
+
+  "source": {
+    "model": "Texo / FormulaNet as shipped in LatexGen public/models/texo (fp32 ONNX export: encoder_model.onnx 54.2 MB, decoder_model_merged.onnx 25.9 MB); upstream Hugging Face id not recorded",
+    "revision": null,
+    "components": {
+      "encoder": { "model": "my_hgnetv2 (HGNetv2, stages [48,48,128,1,6,3] [128,96,512,1,6,3,down] [512,192,1024,3,6,5,down,light] [1024,384,2048,1,6,5,down,light])", "revision": null, "role": "image encoder; 384 -> 12x12 = 144 positions x 2048" },
+      "decoder": { "model": "mbart (2 layers, d_model 384, 16 heads x 24, ffn 1536, vocab 687, max positions 1027, scale_embedding)", "revision": null, "role": "autoregressive LaTeX token decoder" }
+    },
+    "precision": "float16 throughout, no float32 ops; the fp16 encoder output sits at 1.08x the fp16-on-MPS noise floor and greedy tokens are identical to fp32 on all 18 benchmark images",
+    "resolution": 384,
+    "steps": null
+  },
+
+  "contract": {
+    "graphs": {
+      "encoder": {
+        "role": "HGNetv2 encoder + the decoder's cross-attention K/V projections (enc_to_dec_proj folded into k_proj/v_proj), per layer, per head",
+        "inputs": {
+          "image": {
+            "dataType": "float16",
+            "shape": [1, 1, 384, 384],
+            "layout": "nchw",
+            "source": "LatexGen's texoPreprocess: grayscale, auto-invert to light background, crop to content, resize with the shorter side to 384 onto a black 384x384 canvas, then (x/255 - 0.7931) / 0.1738, rounded to float16",
+            "note": "One channel. The ONNX model takes three identical channels; the graph sums them into stem1's filter. Preprocessing is canvas work and stays in the consumer: the verification inputs are what Chrome's canvas produced, byte for byte."
+          }
+        },
+        "outputs": {
+          "enc_kT0": { "dataType": "float16", "shape": [1, 16, 24, 144], "role": "cross-attention K^T for decoder layer 0, per head; feeds the decode graph on device", "readable": true, "note": "readable only because readTensor() on it is the cheapest completion fence" },
+          "enc_v0": { "dataType": "float16", "shape": [1, 16, 144, 24], "role": "cross-attention V for decoder layer 0", "readable": false },
+          "enc_kT1": { "dataType": "float16", "shape": [1, 16, 24, 144], "role": "cross-attention K^T for decoder layer 1", "readable": false },
+          "enc_v1": { "dataType": "float16", "shape": [1, 16, 144, 24], "role": "cross-attention V for decoder layer 1", "readable": false }
+        }
+      },
+      "decoder": {
+        "role": "k greedy decode steps in one graph: embedding, 2 mBART layers over static self-attention caches and the encoder K/V, final LayerNorm, lm head, argMax; each step's token feeds the next in-graph",
+        "inputs": {
+          "tok": { "dataType": "int32", "shape": [1], "source": "the token to feed at the first unrolled step: 0 (<s>) at the start of an image, then the last token of the previous dispatch" },
+          "step": { "dataType": "int32", "shape": [1], "source": "its position: 0, then the number of tokens generated so far" },
+          "cache_kT0": { "dataType": "float16", "shape": [1, 16, 24, 512], "source": "self-attention K cache of layer 0, TRANSPOSED; zeros at the start of an image, then the previous dispatch's cache_kT0_out", "note": "an MLTensor cannot be both an input and an output of one dispatch: keep two sets and alternate" },
+          "cache_v0": { "dataType": "float16", "shape": [1, 16, 512, 24], "source": "self-attention V cache of layer 0" },
+          "cache_kT1": { "dataType": "float16", "shape": [1, 16, 24, 512], "source": "self-attention K^T cache of layer 1" },
+          "cache_v1": { "dataType": "float16", "shape": [1, 16, 512, 24], "source": "self-attention V cache of layer 1" },
+          "enc_kT0": { "dataType": "float16", "shape": [1, 16, 24, 144], "source": "the encoder graph's enc_kT0, bound as the SAME MLTensor" },
+          "enc_v0": { "dataType": "float16", "shape": [1, 16, 144, 24], "source": "the encoder graph's enc_v0" },
+          "enc_kT1": { "dataType": "float16", "shape": [1, 16, 24, 144], "source": "the encoder graph's enc_kT1" },
+          "enc_v1": { "dataType": "float16", "shape": [1, 16, 144, 24], "source": "the encoder graph's enc_v1" }
+        },
+        "outputs": {
+          "tokens": { "dataType": "int32", "shape": [16], "readable": true, "role": "the argMax token of each of the k unrolled steps, in order; the consumer stops at the first 2 (</s>) and discards the rest" },
+          "cache_kT0_out": { "dataType": "float16", "shape": [1, 16, 24, 512], "readable": false, "role": "cache_kT0 after k steps; bind as the next dispatch's cache_kT0" },
+          "cache_v0_out": { "dataType": "float16", "shape": [1, 16, 512, 24], "readable": false, "role": "cache_v0 after k steps" },
+          "cache_kT1_out": { "dataType": "float16", "shape": [1, 16, 24, 512], "readable": false, "role": "cache_kT1 after k steps" },
+          "cache_v1_out": { "dataType": "float16", "shape": [1, 16, 512, 24], "readable": false, "role": "cache_v1 after k steps" }
+        }
+      }
+    },
+    "chaining": {
+      "contexts": "ONE MLContext for both graphs. navigator.ml.createContext({deviceType: 'gpu'}).",
+      "pattern": [
+        "1. Allocate the encoder's four K/V outputs once and bind them both as encoder outputs and as the decode graph's enc_* inputs; they never cross into JS.",
+        "2. Allocate TWO sets of the four cache tensors (A and B). Per image: writeTensor zeros into set A (the one-hot ADD update needs a clean cache; ~0.1 ms).",
+        "3. writeTensor(image); dispatch(encoder). No await: dispatch and writeTensor are ordered on one pipe.",
+        "4. tok = 0, step = 0. Loop: writeTensor(tok), writeTensor(step); dispatch(decoder, {tok, step, cache_* from set A, enc_*}, {tokens, cache_*_out into set B}); await readTensor(tokens) -> k int32; append tokens up to and including the first 2 (</s>); stop on </s> or when step + k reaches the cache length; else tok = last token, step += k, swap A and B.",
+        "5. Decode the ids with the family tokenizer (WordLevel lookup joined with spaces; apply clean_up_tokenization to match LatexGen's strings)."
+      ],
+      "autoregressive": {
+        "graph": "decoder",
+        "tokenInput": "tok",
+        "positionInput": "step",
+        "tokensOutput": "tokens",
+        "caches": [["cache_kT0", "cache_kT0_out"], ["cache_v0", "cache_v0_out"], ["cache_kT1", "cache_kT1_out"], ["cache_v1", "cache_v1_out"]],
+        "zeroCachesPerSequence": true,
+        "bos": 0,
+        "eos": 2,
+        "maxNewTokens": 512,
+        "note": "runtime/loader.js autoregressive() implements exactly this from these fields; the cache length is the cache tensors' shape, the unroll factor the tokens output's length."
+      },
+      "everyOutputMustBeBound": "WebNN requires every declared output to be bound at dispatch. The four cache outputs are the second tensor set, so nothing is wasted.",
+      "whyUnrolled": "On Core ML a dispatch is 0.1 ms but every activation tensor crossing the graph boundary costs ~0.4 ms per 384 KiB in and out, unamortised. One step per dispatch is 1.7 ms per token; 16 steps per dispatch is 0.64."
+    }
+  },
+
+  "tokenizer": {
+    "algorithm": "WordLevel over WhitespaceSplit, 687 entries, template <s> A </s>, no normalizer; decoding is a table lookup joined with spaces, plus transformers' clean_up_tokenization_spaces to match LatexGen's recorded strings",
+    "files": ["tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json", "tokenizer/special_tokens_map.json", "tokenizer/generation_config.json"],
+    "module": "tokenizer.js",
+    "class": "TexoTokenizer",
+    "maxLength": 512,
+    "produces": "decoder.tokens is what it DECODES; nothing is encoded at inference",
+    "parity": "18/18 reference sequences decode to LatexGen's recorded strings after clean_up_tokenization (verification/tokenizer_cases.json); encode(decode(ids)) == ids on all of them"
+  },
+
+  "constants": {
+    "scope": "per-entry",
+    "note": "The encoder blob (31.8 MiB) and the decoder blob (10.3 MiB) are the entry's; a variant with a different unroll factor or cache length has identical weights but different table constants, so the blobs are per-entry for now."
+  },
+
+  "verification": {
+    "case": "LatexGen's 18 image-OCR benchmark items (bench/render-images.py: KaTeX in headless Chrome), preprocessed by LatexGen's own texoPreprocess in Chrome 152, as float16 [1,1,384,384] tensors",
+    "reference": "fp32 ONNX Runtime running the shipped ONNX files incrementally with their KV cache (webnn-workbench bench/webnn/texo/export_texo.py); torch fp32 and a full fp16 chain on MPS reproduce the same tokens",
+    "bar": "greedy token ids identical to the reference on every image",
+    "runner": "scripts/verify.mjs --entry families/texo-384/entries/<id>"
+  },
+
+  "notes": "Corrections to the model as documented: the encoder emits 144 tokens (12x12), not the 4 the ONNX file's stale declared output shape suggests; the merged decoder's cached branch emits empty present.*.encoder.* tensors, so the encoder-side K/V are computed once, which is what the hoist here relies on."
+}
