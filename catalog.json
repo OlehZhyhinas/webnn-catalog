@@ -128,7 +128,7 @@
           "newPromptMs": 145.7,
           "measuredHosts": 1,
           "constantBytes": 626579624,
-          "weightsPublished": false
+          "weightsPublished": true
         }
       ]
     }
