@@ -1,0 +1,1026 @@
+{
+  "id": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "texify-420",
+  "variant": "exact",
+  "created": "2026-09-05",
+  "producedBy": {
+    "workbench": "webnn-workbench@f90cb4a",
+    "date": "2026-09-05",
+    "recorder": "bench/webnn/ir-record.js"
+  },
+  "title": "Texify (Donut-Swin + mBART, ~300M): WebNN / Core ML on Apple M5 Pro",
+  "summary": "Donut-Swin encoder with hoisted cross-attention K/V, and an mBART decode-step with on-device KV ping-pong. 145.7 ms median per LatexGen benchmark image, tokens identical to fp32 on 18/18.",
+  "target": {
+    "generatedAt": "2026-09-05T18:55:21.800Z",
+    "tool": "webnn-catalog scripts/probe-target.mjs",
+    "backend": {
+      "name": "coreml",
+      "deviceType": "gpu",
+      "fingerprint": {
+        "preferredInputLayout": "nchw",
+        "inputRankMax": 5,
+        "inputDataTypes": [
+          "float32",
+          "float16",
+          "int32"
+        ]
+      },
+      "byDeviceType": {
+        "gpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "npu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "cpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        }
+      },
+      "observable": "browser"
+    },
+    "browser": {
+      "name": "Chrome",
+      "version": "152.0.7977.77",
+      "major": 152,
+      "engine": "Chromium 152.0.7977.77",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "flags": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=WebMachineLearningNeuralNetwork,WebMachineLearningNeuralNetworkExperimentalFeatures,WebNNCoreML,WebGPUExperimentalFeatures",
+        "--enable-dawn-features=allow_unsafe_apis"
+      ],
+      "profile": "persistent",
+      "observable": "browser"
+    },
+    "os": {
+      "name": "macOS",
+      "version": "26.6.2",
+      "major": 26,
+      "build": "25G83",
+      "browserReported": {
+        "platform": "macOS",
+        "platformVersion": "26.6.2",
+        "architecture": "arm",
+        "bitness": "64",
+        "note": "What a page can see on its own. `version` and `build` above are the host reading, which is authoritative where the two disagree: userAgentData's platformVersion is capped or coarsened on some platforms and browser builds."
+      },
+      "observable": "browser(partial)/host"
+    },
+    "gpu": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": "",
+      "subgroupMinSize": 32,
+      "subgroupMaxSize": 32,
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxBindGroups": 4,
+        "maxStorageBuffersPerShaderStage": 10
+      },
+      "observable": "browser"
+    },
+    "host": {
+      "platform": "darwin",
+      "chip": "Apple M5 Pro",
+      "gpuCores": 20,
+      "memoryGB": 64,
+      "cpuThreads": 18,
+      "loadAvg": [
+        4.29,
+        5.09,
+        9.52
+      ],
+      "unavailable": [],
+      "observable": "host"
+    },
+    "perfClass": {
+      "f16TflopsMeasured": 5.69,
+      "method": "WGSL tiled f16 matmul 2048x2048x2048, 128x128 workgroup tile, 8x8 per invocation, f32 accumulate, 53 dispatches over ~200 ms. A LOWER BOUND on this machine's f16 throughput, not its peak.",
+      "shape": [
+        2048,
+        2048,
+        2048
+      ],
+      "iterations": 53,
+      "elapsedMs": 160,
+      "checked": true,
+      "error": null,
+      "observable": "browser(probe)"
+    }
+  },
+  "compat": {
+    "requires": {
+      "backend.name": "coreml"
+    },
+    "ops": [
+      "add",
+      "argMax",
+      "concat",
+      "conv2d",
+      "gather",
+      "gelu",
+      "layerNormalization",
+      "matmul",
+      "mul",
+      "pad",
+      "reshape",
+      "slice",
+      "softmax",
+      "split",
+      "transpose"
+    ],
+    "notes": "Facts, not policy. `requires` is what must hold for these graphs to build and compute correctly; `target` additionally records where they were tuned and timed, which is a weaker claim. Timings apply only to the hosts measurements.json names."
+  },
+  "graphs": {
+    "encoder": {
+      "recipe": "recipe.encoder.json",
+      "constants": "encoder",
+      "role": "Texify Donut-Swin encoder (420×420, depths [2,2,14,2], window 5) as one NCHW WebNN graph. Window partition/reverse stay at rank 5; cyclic shift is slice+concat; relative-position bias and shifted-window masks are baked constants; packed QKV; 1/sqrt(32) folded into Q. Hoists all 8 decoder cross-attention K/V.",
+      "layout": "nchw",
+      "ops": 1049,
+      "opTypes": 12,
+      "constantCount": 309,
+      "inputs": [
+        {
+          "name": "pixel_values",
+          "dataType": "float16",
+          "shape": [
+            1,
+            3,
+            420,
+            420
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dec0_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 0 cross-attention K [1,16,196,64]",
+          "readable": true
+        },
+        {
+          "name": "dec0_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 0 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec1_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 1 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec1_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 1 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec2_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 2 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec2_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 2 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec3_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 3 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec3_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 3 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec4_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 4 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec4_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 4 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec5_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 5 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec5_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 5 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec6_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 6 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec6_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 6 cross-attention V [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec7_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 7 cross-attention K [1,16,196,64]",
+          "readable": false
+        },
+        {
+          "name": "dec7_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ],
+          "role": "decoder layer 7 cross-attention V [1,16,196,64]",
+          "readable": false
+        }
+      ]
+    },
+    "decode": {
+      "recipe": "recipe.decode.json",
+      "constants": "decode",
+      "role": "Texify mBART decoder (8 layers, d_model 1024, 16×64, FFN 4096, vocab 50000) as one static decode-step graph, cache length 384. Learned positions gathered at step+2; embed scale folded into the token table; on-device A/B KV ping-pong; in-graph argMax. Timed graph does not emit logits. HuggingFace forced_eos_token_id=2 is applied in the harness at max_new_tokens.",
+      "layout": "nchw",
+      "ops": 349,
+      "opTypes": 11,
+      "constantCount": 162,
+      "inputs": [
+        {
+          "name": "token",
+          "dataType": "int32",
+          "shape": [
+            1
+          ]
+        },
+        {
+          "name": "step",
+          "dataType": "int32",
+          "shape": [
+            1
+          ]
+        },
+        {
+          "name": "dec0_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec0_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self0_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self0_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec1_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec1_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self1_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self1_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec2_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec2_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self2_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self2_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec3_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec3_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self3_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self3_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec4_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec4_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self4_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self4_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec5_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec5_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self5_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self5_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec6_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec6_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self6_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self6_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "dec7_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "dec7_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            196,
+            64
+          ]
+        },
+        {
+          "name": "self7_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        },
+        {
+          "name": "self7_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "token",
+          "dataType": "int32",
+          "shape": [
+            1
+          ],
+          "role": "argMax next-token id, int32 [1]; the only output a consumer reads",
+          "readable": true
+        },
+        {
+          "name": "self0_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self0_k)",
+          "readable": false
+        },
+        {
+          "name": "self0_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self1_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self1_k)",
+          "readable": false
+        },
+        {
+          "name": "self1_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self2_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self2_k)",
+          "readable": false
+        },
+        {
+          "name": "self2_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self3_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self3_k)",
+          "readable": false
+        },
+        {
+          "name": "self3_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self4_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self4_k)",
+          "readable": false
+        },
+        {
+          "name": "self4_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self5_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self5_k)",
+          "readable": false
+        },
+        {
+          "name": "self5_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self6_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self6_k)",
+          "readable": false
+        },
+        {
+          "name": "self6_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        },
+        {
+          "name": "self7_k",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention K cache after this step (bind as next dispatch's self7_k)",
+          "readable": false
+        },
+        {
+          "name": "self7_v",
+          "dataType": "float16",
+          "shape": [
+            1,
+            16,
+            384,
+            64
+          ],
+          "role": "self-attention V cache after this step",
+          "readable": false
+        }
+      ]
+    },
+    "chain": [
+      [
+        "encoder.dec0_k",
+        "decode.dec0_k"
+      ],
+      [
+        "encoder.dec0_v",
+        "decode.dec0_v"
+      ],
+      [
+        "encoder.dec1_k",
+        "decode.dec1_k"
+      ],
+      [
+        "encoder.dec1_v",
+        "decode.dec1_v"
+      ],
+      [
+        "encoder.dec2_k",
+        "decode.dec2_k"
+      ],
+      [
+        "encoder.dec2_v",
+        "decode.dec2_v"
+      ],
+      [
+        "encoder.dec3_k",
+        "decode.dec3_k"
+      ],
+      [
+        "encoder.dec3_v",
+        "decode.dec3_v"
+      ],
+      [
+        "encoder.dec4_k",
+        "decode.dec4_k"
+      ],
+      [
+        "encoder.dec4_v",
+        "decode.dec4_v"
+      ],
+      [
+        "encoder.dec5_k",
+        "decode.dec5_k"
+      ],
+      [
+        "encoder.dec5_v",
+        "decode.dec5_v"
+      ],
+      [
+        "encoder.dec6_k",
+        "decode.dec6_k"
+      ],
+      [
+        "encoder.dec6_v",
+        "decode.dec6_v"
+      ],
+      [
+        "encoder.dec7_k",
+        "decode.dec7_k"
+      ],
+      [
+        "encoder.dec7_v",
+        "decode.dec7_v"
+      ]
+    ]
+  },
+  "constants": "manifest.json",
+  "verification": "verification/",
+  "measurements": "measurements.json",
+  "provenance": "provenance.md",
+  "tokenizerFromFamily": true
+}

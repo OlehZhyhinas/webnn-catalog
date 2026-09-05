@@ -102,6 +102,35 @@
           "weightsPublished": true
         }
       ]
+    },
+    "texify-420": {
+      "path": "families/texify-420",
+      "family": "families/texify-420/family.json",
+      "name": "Texify, 420×420, Donut-Swin + mBART",
+      "task": "image-to-latex",
+      "model": "vikp/texify",
+      "entries": [
+        {
+          "id": "coreml-apple-m5-pro-macos26-chrome152",
+          "path": "families/texify-420/entries/coreml-apple-m5-pro-macos26-chrome152",
+          "entry": "families/texify-420/entries/coreml-apple-m5-pro-macos26-chrome152/entry.json",
+          "variant": "exact",
+          "backend": "coreml",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-05",
+          "graphs": [
+            "encoder",
+            "decode"
+          ],
+          "newPromptMs": 145.7,
+          "measuredHosts": 1,
+          "constantBytes": 626579624,
+          "weightsPublished": false
+        }
+      ]
     }
   },
   "conventions": {
@@ -113,5 +142,5 @@
     "provenance": "Every entry has a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like.",
     "index": "Summary rows only. The entry directory is authoritative for every field copied here."
   },
-  "generatedAt": "2026-09-05T20:09:10.796Z"
+  "generatedAt": "2026-09-05T20:19:15.173Z"
 }
