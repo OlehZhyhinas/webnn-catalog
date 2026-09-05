@@ -62,8 +62,8 @@ run() {
   if [[ $DRY_RUN -eq 1 ]]; then printf '  [dry-run] %s\n' "$*"; else "$@"; fi
 }
 
-command -v huggingface-cli >/dev/null || {
-  echo "error: huggingface-cli not found. pip install -U 'huggingface_hub[cli]' and huggingface-cli login" >&2
+command -v hf >/dev/null || {
+  echo "error: hf not found. pip install -U 'huggingface_hub[cli]' and hf auth login (huggingface-cli is retired)" >&2
   exit 2
 }
 
@@ -99,16 +99,16 @@ echo
 # ---------------------------------------------------------------------------
 if [[ $SKIP_UPLOAD -eq 0 ]]; then
   echo "creating $REPO_TYPE repo $REPO (no-op if it exists)"
-  run huggingface-cli repo create "$REPO" --type "$REPO_TYPE" $PRIVATE -y || true
+  run hf repos create "$REPO" --type "$REPO_TYPE" $PRIVATE || true
   echo
 
   echo "uploading"
   while IFS=$'\t' read -r key file bytes sha; do
     echo "  $file -> $REPO:$ENTRY/$file"
-    # huggingface-cli upload <repo> <local> <path-in-repo>. Uploads are
+    # hf upload <repo> <local> <path-in-repo>. Uploads are
     # resumable and chunked; a 1.65 GB blob is well within LFS limits but will
     # take a while on a domestic uplink.
-    run huggingface-cli upload "$REPO" "$WEIGHTS/$file" "$ENTRY/$file" \
+    run hf upload "$REPO" "$WEIGHTS/$file" "$ENTRY/$file" \
       --repo-type "$REPO_TYPE" --revision "$REVISION" \
       --commit-message "$ENTRY: $file ($bytes bytes, sha256 $sha)"
   done <<< "$FILES"
