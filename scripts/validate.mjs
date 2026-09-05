@@ -306,6 +306,9 @@ export function validateCatalog({ only = null, quiet = false } = {}) {
       for (const e of v.validate("manifest.schema.json", manifest, rel(manifestPath))) bad(e);
       if (manifest.entry !== entry.id || manifest.family !== entry.family)
         bad(`${rel(manifestPath)}: entry/family do not match entry.json`);
+      const allPublished = Object.values(manifest.constants).every((c) => c.url !== null);
+      if (row.weightsPublished !== allPublished)
+        bad(`catalog.json: ${famId}/${row.id}.weightsPublished is ${row.weightsPublished} but manifest.json ${allPublished ? "has" : "lacks"} a url for every blob`);
 
       // graphs: recipes exist, hash, and agree with the entry's declared I/O
       const graphNames = Object.keys(entry.graphs).filter((k) => k !== "chain");

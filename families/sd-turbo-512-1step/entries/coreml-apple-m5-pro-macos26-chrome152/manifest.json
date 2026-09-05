@@ -7,7 +7,7 @@
       "bytes": 1730075200,
       "usedBytes": 1730075196,
       "sha256": "329d16b641923069ed42d0d1802d7f4e78cc9bacd2019c24ecbaba3263f0c2da",
-      "url": null,
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo/resolve/main/sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152/image-pass4.bin",
       "chunks": null,
       "note": "The trailing 4 bytes are alignment padding; the recipe indexes 1730075196."
     },
@@ -15,7 +15,7 @@
       "file": "textenc-best.bin",
       "bytes": 680787544,
       "sha256": "8b8f4a909233f183389bd5fc9f9537c46f699d7c2fd91ba809ba07d605713e8a",
-      "url": null,
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo/resolve/main/sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152/textenc-best.bin",
       "chunks": null
     }
   },
@@ -30,5 +30,9 @@
       "recordedFrom": "webnn-workbench/bench/webnn/ir/textenc-best.json",
       "sourceSha256": "ee51efe36b0b164b5b32bc58a32d84219064eccca621c37725e38746033f292c"
     }
+  },
+  "published": {
+    "at": "2026-09-05T18:20:23.786Z",
+    "base": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo/resolve/main/sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152"
   }
 }

@@ -138,6 +138,16 @@ else
     m.published = { at: new Date().toISOString(), base };
     fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2) + "\n");
   ' "$MANIFEST" "$BASE"
+  node -e '
+    const fs = require("fs");
+    const [catalogPath, family, entryId] = process.argv.slice(1);
+    const c = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+    const row = c.families[family]?.entries.find((e) => e.id === entryId);
+    if (!row) { console.error(`  error: catalog.json has no row for ${family}/${entryId}`); process.exit(1); }
+    row.weightsPublished = true;
+    fs.writeFileSync(catalogPath, JSON.stringify(c, null, 2) + "\n");
+    console.log(`  catalog.json: ${family}/${entryId}.weightsPublished = true`);
+  ' "$ROOT/catalog.json" "$FAMILY" "$ENTRY_ID"
 fi
 echo
 
@@ -159,7 +169,7 @@ cat <<EOF
 done.
 
 next:
-  1. commit the manifest change
+  1. commit the manifest and catalog.json changes
   2. node scripts/verify.mjs --weights <local dir>   (still passes against local bytes)
   3. serve the catalog with no --weights mount and confirm the page loads from
      the published URLs, since manifest.constants[*].url now wins over baseUrl
