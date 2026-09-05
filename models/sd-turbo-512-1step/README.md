@@ -297,6 +297,24 @@ against the reference embedding, the sha256 of the RGBA readback against
 `verification/expected.json`, the PSNR against both reference images, and times
 20 runs. See `verification/expected.json` for the bars and their rationale.
 
+### What it gave, replaying these recipes
+
+Three builds on the reference machine, two constant paths, all under an
+unrelated compute job (load average 16 to 18, an ORCA SCF run plus a VM), so
+the absolutes are 0 to 5 ms pessimistic in the way the workbench documented.
+
+| run | new prompt | cached | image graph | text graph |
+|---|---:|---:|---:|---:|
+| whole-file constants | 70.30 | 62.45 | 62.80 | 7.40 |
+| chunked, 192 MiB ranges | 72.35 | 64.60 | 64.45 | 7.70 |
+| whole-file, final | **68.20** | 61.15 | 61.25 | 7.25 |
+| reference (quiet machine) | 67.85 | ~60 | ~62 | 7.15 |
+
+All three produced the same 1,048,576-byte RGBA readback, byte for byte:
+`5838ed1a...`. The replay itself costs 2 to 8 ms for 1441 ops, against the
+3,569 ms the original emitter spent building the same graph; the 28 s is Core
+ML compiling it, and Chromium caches none of that.
+
 One thing to know before comparing against the workbench's own output PNG:
 **this recipe declares two graph outputs**, `out` and the debug `latent`,
 because it was recorded with `latentOutput` on. The 67.85 ms configuration
