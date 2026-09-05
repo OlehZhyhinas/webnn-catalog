@@ -1,0 +1,160 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "texo-384",
+  "rows": [
+    {
+      "label": "k16-S512, 18 LatexGen benchmark images",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "interleaved-ab",
+      "newPromptMs": 25.85,
+      "stages": {
+        "encoderDispatchPlusFence": 2.4,
+        "perToken": 0.6364,
+        "cacheZeroingPerImage": 0.2,
+        "meanImage": 29.34,
+        "medianImageBlock2": 26.48,
+        "meanImageBlock2": 29.95
+      },
+      "runs": 10,
+      "statistic": "median over the 18 benchmark images of each image's median of 10 runs (write image + encoder + greedy decode to <eos> + tokens readback), block 1 of 2 interleaved blocks; 847 tokens in 61 dispatches",
+      "buildOnceMs": {
+        "encoder": 577.5,
+        "decoder": 4378.8,
+        "firstImageCold": 270
+      },
+      "quality": {
+        "tokensIdentical": "18/18",
+        "encoderMaxAbsVsFp32": 0.09764683246612549,
+        "encoderFp16Floor": 0.09032261371612549
+      },
+      "loadAvg": 4.7,
+      "source": "webnn-workbench/bench/results/texo-final.json"
+    },
+    {
+      "label": "loader replay, 18 images, scripts/verify.mjs",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "replay",
+      "runs": 10,
+      "warmup": 3,
+      "statistic": "median of the timed runs",
+      "newPromptMs": 24.65,
+      "stages": {},
+      "buildOnceMs": {},
+      "quality": {
+        "psnrVsExpectedImageDb": null,
+        "psnrVsReferenceImageDb": null,
+        "textEncoderMaxAbs": null
+      },
+      "notes": "The catalog's own loader replaying the two recipes: tokens identical on 18/18 images, decoded strings identical to LatexGen's recorded outputs on 18/18. Load average 5.3 at run time.",
+      "source": "webnn-catalog bench/verify-texo-384.json"
+    },
+    {
+      "label": "k16-S512, 18 images, quiet machine (load 3.9)",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "interleaved-ab",
+      "newPromptMs": 22.73,
+      "stages": {
+        "encoderDispatchPlusFence": 2,
+        "perToken": 0.5521,
+        "cacheZeroingPerImage": 0.1,
+        "meanImage": 26.08,
+        "medianImageBlock2": 22.87,
+        "meanImageBlock2": 26.03
+      },
+      "runs": 10,
+      "statistic": "median over the 18 benchmark images of each image's median of 10 runs (write image + encoder + greedy decode to <eos> + tokens readback), block 1 of 2 interleaved blocks; 847 tokens in 61 dispatches",
+      "buildOnceMs": {
+        "encoder": 384.2,
+        "decoder": 3216.8,
+        "firstImageCold": 153.4
+      },
+      "quality": {
+        "tokensIdentical": "18/18",
+        "encoderMaxAbsVsFp32": 0.09764683246612549,
+        "encoderFp16Floor": 0.09032261371612549
+      },
+      "notes": "Same graphs as row 1, run after the harness waited for the 1-minute load average to fall under 4: 22.7 ms median per image, 0.55 ms per token, encoder 1.9 ms. Row 1 ran at load 5.2.",
+      "source": "webnn-workbench bench/results/texo-final-quiet.json"
+    }
+  ],
+  "baselines": {
+    "latexgenOrtWasmFp32": {
+      "perImageMs": 770,
+      "runtime": "ONNX Runtime Web (WASM, 1 thread), fp32, transformers.js generate(), as LatexGen ships",
+      "perImageRecorded": "584-1014 ms on the same 18 images (LatexGen bench/results-images-2026-09.json)",
+      "ratioToOurs": 29.8
+    },
+    "latexgenOrtWebgpu": {
+      "perImageMs": 780,
+      "runtime": "ONNX Runtime Web WebGPU EP (LatexGen docs/benchmarks.md: 'overhead-bound, stays on CPU')"
+    }
+  },
+  "floor": {
+    "perTokenMs": 0.6364,
+    "reasoning": "A dispatch + 4-byte readback is 0.1 ms queued; every activation tensor crossing the graph boundary costs ~0.4 ms per 384 KiB in and out and is not amortised by queuing, so the four full-length caches cost 1.6 ms per dispatch, divided by the k=16 unrolled steps. The remaining ~0.55 ms per step is ~85 WebNN ops (91 Core ML ops) at 6-7 us of per-op launch overhead each; the compiled plan puts every op on the GPU and the cache-length sweep (S=128: -10%) shows bytes are not the bound. Fewer ops per step is the only lever left.",
+    "source": "webnn-workbench bench/results/texo-floor-*.json, docs/texo.md"
+  },
+  "history": [
+    {
+      "label": "k=1, one decode step per dispatch (the issue's design as written)",
+      "medianImageMs": 70.2,
+      "perTokenMs": 1.7426
+    },
+    {
+      "label": "k=16, S=512 (this entry)",
+      "medianImageMs": 25.85,
+      "perTokenMs": 0.6364
+    },
+    {
+      "label": "k=16, S=128 (fast variant, caps output at 128 tokens)",
+      "medianImageMs": 24.05,
+      "deltaVsThisEntry": [
+        -2.36,
+        -3.06
+      ]
+    }
+  ],
+  "sources": [
+    "webnn-workbench docs/texo.md",
+    "webnn-workbench bench/results/texo-final.json",
+    "webnn-workbench bench/results/texo-ksweep.json",
+    "webnn-workbench bench/results/texo-plan-texo-decoder-k8.md"
+  ],
+  "caveat": "Absolute numbers move with machine load: the same k=16 graph measured 40 ms median in a session at load average 12-20 (texo-ksweep.json) and 25.85 ms at load average ~5 (texo-final.json). Interleaved deltas are immune; absolutes are not."
+}

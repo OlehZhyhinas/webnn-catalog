@@ -73,10 +73,16 @@ parses it.
 | family | entry | variant | new prompt | quality | measured on |
 |---|---|---|---:|---|---|
 | [`sd-turbo-512-1step`](families/sd-turbo-512-1step/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **68.4 ms** | PSNR 44.28 dB vs the fp32 chain | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
+| [`texo-384`](families/texo-384/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/texo-384/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **22.7 ms** per image | greedy tokens identical to fp32 on 18/18 benchmark images | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
 
 For context, on the same machine and the same model: ONNX Runtime Web on WebGPU
 is 916 ms, the same demo on ORT's WebNN EP is 237 ms, and native PyTorch MPS is
-94.5 ms.
+94.5 ms. For Texo, LatexGen's own ONNX Runtime Web path takes 770 ms per image
+(WASM fp32) or 780 ms (WebGPU); "new prompt" for that family means one
+preprocessed image in, a LaTeX token sequence out, and the entry is
+autoregressive: a decode graph that runs 16 greedy steps per dispatch over
+static caches, driven by `runtime/loader.js`'s `autoregressive()` from the
+family's `contract.chaining.autoregressive` block.
 
 Machine-readable index: [`catalog.json`](catalog.json), which holds summary rows
 only. The entry directory is authoritative for everything in them.

@@ -35,6 +35,7 @@ import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const readJson = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const ROOT = path.resolve(HERE, "..");
 const DEFAULT_WEIGHTS = path.resolve(ROOT, "..", "webnn-workbench", "bench", "webnn", "ir");
 
@@ -254,7 +255,52 @@ try {
 }
 
 // ---------------------------------------------------------------------------
-if (result) {
+if (result && result.kind === "tokens") {
+  // A verification set of kind "tokens": the bar is token-for-token identity
+  // with the reference ids on every case (see scripts/verify-page.js runTokens).
+  const c = result.checks, t = result.timings;
+  console.log(`\n=== ${ref} ===\n`);
+  console.log(`backend    ${result.fingerprint.backend} (preferredInputLayout=${result.fingerprint.preferredInputLayout})`);
+  console.log(`chrome     ${chromeVersion}`);
+  console.log(`uptime     ${uptime}\n`);
+  console.log("graphs");
+  console.log(table([
+    ["", "ops", "consts", "constants ms", "emit ms", "build ms"],
+    ...Object.entries(result.graphStats).map(([g, s]) => [g, s.ops, s.constants, s.constantsMs, s.emitMs, s.buildMs]),
+  ]));
+  const ok = (b) => (b ? "PASS" : "FAIL");
+  console.log("\nchecks");
+  console.log(table([
+    ["check", "value", "expected", ""],
+    ["tokens identical", `${c.tokens.identical}/${c.tokens.cases}`, `${c.tokens.cases}/${c.tokens.cases}`, ok(c.tokens.pass)],
+    ...(c.tokenizer ? [["decoded strings match", `${c.tokenizer.parity}/${c.tokenizer.cases}`, `${c.tokenizer.cases}/${c.tokenizer.cases}`, ok(c.tokenizer.parity === c.tokenizer.cases)]] : []),
+    ["stable over runs", c.stableAcrossRuns, "true", ok(c.stableAcrossRuns)],
+  ]));
+  for (const d of c.tokens.detail) if (!d.identical) console.log(`  ${d.id}: differs at token ${d.firstDiff} (got ${JSON.stringify(d.got)}, want ${JSON.stringify(d.want)})`);
+  console.log("\ntimings (ms)");
+  console.log(table([
+    ["stage", "median", "min", "max", "mean", "n"],
+    ["per case (encoder + greedy decode + tokens)", t.newPrompt.medianMs, t.newPrompt.minMs, t.newPrompt.maxMs, t.newPrompt.meanMs, t.newPrompt.n],
+    ["encoder + fence", t.encoder.medianMs, t.encoder.minMs, t.encoder.maxMs, t.encoder.meanMs, t.encoder.n],
+    ["per token", t.msPerToken, "", "", "", t.tokensPerRun],
+  ]));
+  console.log("\nper case (median ms)");
+  console.log(table([["case", "ms", "tokens"], ...c.tokens.detail.map((d) => [d.id, t.perCase[d.id], d.nTokens])]));
+  const ref0 = readJson(path.join(entryDir, "measurements.json")).rows?.[0]?.newPromptMs;
+  if (ref0 != null) console.log(`\n  per-case median is ${(t.newPrompt.medianMs - ref0 >= 0 ? "+" : "")}${(t.newPrompt.medianMs - ref0).toFixed(2)} ms vs the ${ref0} ms the entry recorded`);
+  console.log(`\nop coverage`);
+  const gs = Object.keys(result.opCoverage);
+  const types = [...new Set(gs.flatMap((g) => Object.keys(result.opCoverage[g])))].sort();
+  console.log(table([["op", ...gs], ...types.map((k) => [k, ...gs.map((g) => result.opCoverage[g][k] ?? "-")]), ["TOTAL", ...gs.map((g) => result.graphStats[g].ops)]]));
+  if (result.errors.length) console.log(`\nERRORS:\n  ${result.errors.join("\n  ")}`);
+  const failed = result.errors.length || !c.tokens.pass || !c.stableAcrossRuns;
+  console.log(`\n${failed ? "VERIFY FAILED" : "VERIFY OK"}`);
+  const outPath = args.out ?? path.join(ROOT, "bench", `verify-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), chrome: chromeVersion, uptime, args: { ...args }, entry: ref, entryPath: entryDir, result, consoleLines }, null, 2));
+  console.log(`\nwrote ${outPath}`);
+  if (failed) process.exitCode = 1;
+} else if (result) {
   const c = result.checks, t = result.timings;
   const png = c.pngDataUrl;
   delete c.pngDataUrl;

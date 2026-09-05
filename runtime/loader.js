@@ -63,6 +63,7 @@ const POSITIONAL = {
   pad: ["beginningPadding", "endingPadding"],
   argMin: ["axis"],
   argMax: ["axis"],
+  slice: ["starts", "sizes"],
 };
 
 /** Builder methods whose first argument is an ARRAY of operands, not one. */
@@ -713,4 +714,72 @@ export async function fence(context, tensor, into = null) {
 /** Dispatch a loaded graph. Thin, but it keeps call sites symmetrical. */
 export function dispatch(context, loaded, inputs, outputs) {
   context.dispatch(loaded.graph, inputs, outputs);
+}
+
+// ---------------------------------------------------------------------------
+// Autoregressive decoding
+// ---------------------------------------------------------------------------
+
+/**
+ * Run a decode graph that computes k greedy steps per dispatch over static
+ * caches, until it emits `eos` or `maxNewTokens` tokens. Everything the loop
+ * needs is data: `spec` is a family's `contract.chaining.autoregressive`
+ * block, and the tensors come from createEntryTensors(), which already
+ * allocated one tensor per cache input and one per cache output; those two
+ * are the two sets the caches ping-pong between (an MLTensor cannot be both an
+ * input and an output of one dispatch).
+ *
+ *   spec = {graph, tokenInput, positionInput, tokensOutput,
+ *           caches: [[inputName, outputName], ...], zeroCachesPerSequence,
+ *           bos, eos, maxNewTokens}
+ *
+ * The unroll factor k is the tokens output's length; the cache length is the
+ * cache tensors' shape. Returns {tokens, dispatches, endedWithEos}. The
+ * graph's other inputs (the encoder K/V a chain link filled) are bound as
+ * createEntryTensors() left them.
+ */
+export async function autoregressive(context, rig, tensors, spec, { maxNewTokens = null, tokensView = null } = {}) {
+  const g = spec.graph;
+  const loaded = rig.graphs[g];
+  if (!loaded) throw new Error(`autoregressive: graph "${g}" is not loaded`);
+  const k = loaded.outputs[spec.tokensOutput].shape.reduce((a, b) => a * b, 1);
+  const cacheLen = Math.min(...spec.caches.map(([i]) => Math.max(...loaded.inputs[i].shape)));
+  const limit = Math.min(maxNewTokens ?? spec.maxNewTokens ?? cacheLen, cacheLen);
+  const sets = [
+    spec.caches.map(([i]) => tensors.get(g, i)),
+    spec.caches.map(([, o]) => tensors.get(g, o)),
+  ];
+  if (spec.zeroCachesPerSequence) {
+    // the first dispatch of a sequence must see clean caches: the update adds
+    // into the row at `step`, it does not replace it
+    for (const [i] of spec.caches) {
+      const t = tensors.get(g, i);
+      const n = loaded.inputs[i].shape.reduce((a, b) => a * b, 1);
+      context.writeTensor(t, new Uint8Array(n * byteLengthOf(loaded.inputs[i].dataType, [1])));
+    }
+  }
+  const tokT = tensors.get(g, spec.tokenInput), stepT = tensors.get(g, spec.positionInput);
+  const tokBuf = new Int32Array([spec.bos ?? 0]), stepBuf = new Int32Array([0]);
+  const out = tokensView ?? new Int32Array(k);
+  const baseIn = tensors.inputsFor(g), baseOut = tensors.outputsFor(g);
+  const tokens = [];
+  let cur = 0, dispatches = 0, ended = false;
+  while (tokens.length < limit) {
+    context.writeTensor(tokT, tokBuf);
+    context.writeTensor(stepT, stepBuf);
+    const inputs = { ...baseIn }, outputs = { ...baseOut };
+    spec.caches.forEach(([i, o], idx) => { inputs[i] = sets[cur][idx]; outputs[o] = sets[cur ^ 1][idx]; });
+    context.dispatch(loaded.graph, inputs, outputs);
+    cur ^= 1;
+    dispatches++;
+    await context.readTensor(tensors.get(g, spec.tokensOutput), out);
+    for (let j = 0; j < k && tokens.length < limit; j++) {
+      tokens.push(out[j]);
+      if (out[j] === spec.eos) { ended = true; break; }
+    }
+    if (ended) break;
+    tokBuf[0] = tokens[tokens.length - 1];
+    stepBuf[0] = tokens.length;
+  }
+  return { tokens, dispatches, endedWithEos: ended, k, cacheLen };
 }

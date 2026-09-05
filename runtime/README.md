@@ -139,6 +139,27 @@ a graph you are about to mis-measure.
 `MLGraphBuilder`. Both are cheap and neither touches the constants, so you can
 find out a browser is missing an op before downloading 1.6 GB.
 
+### `autoregressive(context, rig, tensors, spec, opts?) -> Promise<{tokens, dispatches, endedWithEos, k, cacheLen}>`
+
+Runs a decode graph that computes k greedy steps per dispatch over static
+caches until it emits `spec.eos` or `maxNewTokens` tokens. `spec` is the
+family's `contract.chaining.autoregressive` block, data not code:
+
+```json
+{ "graph": "decoder", "tokenInput": "tok", "positionInput": "step", "tokensOutput": "tokens",
+  "caches": [["cache_kT0", "cache_kT0_out"], ["cache_v0", "cache_v0_out"], ...],
+  "zeroCachesPerSequence": true, "bos": 0, "eos": 2, "maxNewTokens": 512 }
+```
+
+`tensors` comes from `createEntryTensors()`, which already allocated one
+tensor per cache input and one per cache output: those are the two sets the
+caches ping-pong between, because an MLTensor cannot be both an input and an
+output of one dispatch. The unroll factor k is the tokens output's length, the
+cache length is the cache tensors' shape, and the graph's other inputs (the
+encoder K/V a chain link filled) stay bound as `createEntryTensors()` left
+them. Per dispatch: two 4-byte `writeTensor`s, one `dispatch`, one
+`readTensor` of k int32 tokens; the caller does nothing per token.
+
 ### Tensor helpers
 
 `createInputTensors`, `createOutputTensors`, `chainTensor`, `writeTensor`,
@@ -234,3 +255,8 @@ Every op type in the SD-Turbo entry's two recipes, replayed and verified:
 
 The replay itself costs about 8 ms for 1441 ops. The 25 s is Core ML compiling
 the result, and Chromium caches none of it.
+
+The `texo-384` entry adds `gather`, `argMax`, `slice` (recorded with positional
+`starts`/`sizes`, in `POSITIONAL`), `split` with a `splits` array, `pad`,
+`maxPool2d`, `relu`, `layerNormalization` and int32 graph inputs and constants:
+155 ops / 8 types in its encoder, 1363 ops / 12 types in its 16-step decoder.
