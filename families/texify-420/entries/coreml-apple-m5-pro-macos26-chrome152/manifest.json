@@ -6,14 +6,14 @@
       "file": "texify-encoder.bin",
       "bytes": 182872160,
       "sha256": "aa9ad04bc667b66bc6406a66e8db18dcac8bbef844c8c029594ac35d6598e1a4",
-      "url": null,
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/texify-420/coreml-apple-m5-pro-macos26-chrome152/texify-encoder.bin",
       "chunks": null
     },
     "decode": {
       "file": "texify-decode.bin",
       "bytes": 443707464,
       "sha256": "f4a1122c7bb68109e4532333a06f55cb9ce934a70efd21968ec110ec7607bae4",
-      "url": null,
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/texify-420/coreml-apple-m5-pro-macos26-chrome152/texify-decode.bin",
       "chunks": null
     }
   },
@@ -28,5 +28,9 @@
       "recordedFrom": "webnn-workbench-texify/bench/webnn/ir/texify-decode.json",
       "sourceSha256": "16e7e80c3f3145a3fd677c3a92227ebaeb10695758b009078f006b6906c1eba7"
     }
+  },
+  "published": {
+    "at": "2026-09-05T20:46:32.553Z",
+    "base": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/texify-420/coreml-apple-m5-pro-macos26-chrome152"
   }
 }
