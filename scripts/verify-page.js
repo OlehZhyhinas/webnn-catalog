@@ -83,7 +83,7 @@ function psnrRGB(a, bb) {
 export async function run(opts = {}) {
   const { runs = 20, warmup = 5, weightsBase = "/weights", chunkMB = 0, prompt = null, entryPath } = opts;
   if (!entryPath) throw new Error("no entryPath: verify.mjs must name the entry to run");
-  const R = { opts: { runs, warmup, weightsBase, chunkMB, entryPath }, errors: [], checks: {}, timings: {} };
+  const R = { opts: { runs, warmup, weightsBase, chunkMB, entryPath, onlyBucket: opts.onlyBucket ?? null }, errors: [], checks: {}, timings: {} };
   const T = () => performance.now();
 
   // ---- the entry ----------------------------------------------------------
@@ -95,7 +95,7 @@ export async function run(opts = {}) {
   // case, which this file spells out by hand.
   {
     const expected0 = await j(`${entryPath}/verification/expected.json`);
-    if (expected0.kind === "tokens") return runTokens({ R, entry, entryPath, expected: expected0, runs, warmup, weightsBase, chunkMB });
+    if (expected0.kind === "tokens") return runTokens({ R, entry, entryPath, expected: expected0, runs, warmup, weightsBase, chunkMB, onlyBucket: opts.onlyBucket ?? null });
   }
   if (entry.family !== KNOWN_FAMILY)
     throw new Error(`this harness knows the ${KNOWN_FAMILY} family's reference case only; the entry is from ${entry.family}`);
@@ -142,7 +142,7 @@ export async function run(opts = {}) {
     return out;
   };
   const sources = Object.fromEntries(Object.entries(manifest.constants).map(([key, c]) =>
-    [key, constantSource({ ...c, chunks: mkChunks(c.bytes) }, { baseUrl: weightsBase })]));
+    [key, constantSource({ ...c, url: null, chunks: mkChunks(c.bytes) }, { baseUrl: weightsBase })]));
 
   // ---- build every graph the entry declares -------------------------------
   // loadEntry builds the largest constants first, which keeps peak resident
@@ -296,22 +296,51 @@ export async function run(opts = {}) {
 
 
 // ---------------------------------------------------------------------------
-// kind "tokens": an encoder graph fed one input tensor per case, then the
-// family's autoregressive decode loop; the bar is token-for-token identity
-// with expected.json's ids on every case, and the timing is per case.
+// kind "tokens": encoder graph(s) then the family's autoregressive decode
+// loop. One encoder input (Texo: a single `input` blob) or a named `inputs`
+// map (IntelliTeX: input_ids + pad_bias). Length-bucketed families declare
+// contract.chaining.buckets and are verified one pair at a time — compiling
+// several decode graphs in one MLContext has killed Chrome.
 // ---------------------------------------------------------------------------
-async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsBase, chunkMB }) {
+async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsBase, chunkMB, onlyBucket }) {
   const T = () => performance.now();
   R.kind = "tokens";
   const familyBase = `/families/${entry.family}`;
   const family = await j(`${familyBase}/family.json`);
-  const spec = family.contract?.chaining?.autoregressive;
-  if (!spec) throw new Error(`${entry.family}/family.json has no contract.chaining.autoregressive block`);
+  const spec0 = family.contract?.chaining?.autoregressive;
+  if (!spec0) throw new Error(`${entry.family}/family.json has no contract.chaining.autoregressive block`);
+  const bucketMap = family.contract.chaining.buckets ?? null;
+  const copyToDecode = family.contract.chaining.copyInputsToDecode ?? [];
+  const allCases = expected.images;
+  const wanted = onlyBucket != null
+    ? allCases.filter((c) => String(c.bucket) === String(onlyBucket))
+    : allCases;
+  if (!wanted.length) throw new Error(`no verification cases${onlyBucket != null ? ` for bucket ${onlyBucket}` : ""}`);
+
+  const pairFor = (c) => {
+    if (bucketMap) {
+      const p = bucketMap[String(c.bucket)];
+      if (!p) throw new Error(`family.contract.chaining.buckets has no entry for bucket ${c.bucket}`);
+      return p;
+    }
+    const names = Object.keys(entry.graphs).filter((k) => k !== "chain");
+    const encoderName = names.find((g) => g !== spec0.graph);
+    if (!encoderName) throw new Error("tokens verification wants an encoder graph next to the decode graph");
+    return { encoder: encoderName, decode: spec0.graph };
+  };
+  const pairs = [...new Map(wanted.map((c) => {
+    const p = pairFor(c);
+    return [`${p.encoder}+${p.decode}`, p];
+  })).values()];
+  if (pairs.length !== 1) {
+    throw new Error(`this page loaded ${pairs.length} encoder/decode pairs; pass onlyBucket so each pair is a fresh page (compiling several decode graphs in one context kills Chrome)`);
+  }
+  const { encoder: encoderName, decode: decodeName } = pairs[0];
+  const spec = { ...spec0, graph: decodeName };
+  const graphNames = [encoderName, decodeName];
+
   const manifest = await j(`${entryPath}/${entry.constants}`);
-  const graphNames = Object.keys(entry.graphs).filter((k) => k !== "chain");
   const recipes = Object.fromEntries(await Promise.all(graphNames.map(async (g) => [g, await j(`${entryPath}/${entry.graphs[g].recipe}`)])));
-  const encoderName = graphNames.find((g) => g !== spec.graph);
-  if (!encoderName) throw new Error("tokens verification wants an encoder graph next to the decode graph");
 
   if (!navigator.ml) throw new Error("navigator.ml is missing: WebNN is not enabled in this browser");
   let t = T();
@@ -319,7 +348,7 @@ async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsB
   R.timings.createContextMs = +(T() - t).toFixed(1);
   R.fingerprint = assertCoreMLFingerprint(ctx);
   log(`context: ${R.fingerprint.backend}, preferredInputLayout=${R.fingerprint.preferredInputLayout}`);
-  log(`entry: ${entry.family}/${entry.id} (variant ${entry.variant}); graphs ${graphNames.join(", ")}; decode graph "${spec.graph}"`);
+  log(`entry: ${entry.family}/${entry.id}; graphs ${graphNames.join(", ")}; bucket ${onlyBucket ?? "(single pair)"}`);
   ctx.lost?.then((i) => { R.contextLost = String(i?.message ?? i); log(`CONTEXT LOST: ${R.contextLost}`); }).catch(() => {});
 
   R.opCoverage = Object.fromEntries(graphNames.map((g) => [g, opCoverage(recipes[g])]));
@@ -332,17 +361,16 @@ async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsB
     if (!chunkMB) return null;
     const size = chunkMB * 1024 * 1024 + 1;
     const out = [];
-    for (let o = 0; o < bytes; o += size) out.push({ byteOffset: o, byteLength: Math.min(size, bytes - o) });
+    for (let off = 0; off < bytes; off += size) out.push({ byteOffset: off, byteLength: Math.min(size, bytes - off) });
     return out;
   };
-  const sources = Object.fromEntries(Object.entries(manifest.constants).map(([key, c]) => [key, constantSource({ ...c, chunks: mkChunks(c.bytes) }, { baseUrl: weightsBase })]));
+  const sources = Object.fromEntries(Object.entries(manifest.constants).map(([key, c]) => [key, constantSource({ ...c, url: null, chunks: mkChunks(c.bytes) }, { baseUrl: weightsBase })]));
   t = T();
-  const rig = await loadEntry(entry, sources, ctx, { baseUrl: entryPath, recipes });
+  const rig = await loadEntry(entry, sources, ctx, { baseUrl: entryPath, recipes, only: graphNames });
   R.timings.loadEntryMs = +(T() - t).toFixed(1);
   R.graphStats = rig.stats;
   for (const g of graphNames) log(`${g} graph built: ${JSON.stringify(rig.graphs[g].stats)}`);
 
-  // tokenizer, for the log and the decoded strings
   let tok = null;
   if (family.tokenizer?.module) {
     const mod = await import(`${familyBase}/${family.tokenizer.module}`);
@@ -352,29 +380,47 @@ async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsB
   }
 
   const tensors = await createEntryTensors(ctx, rig);
-  const encInputs = Object.keys(rig.graphs[encoderName].inputs);
-  if (encInputs.length !== 1) throw new Error(`the encoder graph has ${encInputs.length} inputs; the tokens path feeds exactly one`);
-  const imageT = tensors.get(encoderName, encInputs[0]);
-  const dispatchEncoder = () => ctx.dispatch(rig.graphs[encoderName].graph, tensors.inputsFor(encoderName), tensors.outputsFor(encoderName));
-  const tokensView = new Int32Array(rig.graphs[spec.graph].outputs[spec.tokensOutput].shape.reduce((a, b) => a * b, 1));
-  const runCase = async (bytes) => {
-    ctx.writeTensor(imageT, bytes);
-    dispatchEncoder();
+  const encInputNames = Object.keys(rig.graphs[encoderName].inputs);
+  const tokensView = new Int32Array(rig.graphs[decodeName].outputs[spec.tokensOutput].shape.reduce((a, b) => a * b, 1));
+
+  const writeNamed = (graph, name, bytes) => {
+    const specIn = rig.graphs[graph].inputs[name];
+    if (!specIn) throw new Error(`${graph} has no input "${name}"`);
+    ctx.writeTensor(tensors.get(graph, name), bytes);
+  };
+  const runCase = async (c) => {
+    if (c.inputs) {
+      for (const [name, bytes] of Object.entries(c.inputBytes)) {
+        writeNamed(encoderName, name, bytes);
+        if (copyToDecode.includes(name) && rig.graphs[decodeName].inputs[name]) writeNamed(decodeName, name, bytes);
+      }
+    } else {
+      if (encInputNames.length !== 1) throw new Error(`the encoder graph has ${encInputNames.length} inputs; a single-blob case needs exactly one`);
+      ctx.writeTensor(tensors.get(encoderName, encInputNames[0]), c.bytes);
+    }
+    ctx.dispatch(rig.graphs[encoderName].graph, tensors.inputsFor(encoderName), tensors.outputsFor(encoderName));
     return autoregressive(ctx, rig, tensors, spec, { tokensView });
   };
 
-  // ---- every case once, checked ------------------------------------------
   const cases = [];
-  for (const c of expected.images) cases.push({ ...c, bytes: new Uint8Array(await b(`${entryPath}/verification/${c.input}`)) });
+  for (const c of wanted) {
+    if (c.inputs) {
+      const inputBytes = {};
+      for (const [name, file] of Object.entries(c.inputs)) inputBytes[name] = new Uint8Array(await b(`${entryPath}/verification/${file}`));
+      cases.push({ ...c, inputBytes });
+    } else {
+      cases.push({ ...c, bytes: new Uint8Array(await b(`${entryPath}/verification/${c.input}`)) });
+    }
+  }
   R.checks.tokens = { cases: cases.length, identical: 0, detail: [] };
   t = T();
   for (const c of cases) {
-    const r = await runCase(c.bytes);
+    const r = await runCase(c);
     const same = r.tokens.length === c.tokens.length && r.tokens.every((v, i) => v === c.tokens[i]);
     const first = same ? -1 : r.tokens.findIndex((v, i) => v !== c.tokens[i]);
     if (same) R.checks.tokens.identical++;
     const decoded = tok ? tok.decode(r.tokens) : null;
-    const d = { id: c.id, nTokens: r.tokens.length, expected: c.tokens.length, identical: same, dispatches: r.dispatches, endedWithEos: r.endedWithEos,
+    const d = { id: c.id, bucket: c.bucket ?? null, nTokens: r.tokens.length, expected: c.tokens.length, identical: same, dispatches: r.dispatches, endedWithEos: r.endedWithEos,
       ...(same ? {} : { firstDiff: first, got: r.tokens.slice(Math.max(0, first - 2), first + 4), want: c.tokens.slice(Math.max(0, first - 2), first + 4) }),
       ...(tok && c.decodedClean !== undefined ? { decodedMatches: decoded === c.decodedClean } : {}) };
     R.checks.tokens.detail.push(d);
@@ -386,32 +432,30 @@ async function runTokens({ R, entry, entryPath, expected, runs, warmup, weightsB
   if (!R.checks.tokens.pass) R.errors.push(`${R.checks.tokens.cases - R.checks.tokens.identical} of ${R.checks.tokens.cases} cases differ from the reference tokens`);
   log(`tokens: ${R.checks.tokens.identical}/${R.checks.tokens.cases} identical -> ${R.checks.tokens.pass ? "PASS" : "FAIL"}`);
 
-  // ---- timing: per case, median of `runs` -------------------------------
-  for (let i = 0; i < warmup; i++) for (const c of cases) await runCase(c.bytes);
+  for (let i = 0; i < warmup; i++) for (const c of cases) await runCase(c);
   const per = Object.fromEntries(cases.map((c) => [c.id, []]));
   let totalTokens = 0;
   for (let i = 0; i < runs; i++)
     for (const c of cases) {
       const t0 = T();
-      const r = await runCase(c.bytes);
+      const r = await runCase(c);
       per[c.id].push(T() - t0);
       if (i === 0) totalTokens += r.tokens.length;
     }
   const medians = Object.fromEntries(Object.entries(per).map(([id, a]) => [id, +median(a).toFixed(2)]));
   const meds = Object.values(medians);
   R.timings.perCase = medians;
-  R.timings.newPrompt = { ...stats(meds), n: runs, note: "median over cases of each case's median per-image time (encoder + greedy decode + tokens readback)" };
+  R.timings.newPrompt = { ...stats(meds), n: runs, note: "median over cases of each case's median time (encoder + greedy decode + tokens readback)" };
   R.timings.tokensPerRun = totalTokens;
   R.timings.msPerToken = +(meds.reduce((a, x) => a + x, 0) / totalTokens).toFixed(4);
-  // encoder alone, fenced on its first readable output
   const encOutName = Object.keys(rig.graphs[encoderName].outputs).find((n) => (entry.graphs[encoderName].outputs.find((o) => o.name === n)?.readable) !== false) ?? Object.keys(rig.graphs[encoderName].outputs)[0];
   const encT = [];
+  const dispatchEncoder = () => ctx.dispatch(rig.graphs[encoderName].graph, tensors.inputsFor(encoderName), tensors.outputsFor(encoderName));
   for (let i = 0; i < runs; i++) { const t0 = T(); dispatchEncoder(); await ctx.readTensor(tensors.get(encoderName, encOutName)); encT.push(T() - t0); }
   R.timings.encoder = stats(encT);
-  // stability: the first case again
-  const again = await runCase(cases[0].bytes);
+  const again = await runCase(cases[0]);
   R.checks.stableAcrossRuns = again.tokens.length === cases[0].tokens.length && again.tokens.every((v, i) => v === cases[0].tokens[i]);
   if (!R.checks.stableAcrossRuns) R.errors.push("tokens drifted across runs");
-  log(`per image: median ${R.timings.newPrompt.medianMs} ms (min ${R.timings.newPrompt.minMs}, max ${R.timings.newPrompt.maxMs}); ${R.timings.msPerToken} ms/token; encoder ${R.timings.encoder.medianMs} ms`);
+  log(`per case: median ${R.timings.newPrompt.medianMs} ms (min ${R.timings.newPrompt.minMs}, max ${R.timings.newPrompt.maxMs}); ${R.timings.msPerToken} ms/token; encoder ${R.timings.encoder.medianMs} ms`);
   return R;
 }
