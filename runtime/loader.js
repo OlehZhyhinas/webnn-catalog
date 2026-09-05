@@ -518,8 +518,9 @@ export async function loadEntry(entry, constants = null, context, opts = {}) {
  */
 export async function createEntryTensors(context, rig, { readable = null, writable = null } = {}) {
   const key = (g, n) => `${g}.${n}`;
-  const feeds = new Set(rig.chain.map((l) => key(l.from.graph, l.from.name)));
-  const fedBy = new Map(rig.chain.map((l) => [key(l.to.graph, l.to.name), key(l.from.graph, l.from.name)]));
+  const live = (rig.chain ?? []).filter((l) => rig.graphs[l.from.graph] && rig.graphs[l.to.graph]);
+  const feeds = new Set(live.map((l) => key(l.from.graph, l.from.name)));
+  const fedBy = new Map(live.map((l) => [key(l.to.graph, l.to.name), key(l.from.graph, l.from.name)]));
   const declared = (g, n) => (rig.entry.graphs[g]?.outputs ?? []).find((o) => o.name === n);
 
   const tensors = {};
