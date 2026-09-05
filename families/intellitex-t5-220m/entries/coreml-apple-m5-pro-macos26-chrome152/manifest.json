@@ -1,0 +1,70 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "intellitex-t5-220m",
+  "constants": {
+    "encoder32": {
+      "file": "intellitex-encoder-L32.bin",
+      "bytes": 247549840,
+      "sha256": "40ef6748f1a12f00a098e3a6488d9d8ba4d514c328081de75a7adcd083de91d9",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L32.bin",
+      "chunks": null
+    },
+    "decode32": {
+      "file": "intellitex-decode-L32.bin",
+      "bytes": 298684504,
+      "sha256": "a439640946032ef7979e39fde4ad785bfa6e2921759245ea593d438071ffbf6b",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-decode-L32.bin",
+      "chunks": null
+    },
+    "encoder64": {
+      "file": "intellitex-encoder-L64.bin",
+      "bytes": 247623568,
+      "sha256": "650a2b002fb96f9d2350a10a57dc4051eac788f072d4458369987c534db263d1",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L64.bin",
+      "chunks": null
+    },
+    "encoder128": {
+      "file": "intellitex-encoder-L128.bin",
+      "bytes": 247918480,
+      "sha256": "dfe7642ce514a78816a1edc75ab674628dac8f510b44bad8985ae60fbbb01796",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L128.bin",
+      "chunks": null
+    }
+  },
+  "recipeHashes": {
+    "recipe.encoder32.json": {
+      "sha256": "b85fda4939df5bad33c26c0da7edd97cbeceffc4a79fb673828b567a56f10397",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-encoder-L32.json",
+      "sourceSha256": "dcc3730eb69292f5f9b2d419ecd296c3dc386d85b601e00d624a08323a2b3748"
+    },
+    "recipe.decode32.json": {
+      "sha256": "56955b87c08efacd9309be1e3df75ea5cf6bbd86812776a14ce996f57eb8323c",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-decode-L32.json",
+      "sourceSha256": "e4724192a66d80157aeca74ed13609e9105c1324a1bbc9b580bd50f12e49619a"
+    },
+    "recipe.encoder64.json": {
+      "sha256": "91d89b4763763318b36fb2f4dc99a724c5f7a1f92e0dee8c27cac7449df8c63f",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-encoder-L64.json",
+      "sourceSha256": "f22d592688bf3958a80c152fdc8a55d84175c1a8c2dd4563a7398079459d0716"
+    },
+    "recipe.decode64.json": {
+      "sha256": "db81620f750f92a67dbdbec3f2353b9c215b683478f6bc37ecb40f42d2f252a1",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-decode-L64.json",
+      "sourceSha256": "8cf60d0b3ab79bac5ccacd46f70a315f1b346264bfa64b8129e93a4784789858"
+    },
+    "recipe.encoder128.json": {
+      "sha256": "723277475531c5d5ef696f9b5d428310590640d802fea9bec1b6d2eea6562ffd",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-encoder-L128.json",
+      "sourceSha256": "74d01f99ce126dc3ad312a8bad51fb0667dba1ecadca530cdf35bd31d4d460c6"
+    },
+    "recipe.decode128.json": {
+      "sha256": "9d53239d24f00eaa037b443856bf8d9c04905ac56536a9d5be791972d34fefc0",
+      "recordedFrom": "webnn-workbench-intellitex/bench/webnn/ir/intellitex-decode-L128.json",
+      "sourceSha256": "0244e99020c3f007754a38b477a884f46d0ab21804f67a596f271ee633bac422"
+    }
+  },
+  "published": {
+    "at": "2026-09-05T20:11:29.150Z",
+    "base": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152"
+  }
+}

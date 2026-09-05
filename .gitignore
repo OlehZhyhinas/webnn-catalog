@@ -10,6 +10,8 @@ weights/
 # ...except the small reference tensors a verification set needs.
 !families/*/entries/*/verification/*.f16.bin
 !families/*/entries/*/verification/**/*.f16.bin
+!families/*/entries/*/verification/**/*.ids.bin
+!families/*/entries/*/verification/**/*.pad.bin
 
 # A probe writes this for the machine it ran on; the entry it produced
 # carries a copy, so the loose file is scratch.
