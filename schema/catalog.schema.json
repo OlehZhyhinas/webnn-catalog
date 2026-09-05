@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/catalog.schema.json",
+  "title": "Catalog index, version 2",
+  "description": "An index of families and the entries under them. Summary rows only: every field here is a copy of something the entry directory owns, kept so a consumer can fetch one small file, decide what it wants by its own policy, and then fetch that entry. The index states no preference and has no default entry.",
+
+  "type": "object",
+  "required": ["catalog", "version", "families"],
+  "additionalProperties": false,
+  "properties": {
+    "catalog": { "const": "webnn-catalog" },
+    "version": { "const": 2 },
+    "description": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "schema": {
+      "type": "object",
+      "description": "Where the schemas that define every file in this repo live.",
+      "additionalProperties": { "type": "string" }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "loader": { "type": "string" },
+        "docs": { "type": "string" },
+        "recipeSchemaVersion": { "type": "integer" },
+        "note": { "type": "string" }
+      }
+    },
+
+    "families": {
+      "type": "object",
+      "description": "Keyed by family id.",
+      "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "family", "name", "task", "entries"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "family": { "type": "string", "description": "Path to family.json." },
+          "name": { "type": "string" },
+          "task": { "type": "string" },
+          "model": { "type": "string" },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "path", "entry", "variant", "backend"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "path": { "type": "string" },
+                "entry": { "type": "string", "description": "Path to entry.json, which is the only authoritative record." },
+                "variant": { "type": "string" },
+                "backend": { "type": "string" },
+                "browser": { "type": "string" },
+                "os": { "type": "string" },
+                "gpu": { "type": "string" },
+                "chip": { "type": ["string", "null"] },
+                "created": { "type": "string" },
+                "graphs": { "type": "array", "items": { "type": "string" } },
+                "newPromptMs": { "type": ["number", "null"], "description": "The first measurement row's headline number, on the machine that row names. Not a promise about any other machine." },
+                "measuredHosts": { "type": "integer", "minimum": 0 },
+                "constantBytes": { "type": ["integer", "null"] },
+                "weightsPublished": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "conventions": { "type": "object", "additionalProperties": { "type": "string" } }
+  }
+}

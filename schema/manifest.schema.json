@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/manifest.schema.json",
+  "title": "Constants manifest for one entry",
+  "description": "The blobs this entry's recipes index, pinned by sha256, and the hash of each recipe file as it was added. The blobs themselves are never in git.",
+
+  "type": "object",
+  "required": ["entry", "family", "constants"],
+  "additionalProperties": false,
+  "properties": {
+    "entry": { "type": "string" },
+    "family": { "type": "string" },
+    "constants": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Keyed by the name a graph's `constants` field points at.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["file", "bytes", "sha256", "url", "chunks"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "description": "File name of the blob. Resolved against whatever base a consumer serves the weights from when `url` is null." },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "usedBytes": { "type": "integer", "minimum": 1, "description": "Bytes the recipe actually indexes. Less than `bytes` when the blob ends in alignment padding." },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "url": { "type": ["string", "null"], "description": "Where the blob is published, or null while it is unpublished." },
+          "chunks": {
+            "type": ["array", "null"],
+            "description": "Optional byte ranges for a Range-served blob, so a reader holds one chunk instead of the whole thing. Boundaries need not respect constant boundaries.",
+            "items": {
+              "type": "object",
+              "required": ["byteOffset", "byteLength"],
+              "additionalProperties": false,
+              "properties": {
+                "byteOffset": { "type": "integer", "minimum": 0 },
+                "byteLength": { "type": "integer", "minimum": 1 }
+              }
+            }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "recipeHashes": {
+      "type": "object",
+      "description": "sha256 of each recipe file as stored here, plus where it was recorded from. A recipe that no longer hashes to this has been edited by hand, which is exactly what a recipe must never be.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "recordedFrom": { "type": "string" },
+          "sourceSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 of the dump this file was copied from, if it differs." }
+        }
+      }
+    }
+  }
+}

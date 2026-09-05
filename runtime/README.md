@@ -1,33 +1,70 @@
 # runtime
 
-One file, `loader.js`, an ES module with no dependencies. It takes a recipe and
-a blob of constants and gives back a built `MLGraph`.
+One file, `loader.js`, an ES module with no dependencies. Hand it a catalog
+entry and it gives back built `MLGraph`s; hand it a single recipe and a blob of
+constants and it gives back one.
 
 It knows nothing about diffusion, UNets or text encoders. It knows the WebNN
-builder surface and the recipe schema, and it knows the two things about this
-backend that will otherwise cost you an afternoon: the incognito gate and the
-fact that every declared graph output must be bound at dispatch.
+builder surface and the recipe schema, and it knows the three things about this
+backend that will otherwise cost you an afternoon: the incognito gate, the fact
+that every declared graph output must be bound at dispatch, and that an
+intermediate should never cross into JS.
+
+It also knows nothing about *which* entry you should be running. Selection is
+the consuming product's policy; see the README's "Selection is the consumer's
+job". This module starts after that decision.
 
 ```js
 import {
-  loadRecipe, constantSource, assertCoreMLFingerprint,
+  loadEntry, createEntryTensors, assertCoreMLFingerprint,
 } from "./runtime/loader.js";
+
+const dir   = "/families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152";
+const entry = await (await fetch(`${dir}/entry.json`)).json();
 
 const ctx = await navigator.ml.createContext({ deviceType: "gpu" });
 assertCoreMLFingerprint(ctx);                       // fail loudly, not slowly
 
-const manifest = await (await fetch("models/sd-turbo-512-1step/manifest.json")).json();
-const recipe   = await (await fetch("models/sd-turbo-512-1step/recipe.image.json")).json();
-
-const image = await loadRecipe(
-  recipe,
-  constantSource(manifest.constants.image, { baseUrl: "/weights" }),
-  ctx,
-);
-// -> { graph, inputs, outputs, label, layout, stats }
+const rig = await loadEntry(entry, "/weights", ctx, { baseUrl: dir });
+const t   = await createEntryTensors(ctx, rig);
 ```
 
 ## API
+
+### `loadEntry(entry, constants, context, opts?) -> Promise<Rig>`
+
+Builds every graph the entry declares.
+
+| | |
+|---|---|
+| `entry` | the parsed `entry.json` |
+| `constants` | a base URL for the blobs, a `(name, manifestRecord) => source` factory, a `{name: source}` map, or `null` to use each manifest record's own `url` |
+| `context` | an `MLContext` |
+| `opts.baseUrl` | where the entry's own files live; defaults to `entry.baseUrl` or `"."` |
+| `opts.only` | build a subset of the graphs |
+| `opts.manifest`, `opts.recipes` | pass already-fetched JSON instead of refetching |
+| `opts.order` | build order; the default is largest constants first, which keeps peak resident bytes lower |
+| `opts.onProgress` | as `loadRecipe`, plus `graph` |
+
+Returns `{entry, manifest, graphs, chain, inputs, outputs, stats}`, where
+`graphs[name]` is exactly what `loadRecipe` returns and `chain` is
+`entry.graphs.chain` parsed into `{from: {graph, name}, to: {graph, name}}`.
+
+### `createEntryTensors(context, rig, opts?) -> Promise<Tensors>`
+
+Allocates every tensor the entry needs and returns
+`{tensors, inputsFor(graph), outputsFor(graph), get(graph, name)}`, ready to
+hand straight to `dispatch()`.
+
+Each chain link gets **one** MLTensor, bound as the producer's output and as the
+consumer's input, so the intermediate never crosses into JS. An output that
+feeds a link is allocated `readable`, because `readTensor()` on it is the
+cheapest completion fence WebNN offers. An output the entry marks
+`readable: false` is allocated non-readable and still bound, because WebNN
+requires every declared output to be bound at dispatch.
+
+`opts.readable` / `opts.writable` take `"<graph>.<name>"` keys and override
+both defaults.
 
 ### `loadRecipe(recipe, source, context, opts?) -> Promise<Loaded>`
 
@@ -49,7 +86,7 @@ Returns `{graph, inputs, outputs, label, layout, stats}`. `inputs` and
 ```js
 bufferSource(arrayBuffer)                         // already in hand
 httpSource(url, { chunks, totalBytes })           // one fetch, or ranged fetches
-constantSource(manifestEntry, { baseUrl })        // from a manifest record
+constantSource(manifestRecord, { baseUrl })       // from an entry manifest record
 ```
 
 A source is `{ranges, totalBytes, fetchRange(offset, length)}`. Anything with
@@ -156,65 +193,21 @@ handing back a fresh `ArrayBuffer` per frame. With an RGBA-packed int32 output
 you can then keep a permanent `ImageData` over that buffer, and "convert to
 pixels" becomes literally nothing.
 
-## Recipe schema, version 1
+## Recipe schema
 
-```jsonc
-{
-  "version": 1,
-  "label": "sd-turbo-512-1step/image",
-  "layout": "nhwc",
-  "inputs":  [{ "name": "sample", "dataType": "float16", "shape": [1,64,64,4] }],
-  "outputs": [{ "name": "out", "operand": "v1488", "dataType": "int32", "shape": [1,512,512] }],
-  "constants": {
-    "k0": { "dataType": "float16", "shape": [320,3,3,4], "byteOffset": 0, "byteLength": 23040, "tag": "conv_in" }
-  },
-  "ops": [
-    { "id": 1, "type": "conv2d", "inputs": ["sample","k0","k1"], "output": "v1",
-      "outputShape": [1,64,64,320], "outputDataType": "float16",
-      "options": { "strides":[1,1], "padding":[1,1,1,1], "dilations":[1,1],
-                   "inputLayout":"nhwc", "filterLayout":"ohwi", "bias":"k1" },
-      "tag": "conv_in" }
-  ]
-}
-```
+The recipe IR is defined by [`../schema/recipe.schema.json`](../schema/recipe.schema.json)
+and explained in the top-level README under "The recipe IR": the single operand
+namespace, the operand-valued options that appear twice, the `x-callForms`
+positional table that tells `softmax(x, 2)` from `softmax(x, {axis: 2})`, and
+the monotonic constant offsets that make chunked loading safe.
 
-Operand names live in one namespace: graph inputs keep their own names,
-constants are `k<N>`, op results are `v<N>`. A multi-output op (`split`) carries
-`outputs` and `outputShapes` alongside `output`/`outputShape`; every name in
-`outputs` is defined by that op.
-
-An op's `inputs` array is `[...positional operands, ...operand-valued options]`,
-in that order, because an options bag is always the last argument. `conv2d`'s
-bias therefore appears twice, once as `options.bias` and once at the end of
-`inputs`, and the loader shears the operand-valued options off the tail by
-count to recover the positional list.
-
-### The one thing the schema does not say
-
-The recorder flattens a call's positional **non-operand** arguments into the
-same `options` bag as the real options dictionary. So the recipe alone cannot
-distinguish `softmax(x, 2)` from `softmax(x, {axis: 2})`, or
-`split(x, 3, {axis: 1})` from `split(x, {splits: 3, axis: 1})`. The loader
-carries a `POSITIONAL` table, the recorder's table inverted, naming which
-keys are really positional and in what order:
-
-```js
-reshape: ["newShape"],  expand: ["newShape"],  softmax: ["axis"],
-cast: ["type"],         concat: ["axis"],      split: ["splits"],
-tile: ["repetitions"],  pad: ["beginningPadding", "endingPadding"],
-argMin: ["axis"],       argMax: ["axis"],
-```
-
-Plus `VARIADIC` (`concat` takes an array of operands, not one) and
-`MULTI_OUTPUT` (`split` returns several).
-
-**Keep this table in sync with whatever recorder produced the recipe.** A
-version 2 of the schema should either record the argument list positionally or
-name the call form explicitly, and then the table can go.
+The loader's `POSITIONAL`, `VARIADIC` and `MULTI_OUTPUT` tables are that
+schema's `x-callForms` in code. **Keep them in sync with whatever recorder
+produced the recipe**, and with the schema, which is the authority.
 
 ## Op coverage
 
-Every op type in the two SD-Turbo recipes, replayed and verified:
+Every op type in the SD-Turbo entry's two recipes, replayed and verified:
 
 | | image | text |
 |---|---:|---:|

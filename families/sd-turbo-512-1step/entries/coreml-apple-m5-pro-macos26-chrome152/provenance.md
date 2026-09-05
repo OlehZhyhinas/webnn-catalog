@@ -1,4 +1,12 @@
-# sd-turbo-512-1step
+# Provenance: sd-turbo-512-1step, entry `coreml-apple-m5-pro-macos26-chrome152`
+
+The ledger for this entry: what was folded into these two graphs, what was
+tried and rejected with the number that killed it, and what the Core ML backend
+turned out to be like. It is the part that does not survive in the op list.
+
+Everything below was measured on the configuration in `entry.json`'s `target`:
+WebNN / Core ML on an Apple M5 Pro, macOS 26.6.2, Chrome 152.0.7977.77. Another
+configuration is another entry, and the numbers here say nothing about it.
 
 SD-Turbo, 512x512, one Euler step, as **two** WebNN graphs for the Core ML
 backend. Text encoder in one; UNet + the Euler step + the TAESD decoder + an
@@ -12,18 +20,13 @@ float16-on-MPS chain itself reaches only 45.36 dB.
 
 | file | what |
 |---|---|
+| `entry.json` | the configuration this entry was built and tuned for, and its I/O |
 | `recipe.image.json` | 1441 ops, 655 constants, 1650 MiB, NHWC |
 | `recipe.text.json` | 603 ops, 281 constants, 649 MiB |
-| `manifest.json` | blob hashes and URLs, the I/O contract, the chaining pattern |
-| `measurements.json` | every number on this page, machine-readable |
-| `verification/` | the reference case and its bars |
-| `tokenizer.js` + `tokenizer/` | CLIP BPE, 12/12 against HuggingFace |
-
-This document is the **provenance ledger**: what was folded into these graphs,
-what was tried and rejected, and what the backend turned out to be like. It is
-the part that does not survive in the op list.
-
----
+| `manifest.json` | the constants blobs, pinned by sha256, and the recipe hashes |
+| `measurements.json` | every number on this page, machine-readable, one row per host |
+| `verification/` | the reference case and this entry's bars |
+| `../../tokenizer/` | CLIP BPE, shared by every entry of the family |
 
 ## What the recipes are
 
@@ -206,8 +209,7 @@ full ~25 s again.
 
 **Core ML is gated on a non-incognito profile.** Off the record, WebNN silently
 falls back to TFLite/XNNPACK on the CPU: no error, ~50x slower, and the graph
-builds in milliseconds instead of seconds. `runtime/loader.js`'s
-`assertCoreMLFingerprint` exists for exactly this.
+builds in milliseconds instead of seconds. `runtime/loader.js`'s `assertCoreMLFingerprint` exists for exactly this.
 
 **Native Core ML on the identical graph runs 62.5 ms against Chrome's 62.**
 The browser adds no overhead.
@@ -253,8 +255,13 @@ the triples outright. Chromium cannot emit it today, and the MIL op lacks the
 
 ## The optional fast variant
 
-Not in this catalog as a recipe, and deliberately so. Recorded here because the
-measurement is the point.
+Not an entry in this family, because no recipe for it exists yet. Recorded here
+because the measurement is the point.
+
+As of this entry there is **no IR dump of the ToDo graph**: the workbench
+measured the variant end to end but never recorded its `MLGraphBuilder` call
+sequence, so there is no recipe to store and no second entry in this family.
+Recording one is the next thing to do; inventing one from these numbers is not.
 
 **ToDo (Token Downsampling)**, `--todo 2 --todo-pool nearest --todo-levels 64`
 in the workbench: the K/V of the five 64x64 `attn1` layers are nearest-subsampled
@@ -289,7 +296,8 @@ measured: they use factor 2 at 1024x1024 / 16,384 tokens, this is factor 2 on a
 ## Verifying
 
 ```bash
-node scripts/verify.mjs --weights ../webnn-workbench/bench/webnn/ir
+node scripts/verify.mjs --entry sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152 \
+  --weights ../webnn-workbench/bench/webnn/ir
 ```
 
 Checks the tokenizer against `verification/input_ids.json`, the text graph

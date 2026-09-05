@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Hand-built WebNN graph recipes and a generic runtime that replays them into an MLGraph.",
+  "description": "Hand-built WebNN graphs, stored as data and keyed by the configuration they were built for, plus a runtime that builds them into MLGraphs.",
   "scripts": {
+    "validate": "node scripts/validate.mjs",
     "verify": "node scripts/verify.mjs",
+    "probe": "node scripts/probe-target.mjs",
+    "add-entry": "node scripts/add-entry.mjs",
+    "add-measurement": "node scripts/add-measurement.mjs",
     "serve": "node scripts/serve.mjs"
   },
   "devDependencies": {

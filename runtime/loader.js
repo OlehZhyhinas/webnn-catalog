@@ -1,13 +1,25 @@
-// Generic catalog runtime: replay a recipe into an MLGraph.
+// Catalog runtime: turn a catalog entry into built MLGraphs.
 //
 // A recipe is the exact MLGraphBuilder call sequence that built a graph once,
 // recorded op by op with the operand shapes the backend itself inferred. This
 // module replays it. It knows nothing about UNets, text encoders or diffusion;
 // it knows the WebNN builder surface and the recipe schema.
 //
-//   const source = await constantSource(manifest, { baseUrl });
+//   const entry = await (await fetch(`${dir}/entry.json`)).json();
+//   const rig   = await loadEntry(entry, "/weights", ctx, { baseUrl: dir });
+//   const t     = await createEntryTensors(ctx, rig);
+//   ctx.dispatch(rig.graphs.text.graph,  t.inputsFor("text"),  t.outputsFor("text"));
+//
+// ...or one graph at a time:
+//
+//   const source = constantSource(manifest.constants.image, { baseUrl });
 //   const image  = await loadRecipe(recipeJson, source, context);
 //   ctx.dispatch(image.graph, ins, outs);
+//
+// What this module does NOT do is choose an entry. Probing the machine,
+// ranking entries and falling back are the consuming product's policy; the
+// catalog has no opinion and ships no code for it. Hand it an entry and it
+// gives you finished graphs.
 //
 // Everything else here is the plumbing that surrounds a graph on this backend:
 // MLTensor allocation, the on-device chaining of one graph's output into the
@@ -395,6 +407,155 @@ export async function loadRecipe(recipe, source, context, { onProgress, builder:
 }
 
 const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+
+// ---------------------------------------------------------------------------
+// Entries
+// ---------------------------------------------------------------------------
+//
+// An entry is a whole configuration: several graphs, the manifest naming their
+// constants, and the on-device links between them. loadEntry() fetches what it
+// needs relative to the entry directory and builds every graph.
+
+const joinUrl = (base, file) => (/^([a-z]+:)?\/\//i.test(file) ? file : `${String(base).replace(/\/$/, "")}/${file}`);
+
+/**
+ * Build every graph an entry declares.
+ *
+ * @param {object} entry    parsed entry.json
+ * @param {string|function|object|null} constants  where the constants come from:
+ *        a base URL for the blobs, a `(name, manifestRecord) => source` factory,
+ *        a `{name: source}` map, or null to use each manifest record's own `url`.
+ * @param {MLContext} context
+ * @param {object} [opts]  {baseUrl, fetchImpl, onProgress, only, manifest, recipes, order}
+ * @returns {{entry, manifest, graphs, chain, inputs, outputs, stats}}
+ *
+ * `graphs[name]` is exactly what loadRecipe() returns. Graphs are built in the
+ * order given, largest constants first by default: building the 1650 MiB graph
+ * before the 649 MiB one keeps peak resident bytes lower.
+ */
+export async function loadEntry(entry, constants = null, context, opts = {}) {
+  const {
+    baseUrl = entry.baseUrl ?? ".",
+    fetchImpl = fetch,
+    onProgress,
+    only = null,
+    manifest: givenManifest = null,
+    recipes: givenRecipes = null,
+    order = null,
+  } = opts;
+
+  const j = async (url) => {
+    const res = await fetchImpl(url);
+    if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
+    return res.json();
+  };
+
+  const manifest = givenManifest ?? (await j(joinUrl(baseUrl, entry.constants)));
+  const names = Object.keys(entry.graphs).filter((k) => k !== "chain" && (!only || only.includes(k)));
+
+  const sourceFor = (graphName) => {
+    const key = entry.graphs[graphName].constants;
+    const record = manifest.constants[key];
+    if (!record) throw new Error(`entry ${entry.id}: graph "${graphName}" names constants "${key}", which the manifest does not have`);
+    if (typeof constants === "function") return constants(key, record);
+    if (constants && typeof constants === "object") {
+      const s = constants[key];
+      if (!s) throw new Error(`no constant source supplied for "${key}"`);
+      return s;
+    }
+    if (typeof constants === "string") return constantSource(record, { baseUrl: constants, fetchImpl });
+    if (record.url == null)
+      throw new Error(`constants "${key}" are unpublished (manifest url is null): pass a base URL or a source for them`);
+    return constantSource(record, { fetchImpl });
+  };
+
+  const build = order ?? [...names].sort(
+    (a, b) => (manifest.constants[entry.graphs[b].constants]?.bytes ?? 0) - (manifest.constants[entry.graphs[a].constants]?.bytes ?? 0),
+  );
+
+  const graphs = {};
+  for (const name of build) {
+    const spec = entry.graphs[name];
+    const recipe = givenRecipes?.[name] ?? (await j(joinUrl(baseUrl, spec.recipe)));
+    graphs[name] = await loadRecipe(recipe, sourceFor(name), context, {
+      onProgress: onProgress ? (p) => onProgress({ ...p, graph: name }) : undefined,
+    });
+  }
+
+  const chain = (entry.graphs.chain ?? []).map(([from, to]) => {
+    const [fg, fo] = from.split(".");
+    const [tg, ti] = to.split(".");
+    return { from: { graph: fg, name: fo }, to: { graph: tg, name: ti } };
+  });
+
+  const inputs = {}, outputs = {};
+  for (const name of Object.keys(graphs)) {
+    inputs[name] = graphs[name].inputs;
+    outputs[name] = graphs[name].outputs;
+  }
+
+  return {
+    entry,
+    manifest,
+    graphs,
+    chain,
+    inputs,
+    outputs,
+    stats: Object.fromEntries(Object.entries(graphs).map(([k, g]) => [k, g.stats])),
+  };
+}
+
+/**
+ * Allocate every tensor a loaded entry needs, sharing one MLTensor across each
+ * chain link so the intermediate never crosses into JS.
+ *
+ * `readable` comes from the entry: an output the entry marks readable is
+ * allocated readable, and so is any output that feeds a chain link, because
+ * readTensor() on it is the cheapest completion fence WebNN offers. Everything
+ * else is allocated non-readable and still bound, because WebNN requires every
+ * declared output to be bound at dispatch.
+ */
+export async function createEntryTensors(context, rig, { readable = null, writable = null } = {}) {
+  const key = (g, n) => `${g}.${n}`;
+  const feeds = new Set(rig.chain.map((l) => key(l.from.graph, l.from.name)));
+  const fedBy = new Map(rig.chain.map((l) => [key(l.to.graph, l.to.name), key(l.from.graph, l.from.name)]));
+  const declared = (g, n) => (rig.entry.graphs[g]?.outputs ?? []).find((o) => o.name === n);
+
+  const tensors = {};
+  for (const [g, loaded] of Object.entries(rig.graphs)) {
+    for (const [n, spec] of Object.entries(loaded.outputs)) {
+      const k = key(g, n);
+      const want = readable?.includes(k) ?? (feeds.has(k) || declared(g, n)?.readable !== false);
+      tensors[k] = await context.createTensor({ dataType: spec.dataType, shape: spec.shape, readable: want });
+    }
+  }
+  for (const [g, loaded] of Object.entries(rig.graphs)) {
+    for (const [n, spec] of Object.entries(loaded.inputs)) {
+      const k = key(g, n);
+      const from = fedBy.get(k);
+      if (from) {
+        const producer = tensors[from];
+        if (!producer) throw new Error(`chain ${from} -> ${k}: the producer graph is not loaded`);
+        tensors[k] = producer; // ONE tensor, two roles
+        continue;
+      }
+      tensors[k] = await context.createTensor({
+        dataType: spec.dataType,
+        shape: spec.shape,
+        writable: writable?.includes(k) ?? true,
+      });
+    }
+  }
+
+  const pick = (g, which) =>
+    Object.fromEntries(Object.keys(rig.graphs[g][which]).map((n) => [n, tensors[key(g, n)]]));
+  return {
+    tensors,
+    inputsFor: (g) => pick(g, "inputs"),
+    outputsFor: (g) => pick(g, "outputs"),
+    get: (g, n) => tensors[key(g, n)],
+  };
+}
 
 /**
  * Which builder methods a recipe needs. Useful before loading 1.6 GB to find

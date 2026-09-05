@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/family.schema.json",
+  "title": "Family: one model, one task, one I/O contract",
+  "description": "Everything that is true of every entry in the family. An entry may not change any of it: two entries of a family differ only in how the same computation is spelled for a different configuration, so they are interchangeable to a caller. Change the contract and it is a different family.",
+
+  "type": "object",
+  "required": ["id", "name", "task", "source", "contract"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "name": { "type": "string" },
+    "summary": { "type": "string" },
+    "task": {
+      "type": "string",
+      "description": "e.g. \"text-to-image\". Free text: a taxonomy would be a selection mechanism."
+    },
+
+    "source": {
+      "type": "object",
+      "required": ["model"],
+      "additionalProperties": false,
+      "properties": {
+        "model": { "type": "string", "description": "Hugging Face id of the model the graphs were built from, e.g. \"stabilityai/sd-turbo\"." },
+        "revision": { "type": ["string", "null"], "description": "The revision the weights were exported from. null when it was not recorded, which is a gap, not a licence." },
+        "components": {
+          "type": "object",
+          "description": "Other checkpoints folded into the graphs, e.g. a decoder.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["model"],
+            "additionalProperties": false,
+            "properties": {
+              "model": { "type": "string" },
+              "revision": { "type": ["string", "null"] },
+              "role": { "type": "string" }
+            }
+          }
+        },
+        "precision": { "type": "string" },
+        "resolution": { "type": ["integer", "null"] },
+        "steps": { "type": ["integer", "null"] }
+      }
+    },
+
+    "contract": {
+      "type": "object",
+      "description": "What a caller hands in and what comes back, for every entry of the family. Shapes and dtypes here are the promise; an entry's graphs must match it.",
+      "required": ["graphs"],
+      "additionalProperties": false,
+      "properties": {
+        "graphs": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "required": ["inputs", "outputs"],
+            "additionalProperties": false,
+            "properties": {
+              "role": { "type": "string" },
+              "inputs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/operand" } },
+              "outputs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/operand" } }
+            }
+          }
+        },
+        "chaining": {
+          "type": "object",
+          "description": "How the graphs are wired to each other on device, in prose plus the ordered steps.",
+          "additionalProperties": true
+        },
+        "scheduler": {
+          "type": "object",
+          "description": "For a diffusion family: which scheduler the in-graph step implements, and the constants it was baked with.",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "tokenizer": {
+      "type": ["object", "null"],
+      "description": "Data, plus the algorithm that reads it. The files are in the family directory because every entry shares them.",
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": { "type": "string", "description": "e.g. \"CLIP BPE\". This is the contract; the .js next to it is one implementation." },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "module": { "type": ["string", "null"], "description": "Reference implementation shipped with the family, if any." },
+        "class": { "type": ["string", "null"] },
+        "maxLength": { "type": ["integer", "null"] },
+        "produces": { "type": "string", "description": "Which graph input it fills." },
+        "parity": { "type": "string", "description": "What it was checked against, and with what result." }
+      }
+    },
+
+    "constants": {
+      "type": "object",
+      "description": "Where the constants blobs live in the family's structure. The v2 direction is ONE canonical blob set per family that every entry indexes; today entries carry their own, and this records which.",
+      "required": ["scope"],
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "enum": ["per-entry", "per-family"],
+          "description": "per-entry: each entry's manifest.json names its own blobs. per-family: entries index the blobs named here."
+        },
+        "canonical": {
+          "type": ["object", "null"],
+          "description": "Present only when scope is per-family.",
+          "additionalProperties": { "type": "object" }
+        },
+        "note": { "type": "string" }
+      }
+    },
+
+    "verification": {
+      "type": "object",
+      "description": "The reference case every entry of this family is checked against. The bars may differ per entry (a lossy variant cannot meet an exact one's), but the case does not.",
+      "additionalProperties": true
+    },
+
+    "notes": { "type": "string" }
+  },
+
+  "$defs": {
+    "operand": {
+      "type": "object",
+      "required": ["dataType", "shape"],
+      "additionalProperties": false,
+      "properties": {
+        "dataType": { "enum": ["float32", "float16", "int32", "uint32", "int64", "uint64", "int8", "uint8"] },
+        "shape": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "layout": { "enum": ["nhwc", "nchw"] },
+        "role": { "type": "string" },
+        "source": { "type": "string", "description": "Where a caller gets this value from." },
+        "readable": { "type": "boolean" },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

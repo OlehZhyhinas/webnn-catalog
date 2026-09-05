@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/entry.schema.json",
+  "title": "Entry: one family, built and tuned for one configuration",
+  "description": "An entry is a configuration-keyed record. `target` is the configuration it was BUILT and TUNED for; `compat` states the facts about where it is valid, not a policy about where it should be used. Choosing between entries is the consuming product's job; nothing in this repo does it.",
+
+  "type": "object",
+  "required": ["id", "family", "variant", "created", "target", "compat", "graphs", "constants"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Directory name under families/<family>/entries/. Conventionally <backend>-<gpu chip slug>-<os><major>-<browser><major>, which is a readable summary of `target`, not a key anything parses."
+    },
+    "family": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "variant": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+([-.][a-z0-9]+)*$",
+      "description": "\"exact\" when the graphs compute the model as written. Anything else names an approximation that changes the output, e.g. \"todo2-nearest\". A consumer that cares about fidelity filters on this."
+    },
+    "created": { "type": "string", "description": "ISO 8601 date the entry was added." },
+
+    "producedBy": {
+      "type": "object",
+      "required": ["workbench"],
+      "additionalProperties": false,
+      "properties": {
+        "workbench": { "type": "string", "description": "<repo>@<commit> of the harness that emitted and measured the graphs." },
+        "date": { "type": "string" },
+        "recorder": { "type": "string", "description": "The recorder that dumped the recipes." },
+        "note": { "type": "string" }
+      }
+    },
+
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+
+    "target": {
+      "$ref": "target.schema.json",
+      "description": "The configuration this entry was built and tuned for, as scripts/probe-target.mjs observed it on the producing machine."
+    },
+
+    "compat": {
+      "type": "object",
+      "description": "Facts, not policy. `requires` is what must be true for these graphs to build and compute correctly; everything else in `target` is where they were tuned and timed, which is a different claim.",
+      "required": ["requires"],
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "type": "object",
+          "description": "Dotted paths into a target object, each with the value that must match exactly. Kept deliberately small: a key here is a claim that the entry does not work without it.",
+          "propertyNames": { "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)*$" },
+          "additionalProperties": { "type": ["string", "number", "boolean", "integer"] }
+        },
+        "ops": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The MLGraphBuilder methods the recipes call. A browser missing one of these cannot build the graphs, whatever else matches."
+        },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "graphs": {
+      "type": "object",
+      "description": "The graphs this entry carries, plus how they chain. Every key except `chain` is a graph name.",
+      "required": ["chain"],
+      "properties": {
+        "chain": {
+          "type": "array",
+          "description": "On-device links: [\"<graph>.<output>\", \"<graph>.<input>\"]. One MLTensor is the producer's output AND the consumer's input, so the value never crosses into JS. Empty when the entry has one graph.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9_-]*\\.[A-Za-z_][A-Za-z0-9_]*$" }
+          }
+        }
+      },
+      "patternProperties": {
+        "^(?!chain$)[a-z][a-zA-Z0-9_-]*$": {
+          "type": "object",
+          "required": ["recipe", "constants", "inputs", "outputs"],
+          "additionalProperties": false,
+          "properties": {
+            "recipe": { "type": "string", "description": "Path, relative to the entry directory, of a file matching schema/recipe.schema.json." },
+            "constants": { "type": "string", "description": "Key into manifest.json's `constants` naming the blob this graph's byteOffsets index." },
+            "role": { "type": "string" },
+            "layout": { "enum": ["nhwc", "nchw"] },
+            "ops": { "type": "integer", "minimum": 1 },
+            "opTypes": { "type": "integer", "minimum": 1 },
+            "constantCount": { "type": "integer", "minimum": 0 },
+            "inputs": { "type": "array", "items": { "$ref": "#/$defs/operandSpec" } },
+            "outputs": { "type": "array", "items": { "$ref": "#/$defs/operandSpec" } }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "constants": { "type": "string", "description": "Path to this entry's manifest.json (schema/manifest.schema.json)." },
+    "verification": { "type": "string", "description": "Path to the verification directory." },
+    "measurements": { "type": "string", "description": "Path to measurements.json (schema/measurements.schema.json)." },
+    "provenance": { "type": "string", "description": "Path to the ledger: what was folded, what was rejected and by which number, what the backend turned out to be like." },
+    "tokenizerFromFamily": { "type": "boolean", "description": "True when the family's tokenizer is what turns a prompt into this entry's graph inputs." }
+  },
+
+  "$defs": {
+    "operandSpec": {
+      "type": "object",
+      "required": ["name", "dataType", "shape"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "dataType": { "enum": ["float32", "float16", "int32", "uint32", "int64", "uint64", "int8", "uint8"] },
+        "shape": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "role": { "type": "string" },
+        "readable": { "type": "boolean", "description": "Output only: whether a consumer is expected to read it back. Every declared output must still be BOUND at dispatch." }
+      }
+    }
+  }
+}

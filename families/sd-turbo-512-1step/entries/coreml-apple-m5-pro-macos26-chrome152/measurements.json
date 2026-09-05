@@ -1,0 +1,159 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "sd-turbo-512-1step",
+  "rows": [
+    {
+      "label": "workbench pass-4 best, producing host",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.63,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-04",
+      "protocol": "e2e",
+      "runs": 20,
+      "warmup": 5,
+      "statistic": "median of the timed runs",
+      "newPromptMs": 68.4,
+      "cachedMs": 61.8,
+      "stages": {
+        "tokenize": 0.007,
+        "textGraph": 7,
+        "imageGraph": 60.3,
+        "readback": 0.3,
+        "toImageData": 0,
+        "putImageData": 0
+      },
+      "buildOnceMs": {
+        "image": 25317.3,
+        "text": 18725.6,
+        "firstDispatch": 252.3
+      },
+      "quality": {
+        "psnr8VsFp32Cpu": 44.281,
+        "psnr8VsFp16Mps": 44.264
+      },
+      "notes": "The emitter's own run of the graph these recipes were recorded from. The machine carried an unrelated compute job throughout pass four (load 15-20), so absolutes are 1-5 ms pessimistic; the 67.85 ms headline in provenance.md is the quiet-machine pass-three reading of the same configuration, which declared one graph output instead of two.",
+      "source": "webnn-workbench bench/results/webnn-e2e-pass4-best.json"
+    },
+    {
+      "label": "catalog loader replay, whole-file constants",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.63,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "replay",
+      "runs": 20,
+      "warmup": 5,
+      "statistic": "median of the timed runs",
+      "newPromptMs": 69.35,
+      "cachedMs": 61.55,
+      "stages": {
+        "textGraph": 7.3,
+        "imageGraph": 62.15
+      },
+      "buildOnceMs": {
+        "image": 31369.1,
+        "text": 21343.9,
+        "imageConstants": 3665.4,
+        "imageEmit": 5
+      },
+      "outputSha256": "5838ed1aa81430bae7d3cb2af9bec6bfd462f9dd2769478ace5be2af6ada0f2f",
+      "quality": {
+        "psnrVsExpectedImageDb": 60.937,
+        "psnrVsReferenceImageDb": 44.121,
+        "textEncoderMaxAbs": 0.03125
+      },
+      "loadAvg": 18.46,
+      "notes": "The catalog's own runtime/loader.js rebuilding this entry from entry.json + the recipes and running the family's reference case. Same machine as the row above, carrying the same unrelated compute job (load 18.5), so absolutes are a few ms pessimistic. The RGBA readback is byte-identical to the recorded expectation, 5838ed1a...; the replay itself costs 5 ms for 1441 ops against the 3,569 ms the original emitter spent, and the ~31 s is Core ML compiling, which Chromium does not cache.",
+      "source": "webnn-catalog scripts/verify.mjs, bench/verify-v2.json"
+    }
+  ],
+  "baselines": {
+    "ortWebGPU": {
+      "totalMs": 916,
+      "runtime": "ONNX Runtime Web, WebGPU EP, Microsoft's SD-Turbo demo",
+      "vae": "full VAE",
+      "stages": {
+        "textEncoder": 25,
+        "unet": 293,
+        "vaeDecode": 590
+      },
+      "ratioToOurs": 13.5
+    },
+    "ortWebNN": {
+      "totalMs": 237,
+      "runtime": "ONNX Runtime Web, WebNN EP via Core ML, same demo",
+      "vae": "full VAE",
+      "stages": {
+        "textEncoder": 9.5,
+        "unet": 63,
+        "vaeDecode": 158
+      },
+      "ratioToOurs": 3.5
+    },
+    "nativeMPS": {
+      "totalMs": 94.5,
+      "runtime": "Native PyTorch MPS, diffusers, float16 + TAESD",
+      "stages": {
+        "textEncoder": 12.4,
+        "unet": 64.7,
+        "vaeDecode": 9.2
+      },
+      "ratioToOurs": 1.39,
+      "role": "ceiling reference, not a competitor"
+    },
+    "comparabilityNote": "The two ORT rows use the demo's full VAE; ours and the native row use TAESD. The VAE decode column is therefore not like for like; the total is, in the sense that it is what a user waits for."
+  },
+  "floor": {
+    "imageGraphMs": 60,
+    "reasoning": "conv and matmul are at hardware efficiency (678 GFLOPs at ~12 TFLOP/s against a measured float16 vector peak near 13); the softmaxes cannot be spelled cheaper at WebNN level because Chromium exposes no fused attention op, so the [5,4096,4096] scores are materialised; and every cheap category has been measured, not modelled, at approximately zero. Getting under 60 needs a new op in the WebNN surface or fewer FLOPs, not another graph rewrite."
+  },
+  "history": [
+    {
+      "pass": 1,
+      "newPromptMs": 78.75,
+      "cachedMs": 70.75
+    },
+    {
+      "pass": 2,
+      "newPromptMs": 69.4,
+      "cachedMs": 62.9
+    },
+    {
+      "pass": 3,
+      "newPromptMs": 67.85,
+      "cachedMs": 60
+    },
+    {
+      "pass": 4,
+      "newPromptMs": 67.85,
+      "cachedMs": 60,
+      "note": "pass four measured two levers and changed no default"
+    }
+  ],
+  "sources": [
+    "webnn-workbench docs/results.md",
+    "webnn-workbench bench/results/pass2-summary.md",
+    "webnn-workbench bench/results/pass3-summary.md",
+    "webnn-workbench bench/results/pass4-summary.md",
+    "webnn-workbench bench/results/webnn-e2e-pass4-best.json"
+  ],
+  "caveat": "Pass-three sessions 3-5 and all of pass four ran with an unrelated compute job on the machine (load 15-20). Interleaved deltas are immune, since both arms share the load; absolute readings from those sessions are 1-5 ms pessimistic. The 67.85 ms headline is from the quiet-machine sub-pixel session."
+}

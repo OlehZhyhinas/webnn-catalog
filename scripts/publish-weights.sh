@@ -10,7 +10,8 @@
 # Options:
 #   --repo <id>       target repo, e.g. olehzhyhinas/webnn-catalog-sd-turbo   (required)
 #   --type <t>        dataset | model                      (default: dataset)
-#   --entry <id>      catalog entry                        (default: sd-turbo-512-1step)
+#   --entry <ref>     catalog entry as <family>/<entry-id>
+#                     (default: sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152)
 #   --weights <dir>   directory holding the .bin files
 #                     (default: ../webnn-workbench/bench/webnn/ir)
 #   --revision <rev>  branch or tag to upload to           (default: main)
@@ -27,7 +28,7 @@ set -euo pipefail
 
 REPO=""
 REPO_TYPE="dataset"
-ENTRY="sd-turbo-512-1step"
+ENTRY="sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WEIGHTS="$(cd "$ROOT/.." && pwd)/webnn-workbench/bench/webnn/ir"
 REVISION="main"
@@ -52,7 +53,9 @@ done
 
 [[ -n "$REPO" ]] || { echo "error: --repo is required (e.g. --repo someone/webnn-catalog-sd-turbo)" >&2; exit 2; }
 
-MANIFEST="$ROOT/models/$ENTRY/manifest.json"
+FAMILY="${ENTRY%%/*}"
+ENTRY_ID="${ENTRY##*/}"
+MANIFEST="$ROOT/families/$FAMILY/entries/$ENTRY_ID/manifest.json"
 [[ -f "$MANIFEST" ]] || { echo "error: no manifest at $MANIFEST" >&2; exit 2; }
 
 run() {

@@ -1,0 +1,138 @@
+{
+  "id": "sd-turbo-512-1step",
+  "name": "SD-Turbo, 512x512, one step",
+  "summary": "SD-Turbo at 512x512 with a single Euler step, as two WebNN graphs: an OpenCLIP text encoder, and UNet + the Euler step + the TAESD decoder + an RGBA pack. float16 throughout. A prompt goes in, one int32-per-pixel image comes out.",
+  "task": "text-to-image",
+
+  "source": {
+    "model": "stabilityai/sd-turbo",
+    "revision": null,
+    "components": {
+      "decoder": {
+        "model": "madebyollin/taesd",
+        "revision": null,
+        "role": "Tiny AutoEncoder, folded into the image graph in place of the full VAE decoder"
+      }
+    },
+    "precision": "float16 throughout; the only float32 op is the RGBA pack's 1x1 conv, because its 65536 multiplier exceeds float16's 65504",
+    "resolution": 512,
+    "steps": 1
+  },
+
+  "contract": {
+    "graphs": {
+      "text": {
+        "role": "OpenCLIP ViT-H/14 text encoder: 23 layers, hidden 1024, 16 heads, 77 tokens",
+        "inputs": {
+          "input_ids": {
+            "dataType": "int32",
+            "shape": [1, 77],
+            "source": "the family tokenizer: ClipTokenizer.encode(prompt, 77).ids"
+          }
+        },
+        "outputs": {
+          "out": {
+            "dataType": "float16",
+            "shape": [1, 77, 1024],
+            "role": "encoder_hidden_states; feeds the image graph on device and is never read back",
+            "readable": true,
+            "note": "readable not because the value is wanted in JS but because readTensor() on it is the cheapest completion fence WebNN offers, about 0.1 ms."
+          }
+        }
+      },
+      "image": {
+        "role": "UNet + one Euler step + TAESD decoder + RGBA pack, in one dispatch",
+        "inputs": {
+          "sample": {
+            "dataType": "float16",
+            "shape": [1, 64, 64, 4],
+            "layout": "nhwc",
+            "source": "scale_model_input(latent_raw) = latent_raw / 14.648819213552878, converted NCHW -> NHWC",
+            "note": "The reference tensors on disk are NCHW [1,4,64,64]; the caller converts. This is `latent_scaled` in the workbench's reference set."
+          },
+          "encoder_hidden_states": {
+            "dataType": "float16",
+            "shape": [1, 77, 1024],
+            "source": "the text graph's `out`, bound as the SAME MLTensor"
+          },
+          "latent_raw": {
+            "dataType": "float16",
+            "shape": [1, 64, 64, 4],
+            "layout": "nhwc",
+            "source": "unscaled latent = randn(seed) * sigma_0, converted NCHW -> NHWC",
+            "note": "Bound separately because the in-graph Euler step needs the unscaled latent: latent = latent_raw - sigma_0 * unet_out."
+          }
+        },
+        "outputs": {
+          "out": {
+            "dataType": "int32",
+            "shape": [1, 512, 512],
+            "readable": true,
+            "role": "RGBA-packed pixels, one int32 per pixel whose low bytes are R | G<<8 | B<<16 | 0xFF000000",
+            "note": "uint8 cannot leave a Core ML graph (output dtypes are float32/float16/int32), which is what forces the pack. On the JS side new ImageData(new Uint8ClampedArray(buffer), 512, 512) is a permanent view over the readback buffer, so there is no conversion step at all."
+          }
+        }
+      }
+    },
+
+    "chaining": {
+      "contexts": "ONE MLContext for both graphs. navigator.ml.createContext({deviceType: 'gpu'}).",
+      "pattern": [
+        "1. Create one MLTensor {float16, [1,77,1024], readable: true}.",
+        "2. Bind it as the text graph's `out` AND as the image graph's `encoder_hidden_states`.",
+        "3. dispatch(text, {input_ids}, {out: embedding})",
+        "4. await readTensor(embedding) -- a completion fence, not a transfer; the value stays on device",
+        "5. dispatch(image, {sample, encoder_hidden_states: embedding, latent_raw}, outs)",
+        "6. await readTensor(out, hostView) -- 1 MB into a buffer you own, allocated once"
+      ],
+      "everyOutputMustBeBound": "WebNN requires every output an entry's graph DECLARES to be bound at dispatch, including debug outputs the recording carried along. Allocate the ones you will not read as non-readable.",
+      "cachingTheEmbedding": "Re-running the same prompt skips steps 3 and 4: the embedding MLTensor still holds it. That is the difference between an entry's newPromptMs and its cachedMs.",
+      "twoContexts": "If the graphs are on different MLContexts, the embedding must be read back and written across: about 0.1 ms, and on the Neural Engine 2.7x the float16 error."
+    },
+
+    "scheduler": {
+      "name": "EulerDiscreteScheduler",
+      "timestep": 999,
+      "sigma_0": 14.614646911621094,
+      "sigma_0_fp16": -14.6171875,
+      "scale_model_input_divisor": 14.648819213552878,
+      "steps": 1,
+      "guidanceScale": 0,
+      "predictionType": "epsilon",
+      "finalSigmasType": "zero",
+      "identity": "latent_final = latent_raw - sigma_0 * unet_out; at one step with s_churn = 0, pred_original_sample and prev_sample coincide",
+      "inGraph": true
+    }
+  },
+
+  "tokenizer": {
+    "algorithm": "CLIP BPE, lower-cased, with '!' as the pad token",
+    "files": ["tokenizer/vocab.json", "tokenizer/merges.txt", "tokenizer/tokenizer_meta.json"],
+    "module": "tokenizer.js",
+    "class": "ClipTokenizer",
+    "maxLength": 77,
+    "produces": "text.input_ids",
+    "parity": "12/12 against HuggingFace CLIPTokenizer, including the '!' added-token case: pad_token is '!', so a literal '!' is id 0 and never reaches BPE."
+  },
+
+  "constants": {
+    "scope": "per-entry",
+    "note": "Each entry's manifest.json names its own blobs today, because the entries here were recorded independently and their constants differ (an entry that folds a LayerNorm into the next linear has different bytes from one that does not). The v2 direction is one canonical blob set per family that every entry indexes at its own offsets; until two entries actually share bytes, saying so would be a fiction."
+  },
+
+  "verification": {
+    "case": {
+      "prompt": "a photo of a cat wearing sunglasses, studio lighting",
+      "seed": 42,
+      "seedGenerator": "torch.Generator(device='mps').manual_seed(42), diffusers randn_tensor for a [1,4,64,64] float16 latent",
+      "resolution": 512,
+      "steps": 1,
+      "guidanceScale": 0,
+      "timestep": 999
+    },
+    "note": "Every entry of this family is checked against this case. The BARS live with the entry, in its verification/expected.json: an entry whose variant approximates the model cannot meet an exact entry's bars, and pretending otherwise would make the family contract a lie.",
+    "runner": "scripts/verify.mjs --entry <family>/<entry-id>"
+  },
+
+  "notes": "Two graphs rather than one because the text encoder is re-run only when the prompt changes. Everything in this file is true of every entry of the family; if a change would falsify any of it, that is a new family, not a new entry."
+}

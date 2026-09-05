@@ -1,14 +1,20 @@
 // Verify a catalog entry end to end, on real hardware, in a real browser.
 //
-//   node scripts/verify.mjs [--weights <dir>] [--runs 20] [--warmup 5]
+//   node scripts/verify.mjs [--entry <family>/<entry-id>]
+//                           [--weights <dir>] [--runs 20] [--warmup 5]
 //                           [--chunk-mb 0] [--port 8903] [--keep-open]
 //                           [--out bench/verify-<stamp>.json]
 //
 // What it does: serves this repo plus a weights directory over localhost,
 // launches Chrome with a PERSISTENT profile and the WebNN + Core ML flags,
-// replays both recipes through runtime/loader.js, runs the reference prompt,
-// checks the sha256 of the RGBA readback and the PSNR against both reference
-// images, and times `runs` generations.
+// builds every graph the entry declares through runtime/loader.js, runs the
+// family's reference prompt, checks the sha256 of the RGBA readback and the
+// PSNR against both reference images, and times `runs` generations.
+//
+// --entry may be omitted when the catalog holds exactly one entry. It is NOT
+// chosen by matching this machine: verify runs the entry you name, and reports
+// what happened. If that entry was tuned for another configuration, the numbers
+// will say so.
 //
 // --weights defaults to the workbench's IR directory, so this runs today,
 // before the blobs are published anywhere.
@@ -47,6 +53,7 @@ const CHROME_ARGS = [
 // ---------------------------------------------------------------------------
 function parseArgs(argv) {
   const o = {
+    entry: null,
     weights: DEFAULT_WEIGHTS,
     runs: 20,
     warmup: 5,
@@ -61,7 +68,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
-    if (a === "--weights") o.weights = path.resolve(next());
+    if (a === "--entry") o.entry = next();
+    else if (a === "--weights") o.weights = path.resolve(next());
     else if (a === "--runs") o.runs = parseInt(next(), 10);
     else if (a === "--warmup") o.warmup = parseInt(next(), 10);
     else if (a === "--chunk-mb") o.chunkMB = parseInt(next(), 10);
@@ -152,7 +160,33 @@ function table(rows) {
 // ---------------------------------------------------------------------------
 const args = parseArgs(process.argv.slice(2));
 
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "models/sd-turbo-512-1step/manifest.json"), "utf8"));
+// ---------------------------------------------------------------------------
+// Resolve the entry. The catalog index is a lookup table here, nothing more:
+// an --entry that names a row is used verbatim, and a missing --entry is an
+// error unless the catalog holds exactly one entry.
+const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, "catalog.json"), "utf8"));
+const allRows = Object.entries(catalog.families).flatMap(([fam, f]) =>
+  f.entries.map((e) => ({ ...e, familyId: fam, familyFile: f.family })));
+if (!allRows.length) { console.error("catalog.json indexes no entries"); process.exit(2); }
+let ref = args.entry;
+if (!ref) {
+  if (allRows.length > 1) {
+    console.error(`--entry is required; the catalog holds ${allRows.length} entries:`);
+    for (const r of allRows) console.error(`  ${r.familyId}/${r.id}`);
+    process.exit(2);
+  }
+  ref = `${allRows[0].familyId}/${allRows[0].id}`;
+}
+const row = allRows.find((r) => `${r.familyId}/${r.id}` === ref);
+if (!row) {
+  console.error(`no entry "${ref}" in catalog.json. Known:`);
+  for (const r of allRows) console.error(`  ${r.familyId}/${r.id}`);
+  process.exit(2);
+}
+const entry = JSON.parse(fs.readFileSync(path.join(ROOT, row.entry), "utf8"));
+const entryDir = row.path;
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, entryDir, entry.constants), "utf8"));
+
 for (const [key, c] of Object.entries(manifest.constants)) {
   const p = path.join(args.weights, c.file);
   if (!fs.existsSync(p)) {
@@ -171,6 +205,7 @@ const uptime = (() => {
 
 console.log(`webnn-catalog verify`);
 console.log(`  repo      ${ROOT}`);
+console.log(`  entry     ${ref}  (variant ${entry.variant}, built for ${entry.target.backend.name} / ${entry.target.host.chip ?? entry.target.gpu.vendor} / ${entry.target.os.name} ${entry.target.os.major} / ${entry.target.browser.name} ${entry.target.browser.major})`);
 console.log(`  weights   ${args.weights}`);
 console.log(`  runs      ${args.runs} (warmup ${args.warmup})`);
 console.log(`  constants ${args.chunkMB ? `chunked, ${args.chunkMB} MiB ranges` : "whole file"}`);
@@ -211,7 +246,7 @@ try {
   console.log(`[verify] building graphs (about 45 s of Core ML compilation; there is no cache)\n`);
   result = await page.evaluate(
     (o) => window.__verifyRun(o),
-    { runs: args.runs, warmup: args.warmup, weightsBase: "/weights", chunkMB: args.chunkMB, prompt: args.prompt },
+    { runs: args.runs, warmup: args.warmup, weightsBase: "/weights", chunkMB: args.chunkMB, prompt: args.prompt, entryPath: `/${entryDir}` },
   );
 } catch (e) {
   failure = e;
@@ -224,7 +259,7 @@ if (result) {
   const png = c.pngDataUrl;
   delete c.pngDataUrl;
 
-  console.log(`\n=== ${manifest.id} ===\n`);
+  console.log(`\n=== ${ref} ===\n`);
   console.log(`backend    ${result.fingerprint.backend} (preferredInputLayout=${result.fingerprint.preferredInputLayout}, rank max ${result.fingerprint.maxRank})`);
   console.log(`chrome     ${chromeVersion}`);
   console.log(`uptime     ${uptime}\n`);
@@ -292,13 +327,13 @@ if (result) {
   console.log(`\n${failed ? "VERIFY FAILED" : "VERIFY OK"}`);
 
   if (c.expectedSha256 === "PENDING")
-    console.log(`\nRecord this in models/sd-turbo-512-1step/verification/expected.json:\n  "sha256": "${c.outputSha256}"`);
+    console.log(`\nRecord this in ${entryDir}/verification/expected.json:\n  "sha256": "${c.outputSha256}"`);
 
   const outPath = args.out ?? path.join(ROOT, "bench", `verify-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify({
     generatedAt: new Date().toISOString(),
-    chrome: chromeVersion, uptime, args: { ...args }, manifestId: manifest.id, result, consoleLines,
+    chrome: chromeVersion, uptime, args: { ...args }, entry: ref, entryPath: entryDir, result, consoleLines,
   }, null, 2));
   console.log(`\nwrote ${outPath}`);
   if (png) {

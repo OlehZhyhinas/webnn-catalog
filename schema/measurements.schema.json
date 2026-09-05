@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/measurements.schema.json",
+  "title": "Measurements for one entry",
+  "description": "Append-only rows of timings. One entry can carry rows from several machines: a different host is a different ROW, not a different entry, as long as the graphs are byte-identical. Every row carries its own host fingerprint, because a number without a machine, an OS, a browser build and a protocol is not a measurement.",
+
+  "type": "object",
+  "required": ["entry", "family", "rows"],
+  "additionalProperties": false,
+  "properties": {
+    "entry": { "type": "string" },
+    "family": { "type": "string" },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/row" }
+    },
+    "baselines": {
+      "type": "object",
+      "description": "Other runtimes on the same model and machine, for context. Not a claim about this entry. A string value is a note about the comparison rather than a runtime.",
+      "additionalProperties": { "type": ["object", "string"] }
+    },
+    "floor": {
+      "type": "object",
+      "description": "What this entry cannot go below on this backend, and why. Reasoning, with the numbers that support it.",
+      "additionalProperties": true
+    },
+    "history": {
+      "type": "array",
+      "description": "Earlier tuning passes, for the shape of the curve.",
+      "items": { "type": "object" }
+    },
+    "sources": { "type": "array", "items": { "type": "string" } },
+    "caveat": { "type": "string" }
+  },
+
+  "$defs": {
+    "row": {
+      "type": "object",
+      "required": ["host", "date", "protocol"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "host": {
+          "type": "object",
+          "description": "The subset of a target that identifies the machine this row was taken on. Copied from a target.json, never invented.",
+          "required": ["backend", "browser", "os"],
+          "additionalProperties": false,
+          "properties": {
+            "backend": { "type": "string", "description": "Backend name, e.g. \"coreml\"." },
+            "deviceType": { "type": "string" },
+            "browser": { "type": "string", "description": "e.g. \"Chrome 152.0.7977.77\"." },
+            "os": { "type": "string", "description": "e.g. \"macOS 26.6.2 (25G83)\"." },
+            "chip": { "type": ["string", "null"] },
+            "gpu": { "type": ["string", "null"], "description": "vendor/architecture from the WebGPU adapter." },
+            "gpuCores": { "type": ["integer", "null"] },
+            "memoryGB": { "type": ["number", "null"] },
+            "f16TflopsMeasured": { "type": ["number", "null"] },
+            "sameAsTarget": { "type": "boolean", "description": "True when this row was taken on the machine the entry's `target` describes." }
+          }
+        },
+        "date": { "type": "string" },
+        "protocol": {
+          "enum": ["e2e", "interleaved-ab", "isolated-block", "replay"],
+          "description": "e2e: a whole generation, timed. interleaved-ab: A,B,A,B in blocks, which is the only protocol a DELTA may come from. isolated-block: one subgraph in isolation. replay: the catalog's own loader reproducing the entry."
+        },
+        "runs": { "type": ["integer", "null"], "minimum": 1 },
+        "warmup": { "type": ["integer", "null"], "minimum": 0 },
+        "statistic": { "type": "string", "description": "e.g. \"median of the timed runs\"." },
+        "newPromptMs": { "type": ["number", "null"], "minimum": 0 },
+        "cachedMs": { "type": ["number", "null"], "minimum": 0 },
+        "stages": {
+          "type": "object",
+          "description": "Per-stage milliseconds. Keys are the entry's own stage names.",
+          "additionalProperties": { "type": ["number", "null"] }
+        },
+        "buildOnceMs": {
+          "type": "object",
+          "description": "Cost of building the graphs once, per graph. Chromium has no compiled-graph cache, so this is paid per page load, not per machine.",
+          "additionalProperties": { "type": ["number", "null"] }
+        },
+        "loadAvg": { "type": ["number", "array", "null"], "items": { "type": "number" }, "description": "Machine load during the run. Interleaved deltas are immune to it; absolutes are not." },
+        "outputSha256": { "type": ["string", "null"], "pattern": "^([0-9a-f]{64})?$" },
+        "quality": { "type": "object", "additionalProperties": true },
+        "notes": { "type": "string" },
+        "source": { "type": "string", "description": "The file this row was read out of." }
+      }
+    }
+  }
+}

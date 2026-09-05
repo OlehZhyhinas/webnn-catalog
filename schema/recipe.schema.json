@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/recipe.schema.json",
+  "title": "WebNN recipe (graph IR), version 1",
+  "description": "The exact MLGraphBuilder call sequence that built one tuned graph, recorded op by op with the shapes the backend itself inferred. This schema is the interface between the catalog and any consumer: a product replays `ops` into its own MLGraphBuilder. runtime/loader.js is one implementation of that replay, not the contract.",
+
+  "x-callForms": {
+    "$comment": "The recorder flattens a builder call's positional NON-operand arguments into the same `options` bag as the real options dictionary, so `ops[].options` alone cannot tell softmax(x, 2) from softmax(x, {axis: 2}). This is the recorder's table, inverted: for each method, which `options` keys are really positional and in what order. A replayer must apply it, or it builds a graph that computes the wrong thing.",
+    "positional": {
+      "reshape": ["newShape"],
+      "expand": ["newShape"],
+      "softmax": ["axis"],
+      "cast": ["type"],
+      "concat": ["axis"],
+      "split": ["splits"],
+      "tile": ["repetitions"],
+      "pad": ["beginningPadding", "endingPadding"],
+      "argMin": ["axis"],
+      "argMax": ["axis"]
+    },
+    "variadic": ["concat"],
+    "multiOutput": ["split"],
+    "operandValuedOptions": "An op's `inputs` array is [...positional operands, ...operand-valued options], in that order, because an options bag is always the last argument. conv2d's bias therefore appears twice: once as options.bias and once at the tail of inputs. Shear the operand-valued options off the tail by count to recover the positional operand list.",
+    "operandNamespace": "One namespace: graph inputs keep their own names, constants are k<N>, op results are v<N>."
+  },
+
+  "type": "object",
+  "required": ["version", "label", "inputs", "outputs", "constants", "ops"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1, "description": "Recipe schema version. A replayer must refuse anything it does not know." },
+    "label": { "type": "string", "minLength": 1, "description": "Human label, conventionally <family>/<graph>." },
+    "recordedLabel": { "type": "string", "description": "The label the producing harness used for this dump." },
+    "layout": {
+      "enum": ["nhwc", "nchw"],
+      "description": "The layout the spatial ops in this graph are spelled in. Nominal and meaningless for graphs with no spatial ops."
+    },
+    "constantsBlob": { "type": "string", "description": "File name of the blob the constants' byteOffsets index. The authoritative hash and size live in the entry's manifest.json, not here." },
+    "provenance": { "type": "object", "description": "Free-form record of where the graph came from and what was folded into it. Prose belongs in the entry's provenance.md; this is the machine-readable echo." },
+    "emitterConfig": { "type": "object", "description": "Free-form record of the emitter's configuration. Informational: the ops are the truth." },
+    "note": { "type": "string" },
+
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Graph inputs, in the order the recorder saw builder.input() calls. Every one must be bound at dispatch.",
+      "items": {
+        "type": "object",
+        "required": ["name", "dataType", "shape"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "$ref": "#/$defs/operandName" },
+          "dataType": { "$ref": "#/$defs/dataType" },
+          "shape": { "$ref": "#/$defs/shape" }
+        }
+      }
+    },
+
+    "outputs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Graph outputs, as builder.build() was called with them. WebNN requires EVERY declared output to be bound at dispatch, debug outputs included.",
+      "items": {
+        "type": "object",
+        "required": ["name", "operand", "dataType", "shape"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "$ref": "#/$defs/operandName", "description": "The key in build()'s dictionary, i.e. what dispatch() binds." },
+          "operand": { "$ref": "#/$defs/operandName", "description": "Which operand in the namespace this output names." },
+          "dataType": { "$ref": "#/$defs/dataType" },
+          "shape": { "$ref": "#/$defs/shape" },
+          "role": { "type": "string" }
+        }
+      }
+    },
+
+    "constants": {
+      "type": "object",
+      "description": "Every builder.constant(), keyed by operand name. byteOffset/byteLength index the companion blob; offsets are monotonically increasing so a chunked reader can release each range as it goes.",
+      "propertyNames": { "pattern": "^k[0-9]+$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["dataType", "shape", "byteOffset", "byteLength"],
+        "additionalProperties": false,
+        "properties": {
+          "dataType": { "$ref": "#/$defs/dataType" },
+          "shape": { "$ref": "#/$defs/shape" },
+          "byteOffset": { "type": "integer", "minimum": 0 },
+          "byteLength": { "type": "integer", "minimum": 1 },
+          "tag": { "type": ["string", "null"], "description": "Where in the source model this constant came from. Never load-bearing." }
+        }
+      }
+    },
+
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The call sequence, in order. Replaying it in order is sufficient: an op's inputs are always already defined.",
+      "items": { "$ref": "#/$defs/op" }
+    }
+  },
+
+  "$defs": {
+    "dataType": {
+      "enum": ["float32", "float16", "int32", "uint32", "int64", "uint64", "int8", "uint8"]
+    },
+    "shape": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 },
+      "description": "The shape the BACKEND inferred, as the recorder observed it. Not a re-derivation."
+    },
+    "operandName": { "type": "string", "minLength": 1 },
+    "op": {
+      "type": "object",
+      "required": ["id", "type", "inputs", "output", "outputShape", "outputDataType"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 0, "description": "Position in the call sequence, 0-based and dense." },
+        "type": { "type": "string", "minLength": 1, "description": "The MLGraphBuilder method name, verbatim." },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/operandName" },
+          "description": "[...positional operands, ...operand-valued options]. See x-callForms.operandValuedOptions."
+        },
+        "output": { "$ref": "#/$defs/operandName", "description": "Name given to the (first) returned operand. An aliased operand keeps its first name." },
+        "outputShape": { "$ref": "#/$defs/shape" },
+        "outputDataType": { "$ref": "#/$defs/dataType" },
+        "options": {
+          "type": "object",
+          "description": "The options dictionary AND the flattened positional non-operand arguments. Values that name an operand are operand-valued options; see x-callForms."
+        },
+        "tag": { "type": ["string", "null"] },
+        "outputs": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/operandName" },
+          "description": "Multi-output ops only (split). Every name here is defined by this op; outputs[0] equals `output`."
+        },
+        "outputShapes": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/shape" },
+          "description": "Multi-output ops only. Parallel to `outputs`; outputShapes[0] equals `outputShape`."
+        }
+      },
+      "if": { "properties": { "type": { "const": "split" } }, "required": ["type"] },
+      "then": { "required": ["outputs", "outputShapes"] }
+    }
+  }
+}

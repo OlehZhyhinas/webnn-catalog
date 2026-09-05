@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/target.schema.json",
+  "title": "Target: one machine's configuration, as observed",
+  "description": "What scripts/probe-target.mjs writes for the machine it runs on, and what an entry's `target` block is a copy of. Every field carries `observable`, which says whether a product could read that field itself in a browser at runtime, or whether it took a shell on the host to see it. The catalog never matches on these fields; it only records them.",
+
+  "type": "object",
+  "required": ["backend", "browser", "os", "gpu", "host"],
+  "additionalProperties": false,
+  "properties": {
+    "generatedAt": { "type": "string", "description": "ISO 8601." },
+    "tool": { "type": "string", "description": "What produced this file, e.g. \"webnn-catalog scripts/probe-target.mjs\"." },
+
+    "backend": {
+      "type": "object",
+      "description": "Which WebNN backend the browser actually gave us, inferred from opSupportLimits(). This is the single most load-bearing field in the file: on macOS an off-the-record Chrome profile silently lands on TFLite/XNNPACK instead of Core ML.",
+      "required": ["name", "deviceType", "fingerprint", "observable"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": ["coreml", "dml", "tflite", "unknown"],
+          "description": "coreml: preferredInputLayout nchw and input rank max 5. tflite: nhwc. dml: nchw with rank max 8 (Windows). unknown: WebNN present but the fingerprint matches nothing known."
+        },
+        "deviceType": { "enum": ["gpu", "npu", "cpu"], "description": "The MLContextOptions.deviceType this fingerprint was taken with." },
+        "fingerprint": {
+          "type": "object",
+          "required": ["preferredInputLayout", "inputRankMax", "inputDataTypes"],
+          "additionalProperties": false,
+          "properties": {
+            "preferredInputLayout": { "type": ["string", "null"] },
+            "inputRankMax": { "type": ["integer", "null"] },
+            "inputDataTypes": { "type": ["array", "null"], "items": { "type": "string" } }
+          },
+          "description": "The raw fields the inference was made from. Recorded so a future consumer can re-derive `name` differently."
+        },
+        "byDeviceType": {
+          "type": "object",
+          "description": "The same fingerprint taken for every deviceType the browser would create a context for. Informational.",
+          "additionalProperties": { "type": "object" }
+        },
+        "observable": { "const": "browser" }
+      }
+    },
+
+    "browser": {
+      "type": "object",
+      "required": ["name", "version", "major", "observable"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "navigator.userAgentData brand, e.g. \"Chrome\"." },
+        "version": { "type": "string", "description": "Full version from userAgentData high-entropy fullVersionList, e.g. \"152.0.7977.77\". The UA string alone reports 152.0.0.0." },
+        "major": { "type": "integer", "minimum": 1 },
+        "engine": { "type": "string", "description": "e.g. \"Chromium 152.0.7977.77\"." },
+        "userAgent": { "type": "string" },
+        "flags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Command-line flags the browser was launched with for this probe. Not observable from inside the page; recorded by the harness because WebNN and the Core ML backend are flag-gated today."
+        },
+        "profile": { "type": "string", "description": "\"persistent\" or \"off-the-record\". Core ML is gated on a non-incognito profile." },
+        "observable": { "const": "browser" }
+      }
+    },
+
+    "os": {
+      "type": "object",
+      "required": ["name", "version", "major", "observable"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "e.g. \"macOS\", \"Windows\", \"Linux\"." },
+        "version": { "type": "string" },
+        "major": { "type": "integer", "minimum": 0 },
+        "build": { "type": "string", "description": "Host-observed build id, e.g. macOS \"25G83\". Never available in the browser." },
+        "browserReported": {
+          "type": "object",
+          "description": "What userAgentData.getHighEntropyValues() said, before the host correction. On macOS the browser reports a capped platformVersion, which is why this field and the host reading differ.",
+          "additionalProperties": true
+        },
+        "observable": { "const": "browser(partial)/host" }
+      }
+    },
+
+    "gpu": {
+      "type": "object",
+      "required": ["vendor", "architecture", "device", "description", "observable"],
+      "additionalProperties": false,
+      "properties": {
+        "vendor": { "type": "string", "description": "WebGPU adapter.info.vendor, e.g. \"apple\"." },
+        "architecture": { "type": "string", "description": "adapter.info.architecture, e.g. \"metal-3\"." },
+        "device": { "type": "string" },
+        "description": { "type": "string" },
+        "subgroupMinSize": { "type": ["integer", "null"] },
+        "subgroupMaxSize": { "type": ["integer", "null"] },
+        "features": { "type": "array", "items": { "type": "string" }, "description": "Sorted adapter.features." },
+        "limits": { "type": "object", "description": "A summary of adapter.limits, not the whole set.", "additionalProperties": { "type": ["integer", "number"] } },
+        "observable": { "const": "browser" }
+      }
+    },
+
+    "host": {
+      "type": "object",
+      "description": "Read with a shell on the machine, never from a page. An entry records these so a human can tell two configurations apart; a product cannot match on them.",
+      "required": ["platform", "observable"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": { "enum": ["darwin", "win32", "linux"] },
+        "chip": { "type": ["string", "null"], "description": "macOS: sysctl machdep.cpu.brand_string." },
+        "gpuCores": { "type": ["integer", "null"], "description": "macOS: system_profiler SPDisplaysDataType sppci_cores." },
+        "memoryGB": { "type": ["number", "null"], "description": "macOS: sysctl hw.memsize." },
+        "cpuThreads": { "type": ["integer", "null"] },
+        "loadAvg": { "type": ["array", "null"], "items": { "type": "number" }, "description": "1/5/15-minute load at probe time. A busy machine is a slow machine; measurements taken next to this probe inherit it." },
+        "unavailable": { "type": "array", "items": { "type": "string" }, "description": "Fields this platform's probe does not implement yet." },
+        "observable": { "const": "host" }
+      }
+    },
+
+    "perfClass": {
+      "type": "object",
+      "description": "Optional. A crude throughput class for the machine, measured rather than assumed, so two entries on nominally different hardware can be compared. It is not a ranking and the catalog does nothing with it.",
+      "required": ["observable"],
+      "additionalProperties": false,
+      "properties": {
+        "f16TflopsMeasured": { "type": ["number", "null"], "minimum": 0 },
+        "method": { "type": "string", "description": "How it was measured, exactly. A number without this is not a measurement." },
+        "shape": { "type": "array", "items": { "type": "integer" } },
+        "iterations": { "type": ["integer", "null"] },
+        "elapsedMs": { "type": ["number", "null"] },
+        "checked": { "type": ["boolean", "null"], "description": "Whether the kernel's output was checked against the analytic value before the number was believed." },
+        "error": { "type": ["string", "null"] },
+        "observable": { "const": "browser(probe)" }
+      }
+    }
+  }
+}

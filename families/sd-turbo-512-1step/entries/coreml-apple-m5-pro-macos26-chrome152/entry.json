@@ -1,0 +1,304 @@
+{
+  "id": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "sd-turbo-512-1step",
+  "variant": "exact",
+  "created": "2026-09-05",
+  "producedBy": {
+    "workbench": "webnn-workbench@f426834",
+    "date": "2026-09-05",
+    "recorder": "bench/webnn/ir-record.js, a Proxy around MLGraphBuilder that records the exact call sequence with the shapes the backend inferred"
+  },
+  "title": "SD-Turbo, 512x512, one step: WebNN / Core ML on Apple M5 Pro",
+  "summary": "Two graphs replayed into one MLContext: a 603-op text encoder and a 1441-op UNet + Euler + TAESD + RGBA pack. Built and tuned over four measurement passes for this exact configuration.",
+  "target": {
+    "generatedAt": "2026-09-05T17:59:40.853Z",
+    "tool": "webnn-catalog scripts/probe-target.mjs",
+    "backend": {
+      "name": "coreml",
+      "deviceType": "gpu",
+      "fingerprint": {
+        "preferredInputLayout": "nchw",
+        "inputRankMax": 5,
+        "inputDataTypes": [
+          "float32",
+          "float16",
+          "int32"
+        ]
+      },
+      "byDeviceType": {
+        "gpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "npu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        },
+        "cpu": {
+          "ok": true,
+          "name": "coreml",
+          "preferredInputLayout": "nchw",
+          "inputRankMax": 5,
+          "inputDataTypes": [
+            "float32",
+            "float16",
+            "int32"
+          ]
+        }
+      },
+      "observable": "browser"
+    },
+    "browser": {
+      "name": "Chrome",
+      "version": "152.0.7977.77",
+      "major": 152,
+      "engine": "Chromium 152.0.7977.77",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "flags": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=WebMachineLearningNeuralNetwork,WebMachineLearningNeuralNetworkExperimentalFeatures,WebNNCoreML,WebGPUExperimentalFeatures",
+        "--enable-dawn-features=allow_unsafe_apis"
+      ],
+      "profile": "persistent",
+      "observable": "browser"
+    },
+    "os": {
+      "name": "macOS",
+      "version": "26.6.2",
+      "major": 26,
+      "build": "25G83",
+      "browserReported": {
+        "platform": "macOS",
+        "platformVersion": "26.6.2",
+        "architecture": "arm",
+        "bitness": "64",
+        "note": "What a page can see on its own. `version` and `build` above are the host reading, which is authoritative where the two disagree: userAgentData's platformVersion is capped or coarsened on some platforms and browser builds."
+      },
+      "observable": "browser(partial)/host"
+    },
+    "gpu": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": "",
+      "subgroupMinSize": 32,
+      "subgroupMaxSize": 32,
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxBindGroups": 4,
+        "maxStorageBuffersPerShaderStage": 10
+      },
+      "observable": "browser"
+    },
+    "host": {
+      "platform": "darwin",
+      "chip": "Apple M5 Pro",
+      "gpuCores": 20,
+      "memoryGB": 64,
+      "cpuThreads": 18,
+      "loadAvg": [
+        16.33,
+        17.19,
+        16.78
+      ],
+      "unavailable": [],
+      "observable": "host"
+    },
+    "perfClass": {
+      "f16TflopsMeasured": 5.63,
+      "method": "WGSL tiled f16 matmul 2048x2048x2048, 128x128 workgroup tile, 8x8 per invocation, f32 accumulate, 48 dispatches over ~200 ms. A LOWER BOUND on this machine's f16 throughput, not its peak.",
+      "shape": [
+        2048,
+        2048,
+        2048
+      ],
+      "iterations": 48,
+      "elapsedMs": 146.6,
+      "checked": true,
+      "error": null,
+      "observable": "browser(probe)"
+    }
+  },
+  "compat": {
+    "requires": {
+      "backend.name": "coreml"
+    },
+    "ops": [
+      "add",
+      "cast",
+      "clamp",
+      "concat",
+      "conv2d",
+      "gather",
+      "gelu",
+      "layerNormalization",
+      "matmul",
+      "mul",
+      "relu",
+      "resample2d",
+      "reshape",
+      "roundEven",
+      "sigmoid",
+      "softmax",
+      "split",
+      "tanh",
+      "transpose"
+    ],
+    "notes": "Facts, not policy. `requires` is what must hold for these graphs to build and compute correctly; `target` additionally records where they were tuned and timed, which is a weaker claim. Timings apply only to the hosts measurements.json names."
+  },
+  "graphs": {
+    "image": {
+      "recipe": "recipe.image.json",
+      "constants": "image",
+      "role": "UNet + one Euler step + TAESD decoder + RGBA pack, one dispatch from latent to pixels",
+      "layout": "nhwc",
+      "ops": 1441,
+      "opTypes": 18,
+      "constantCount": 655,
+      "inputs": [
+        {
+          "name": "sample",
+          "dataType": "float16",
+          "shape": [
+            1,
+            64,
+            64,
+            4
+          ]
+        },
+        {
+          "name": "encoder_hidden_states",
+          "dataType": "float16",
+          "shape": [
+            1,
+            77,
+            1024
+          ]
+        },
+        {
+          "name": "latent_raw",
+          "dataType": "float16",
+          "shape": [
+            1,
+            64,
+            64,
+            4
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "latent",
+          "dataType": "float16",
+          "shape": [
+            1,
+            64,
+            64,
+            4
+          ],
+          "role": "the post-Euler latent, a debug output this recording carried along. WebNN still requires it to be bound at dispatch; allocate it non-readable, 32 KB.",
+          "readable": false
+        },
+        {
+          "name": "out",
+          "dataType": "int32",
+          "shape": [
+            1,
+            512,
+            512
+          ],
+          "role": "RGBA-packed pixels: one int32 per pixel whose low bytes are R | G<<8 | B<<16 | 0xFF000000",
+          "readable": true
+        }
+      ]
+    },
+    "text": {
+      "recipe": "recipe.text.json",
+      "constants": "text",
+      "role": "OpenCLIP ViT-H/14 text encoder",
+      "layout": "nchw",
+      "ops": 603,
+      "opTypes": 9,
+      "constantCount": 281,
+      "inputs": [
+        {
+          "name": "input_ids",
+          "dataType": "int32",
+          "shape": [
+            1,
+            77
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "out",
+          "dataType": "float16",
+          "shape": [
+            1,
+            77,
+            1024
+          ],
+          "role": "encoder_hidden_states; bound as the SAME MLTensor the image graph reads, so it never crosses into JS",
+          "readable": true
+        }
+      ]
+    },
+    "chain": [
+      [
+        "text.out",
+        "image.encoder_hidden_states"
+      ]
+    ]
+  },
+  "constants": "manifest.json",
+  "verification": "verification/",
+  "measurements": "measurements.json",
+  "provenance": "provenance.md",
+  "tokenizerFromFamily": true
+}

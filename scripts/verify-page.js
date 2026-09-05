@@ -1,16 +1,22 @@
 // The page half of scripts/verify.mjs. Everything that touches WebNN happens
 // here; the Node driver only launches Chrome, serves files and prints a table.
+//
+// It is driven by an ENTRY: the graphs, their chaining and which outputs are
+// read back all come out of entry.json. The reference case, the bars and the
+// checks are the sd-turbo-512-1step family's, and this file says so rather than
+// pretending to be generic.
 
 import {
-  loadRecipe,
+  loadEntry,
+  createEntryTensors,
   constantSource,
   assertCoreMLFingerprint,
   opCoverage,
   checkOpSupport,
 } from "../runtime/loader.js";
-import ClipTokenizer from "../models/sd-turbo-512-1step/tokenizer.js";
 
-const MODEL = "../models/sd-turbo-512-1step";
+const KNOWN_FAMILY = "sd-turbo-512-1step";
+
 const logEl = document.getElementById("log");
 const lines = [];
 const log = (s) => {
@@ -74,36 +80,45 @@ function psnrRGB(a, bb) {
 }
 
 export async function run(opts = {}) {
-  const { runs = 20, warmup = 5, weightsBase = "/weights", chunkMB = 0, prompt = null } = opts;
-  const R = { opts: { runs, warmup, weightsBase, chunkMB }, errors: [], checks: {}, timings: {} };
+  const { runs = 20, warmup = 5, weightsBase = "/weights", chunkMB = 0, prompt = null, entryPath } = opts;
+  if (!entryPath) throw new Error("no entryPath: verify.mjs must name the entry to run");
+  const R = { opts: { runs, warmup, weightsBase, chunkMB, entryPath }, errors: [], checks: {}, timings: {} };
   const T = () => performance.now();
+
+  // ---- the entry ----------------------------------------------------------
+  const entry = await j(`${entryPath}/entry.json`);
+  R.entry = { id: entry.id, family: entry.family, variant: entry.variant };
+  if (entry.family !== KNOWN_FAMILY)
+    throw new Error(`this harness knows the ${KNOWN_FAMILY} family's reference case only; the entry is from ${entry.family}`);
+  const familyBase = `/families/${entry.family}`;
+  const { default: ClipTokenizer } = await import(`${familyBase}/tokenizer.js`);
+
+  const [manifest, expected, refIds] = await Promise.all([
+    j(`${entryPath}/${entry.constants}`),
+    j(`${entryPath}/verification/expected.json`),
+    j(`${entryPath}/verification/input_ids.json`),
+  ]);
+  const graphNames = Object.keys(entry.graphs).filter((k) => k !== "chain");
+  const recipes = Object.fromEntries(await Promise.all(
+    graphNames.map(async (g) => [g, await j(`${entryPath}/${entry.graphs[g].recipe}`)]),
+  ));
 
   // ---- context + fingerprint ---------------------------------------------
   if (!navigator.ml) throw new Error("navigator.ml is missing: WebNN is not enabled in this browser");
   let t = T();
-  const ctx = await navigator.ml.createContext({ deviceType: "gpu" });
+  const ctx = await navigator.ml.createContext({ deviceType: entry.target.backend.deviceType ?? "gpu" });
   R.timings.createContextMs = +(T() - t).toFixed(1);
   R.fingerprint = assertCoreMLFingerprint(ctx);
   log(`context: ${R.fingerprint.backend}, preferredInputLayout=${R.fingerprint.preferredInputLayout}, rank max ${R.fingerprint.maxRank}`);
+  log(`entry: ${entry.family}/${entry.id} (variant ${entry.variant}), built for ${entry.target.backend.name} on ${entry.target.host.chip ?? entry.target.gpu.vendor}`);
   ctx.lost?.then((i) => { R.contextLost = String(i?.message ?? i); log(`CONTEXT LOST: ${R.contextLost}`); }).catch(() => {});
 
-  // ---- recipes ------------------------------------------------------------
-  const [manifest, imageRecipe, textRecipe, expected, refIds] = await Promise.all([
-    j(`${MODEL}/manifest.json`),
-    j(`${MODEL}/recipe.image.json`),
-    j(`${MODEL}/recipe.text.json`),
-    j(`${MODEL}/verification/expected.json`),
-    j(`${MODEL}/verification/input_ids.json`),
-  ]);
-  R.opCoverage = { image: opCoverage(imageRecipe), text: opCoverage(textRecipe) };
-  const support = {
-    image: checkOpSupport(imageRecipe, ctx),
-    text: checkOpSupport(textRecipe, ctx),
-  };
-  R.checks.opSupport = support;
-  if (!support.image.ok || !support.text.ok)
-    throw new Error(`MLGraphBuilder is missing: ${[...support.image.missing, ...support.text.missing].join(", ")}`);
-  log(`op coverage: image ${Object.keys(R.opCoverage.image).length} types / ${imageRecipe.ops.length} ops, text ${Object.keys(R.opCoverage.text).length} types / ${textRecipe.ops.length} ops - all supported`);
+  // ---- op support ---------------------------------------------------------
+  R.opCoverage = Object.fromEntries(graphNames.map((g) => [g, opCoverage(recipes[g])]));
+  R.checks.opSupport = Object.fromEntries(graphNames.map((g) => [g, checkOpSupport(recipes[g], ctx)]));
+  const missing = graphNames.flatMap((g) => R.checks.opSupport[g].missing);
+  if (missing.length) throw new Error(`MLGraphBuilder is missing: ${[...new Set(missing)].join(", ")}`);
+  log(graphNames.map((g) => `${g} ${Object.keys(R.opCoverage[g]).length} types / ${recipes[g].ops.length} ops`).join(", ") + " - all supported");
 
   // ---- constant sources ---------------------------------------------------
   // With --chunk-mb the blob is fetched in ranges and each one is released
@@ -117,30 +132,28 @@ export async function run(opts = {}) {
     for (let o = 0; o < bytes; o += size) out.push({ byteOffset: o, byteLength: Math.min(size, bytes - o) });
     return out;
   };
-  const src = (key) => {
-    const e = { ...manifest.constants[key], chunks: mkChunks(manifest.constants[key].bytes) };
-    return constantSource(e, { baseUrl: weightsBase });
-  };
+  const sources = Object.fromEntries(Object.entries(manifest.constants).map(([key, c]) =>
+    [key, constantSource({ ...c, chunks: mkChunks(c.bytes) }, { baseUrl: weightsBase })]));
 
-  // ---- build both graphs --------------------------------------------------
-  // Image first: it is the 1650 MiB one, and building it before the text
-  // encoder's 649 MiB keeps peak resident bytes lower.
+  // ---- build every graph the entry declares -------------------------------
+  // loadEntry builds the largest constants first, which keeps peak resident
+  // bytes lower than building the small graph first would.
   t = T();
-  const image = await loadRecipe(imageRecipe, src("image"), ctx, {
-    onProgress: (p) => { if (p.phase === "constants") log(`  image constants ${(p.bytesRead / 1e6).toFixed(0)}/${(p.totalBytes / 1e6).toFixed(0)} MB, ${p.built}/${p.total}`); },
+  const rig = await loadEntry(entry, sources, ctx, {
+    baseUrl: entryPath,
+    recipes,
+    onProgress: (p) => {
+      if (p.phase === "constants")
+        log(`  ${p.graph} constants ${(p.bytesRead / 1e6).toFixed(0)}/${(p.totalBytes / 1e6).toFixed(0)} MB, ${p.built}/${p.total}`);
+    },
   });
-  R.timings.imageLoadMs = +(T() - t).toFixed(1);
-  R.imageStats = image.stats;
-  log(`image graph built: ${JSON.stringify(image.stats)}`);
-
-  t = T();
-  const text = await loadRecipe(textRecipe, src("text"), ctx);
-  R.timings.textLoadMs = +(T() - t).toFixed(1);
-  R.textStats = text.stats;
-  log(`text graph built: ${JSON.stringify(text.stats)}`);
+  R.timings.loadEntryMs = +(T() - t).toFixed(1);
+  R.imageStats = rig.graphs.image.stats;
+  R.textStats = rig.graphs.text.stats;
+  for (const g of graphNames) log(`${g} graph built: ${JSON.stringify(rig.graphs[g].stats)}`);
 
   // ---- tokenizer ----------------------------------------------------------
-  const tok = await ClipTokenizer.load(`${MODEL}/tokenizer/`);
+  const tok = await ClipTokenizer.load(`${familyBase}/tokenizer/`);
   const usePrompt = prompt ?? refIds.prompt;
   const enc = tok.encode(usePrompt, 77);
   const idsMatch = usePrompt === refIds.prompt && refIds.ids.every((v, i) => enc.ids[i] === v);
@@ -149,38 +162,31 @@ export async function run(opts = {}) {
   log(`tokenizer: ${enc.nTokens} tokens, matches reference ids: ${idsMatch}`);
 
   // ---- tensors ------------------------------------------------------------
-  const S = 77, C = 1024;
-  const inputIds = await ctx.createTensor({ dataType: "int32", shape: [1, S], writable: true });
-  ctx.writeTensor(inputIds, enc.ids);
-
   // One tensor is the text graph's `out` AND the image graph's
-  // `encoder_hidden_states`: the embedding never crosses into JS.
-  const embedding = await ctx.createTensor({ dataType: "float16", shape: [1, S, C], readable: true });
+  // `encoder_hidden_states`, because entry.graphs.chain says so: the embedding
+  // never crosses into JS. Every declared output is allocated and bound,
+  // including the debug `latent`, which entry.json marks non-readable.
+  const tensors = await createEntryTensors(ctx, rig);
+  const inputIds = tensors.get("text", "input_ids");
+  ctx.writeTensor(inputIds, enc.ids);
+  const embedding = tensors.get("text", "out");
 
   const [rawBuf, scaledBuf, refEmbBuf] = await Promise.all([
-    b(`${MODEL}/verification/latent_raw.f16.bin`),
-    b(`${MODEL}/verification/latent_scaled.f16.bin`),
-    b(`${MODEL}/verification/encoder_hidden_states.f16.bin`),
+    b(`${entryPath}/verification/latent_raw.f16.bin`),
+    b(`${entryPath}/verification/latent_scaled.f16.bin`),
+    b(`${entryPath}/verification/encoder_hidden_states.f16.bin`),
   ]);
-  const sample = await ctx.createTensor({ dataType: "float16", shape: [1, 64, 64, 4], writable: true });
-  const latentRaw = await ctx.createTensor({ dataType: "float16", shape: [1, 64, 64, 4], writable: true });
-  ctx.writeTensor(sample, nchwToNhwc16(scaledBuf, 1, 4, 64, 64));
-  ctx.writeTensor(latentRaw, nchwToNhwc16(rawBuf, 1, 4, 64, 64));
-
-  // Every declared graph output must be bound, `latent` included: the recipe
-  // was recorded with the debug latent output on. Only `out` is readable.
-  const outs = {};
-  for (const [name, spec] of Object.entries(image.outputs))
-    outs[name] = await ctx.createTensor({ dataType: spec.dataType, shape: spec.shape, readable: name === "out" });
-  log(`image outputs bound: ${Object.entries(image.outputs).map(([n, s]) => `${n}:${s.dataType}[${s.shape}]`).join(", ")}`);
+  ctx.writeTensor(tensors.get("image", "sample"), nchwToNhwc16(scaledBuf, 1, 4, 64, 64));
+  ctx.writeTensor(tensors.get("image", "latent_raw"), nchwToNhwc16(rawBuf, 1, 4, 64, 64));
+  log(`image outputs bound: ${Object.entries(rig.graphs.image.outputs).map(([n, s]) => `${n}:${s.dataType}[${s.shape}]`).join(", ")}`);
 
   const hostBuf = new ArrayBuffer(512 * 512 * 4);
   const hostView = new Uint8Array(hostBuf);
 
-  const dispatchText = () => ctx.dispatch(text.graph, { input_ids: inputIds }, { out: embedding });
-  const dispatchImage = () => ctx.dispatch(image.graph, { sample, encoder_hidden_states: embedding, latent_raw: latentRaw }, outs);
+  const dispatchText = () => ctx.dispatch(rig.graphs.text.graph, tensors.inputsFor("text"), tensors.outputsFor("text"));
+  const dispatchImage = () => ctx.dispatch(rig.graphs.image.graph, tensors.inputsFor("image"), tensors.outputsFor("image"));
   const fenceText = () => ctx.readTensor(embedding); // completion fence only
-  const readImage = () => ctx.readTensor(outs.out, hostView);
+  const readImage = () => ctx.readTensor(tensors.get("image", "out"), hostView);
 
   // ---- one correct run, checked -------------------------------------------
   t = T();
@@ -232,8 +238,8 @@ export async function run(opts = {}) {
     const cv = document.getElementById("out");
     cv.getContext("2d").putImageData(img, 0, 0);
     const [exp, ref] = await Promise.all([
-      pngRGBA(`${MODEL}/verification/expected_image.png`),
-      pngRGBA(`${MODEL}/verification/reference_image.png`),
+      pngRGBA(`${entryPath}/verification/expected_image.png`),
+      pngRGBA(`${entryPath}/verification/reference_image.png`),
     ]);
     R.checks.vsExpectedImage = psnrRGB(img.data, exp.data);
     R.checks.vsReferenceImage = psnrRGB(img.data, ref.data);

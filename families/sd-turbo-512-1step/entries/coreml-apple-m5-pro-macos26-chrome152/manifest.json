@@ -1,0 +1,34 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "sd-turbo-512-1step",
+  "constants": {
+    "image": {
+      "file": "image-pass4.bin",
+      "bytes": 1730075200,
+      "usedBytes": 1730075196,
+      "sha256": "329d16b641923069ed42d0d1802d7f4e78cc9bacd2019c24ecbaba3263f0c2da",
+      "url": null,
+      "chunks": null,
+      "note": "The trailing 4 bytes are alignment padding; the recipe indexes 1730075196."
+    },
+    "text": {
+      "file": "textenc-best.bin",
+      "bytes": 680787544,
+      "sha256": "8b8f4a909233f183389bd5fc9f9537c46f699d7c2fd91ba809ba07d605713e8a",
+      "url": null,
+      "chunks": null
+    }
+  },
+  "recipeHashes": {
+    "recipe.image.json": {
+      "sha256": "51d82f64006b8154954071801ef3db1f0d976d3e1e26c2ea8255eec67da74d76",
+      "recordedFrom": "webnn-workbench/bench/webnn/ir/image-pass4.json",
+      "sourceSha256": "767f0c280d27a1738472c576415f26e1cca103ac69405ded9875e44b4a3ab7af"
+    },
+    "recipe.text.json": {
+      "sha256": "e892037e897121fe537011f48a0f7af24ab05a9db3d1afbb42341625aafcf6fb",
+      "recordedFrom": "webnn-workbench/bench/webnn/ir/textenc-best.json",
+      "sourceSha256": "ee51efe36b0b164b5b32bc58a32d84219064eccca621c37725e38746033f292c"
+    }
+  }
+}
