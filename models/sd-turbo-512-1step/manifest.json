@@ -1,0 +1,159 @@
+{
+  "id": "sd-turbo-512-1step",
+  "title": "SD-Turbo, 512x512, one step, WebNN / Core ML",
+  "backend": "webnn-coreml",
+  "recipes": {
+    "text": {
+      "file": "recipe.text.json",
+      "constants": "text",
+      "role": "OpenCLIP ViT-H/14 text encoder"
+    },
+    "image": {
+      "file": "recipe.image.json",
+      "constants": "image",
+      "role": "UNet + one Euler step + TAESD decoder + RGBA pack"
+    }
+  },
+
+  "constants": {
+    "image": {
+      "file": "image-pass4.bin",
+      "bytes": 1730075200,
+      "usedBytes": 1730075196,
+      "sha256": "329d16b641923069ed42d0d1802d7f4e78cc9bacd2019c24ecbaba3263f0c2da",
+      "url": null,
+      "chunks": null,
+      "note": "1650 MiB. 655 constants at 8-byte-aligned offsets, monotonically increasing, so any chunking that respects a constant boundary works; the loader also stitches constants that straddle a chunk seam. The trailing 4 bytes are alignment padding."
+    },
+    "text": {
+      "file": "textenc-best.bin",
+      "bytes": 680787544,
+      "usedBytes": 680787544,
+      "sha256": "8b8f4a909233f183389bd5fc9f9537c46f699d7c2fd91ba809ba07d605713e8a",
+      "url": null,
+      "chunks": null,
+      "note": "649 MiB. 281 constants; the largest single one is the [49408,1024] float16 token embedding at 101 MB."
+    }
+  },
+
+  "recipeHashes": {
+    "recipe.image.json": {
+      "recordedFrom": "webnn-workbench bench/webnn/ir/image-pass4.json",
+      "sourceSha256": "767f0c280d27a1738472c576415f26e1cca103ac69405ded9875e44b4a3ab7af"
+    },
+    "recipe.text.json": {
+      "recordedFrom": "webnn-workbench bench/webnn/ir/textenc-best.json",
+      "sourceSha256": "ee51efe36b0b164b5b32bc58a32d84219064eccca621c37725e38746033f292c"
+    }
+  },
+
+  "tokenizer": {
+    "module": "tokenizer.js",
+    "class": "ClipTokenizer",
+    "load": "ClipTokenizer.load('<baseUrl>/models/sd-turbo-512-1step/tokenizer/')",
+    "files": ["tokenizer/vocab.json", "tokenizer/merges.txt", "tokenizer/tokenizer_meta.json"],
+    "maxLength": 77,
+    "parity": "12/12 against HuggingFace CLIPTokenizer, including the '!' added-token case (pad_token is '!', so a literal '!' is id 0 and never reaches BPE)"
+  },
+
+  "contract": {
+    "text": {
+      "inputs": {
+        "input_ids": {
+          "dataType": "int32",
+          "shape": [1, 77],
+          "source": "ClipTokenizer.encode(prompt, 77).ids"
+        }
+      },
+      "outputs": {
+        "out": {
+          "dataType": "float16",
+          "shape": [1, 77, 1024],
+          "role": "encoder_hidden_states; feeds the image graph on device"
+        }
+      }
+    },
+    "image": {
+      "layout": "nhwc",
+      "inputs": {
+        "sample": {
+          "dataType": "float16",
+          "shape": [1, 64, 64, 4],
+          "source": "scale_model_input(latent_raw) = latent_raw / 14.648819213552878, converted NCHW -> NHWC",
+          "note": "This is `latent_scaled` in the workbench's reference set. The recipe is NHWC, the reference bins are NCHW [1,4,64,64]; the caller converts."
+        },
+        "encoder_hidden_states": {
+          "dataType": "float16",
+          "shape": [1, 77, 1024],
+          "source": "the text graph's `out`, bound as the SAME MLTensor - never read back to JS"
+        },
+        "latent_raw": {
+          "dataType": "float16",
+          "shape": [1, 64, 64, 4],
+          "source": "unscaled latent = randn(seed) * sigma_0, converted NCHW -> NHWC",
+          "note": "bound separately because the in-graph Euler step needs the unscaled latent: latent = latent_raw - sigma_0 * unet_out"
+        }
+      },
+      "outputs": {
+        "out": {
+          "dataType": "int32",
+          "shape": [1, 512, 512],
+          "readable": true,
+          "role": "RGBA-packed pixels: one int32 per pixel whose low bits are R | G<<8 | B<<16 | 0xFF000000",
+          "toImageData": "new ImageData(new Uint8ClampedArray(buffer), 512, 512) - a permanent view over the readback buffer, zero conversion"
+        },
+        "latent": {
+          "dataType": "float16",
+          "shape": [1, 64, 64, 4],
+          "readable": false,
+          "role": "the post-Euler latent; a debug output the recording carried along",
+          "note": "WebNN requires every declared graph output to be bound at dispatch. Allocate it non-readable; at 32 KB the cost is negligible. The 67.85 ms default configuration did not declare it."
+        }
+      }
+    }
+  },
+
+  "scheduler": {
+    "name": "EulerDiscreteScheduler",
+    "timestep": 999,
+    "sigma_0": 14.614646911621094,
+    "sigma_0_fp16": -14.6171875,
+    "scale_model_input_divisor": 14.648819213552878,
+    "steps": 1,
+    "guidanceScale": 0,
+    "predictionType": "epsilon",
+    "finalSigmasType": "zero",
+    "identity": "latent_final = latent_raw - sigma_0 * unet_out; both pred_original_sample and prev_sample coincide at one step with s_churn = 0",
+    "inGraph": true
+  },
+
+  "chaining": {
+    "contexts": "ONE MLContext for both graphs. `navigator.ml.createContext({deviceType: 'gpu'})`, then assertCoreMLFingerprint().",
+    "pattern": [
+      "1. Create one MLTensor {float16, [1,77,1024], readable: true}.",
+      "2. Bind it as the text graph's `out` AND as the image graph's `encoder_hidden_states`.",
+      "3. dispatch(text, {input_ids}, {out: embedding})",
+      "4. await readTensor(embedding)  -- a completion fence, not a transfer; the value stays on device",
+      "5. dispatch(image, {sample, encoder_hidden_states: embedding, latent_raw}, {out, latent})",
+      "6. await readTensor(out, hostView)  -- 1 MB into a buffer you own, allocated once"
+    ],
+    "cachingTheEmbedding": "Re-running the same prompt skips steps 3 and 4 entirely: the embedding MLTensor still holds it. That is the ~60 ms cached number.",
+    "twoContexts": "If the graphs are on different MLContexts (a text-on-npu experiment, say), the embedding must be read back and written across, which costs about 0.1 ms and, on the ANE, 2.7x the float16 error."
+  },
+
+  "requirements": {
+    "browser": "Chrome 152+ with WebNN and the Core ML backend",
+    "flags": [
+      "--enable-unsafe-webgpu",
+      "--enable-features=WebMachineLearningNeuralNetwork,WebMachineLearningNeuralNetworkExperimentalFeatures,WebNNCoreML,WebGPUExperimentalFeatures",
+      "--enable-dawn-features=allow_unsafe_apis"
+    ],
+    "profile": "A real on-disk, non-incognito profile. Core ML is gated on !is_incognito; an off-the-record profile silently falls back to TFLite/XNNPACK on the CPU at roughly 50x the time.",
+    "memory": "The image graph holds 1650 MiB of constants and builds in about 25 s. Chromium has no compiled-graph cache, so every page load pays that again.",
+    "buildTime": {
+      "imageGraphMs": 25317,
+      "textGraphMs": 18726,
+      "note": "one-off per page load, not per generation"
+    }
+  }
+}

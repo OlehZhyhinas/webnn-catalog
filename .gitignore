@@ -1,0 +1,11 @@
+# Chrome profiles: Core ML needs a real on-disk, non-incognito one.
+.chrome-profile*/
+node_modules/
+bench/
+.DS_Store
+
+# Constants blobs are the published artifact; they never live in git.
+weights/
+*.bin
+# ...except the small reference tensors the verification set needs.
+!models/*/verification/*.f16.bin

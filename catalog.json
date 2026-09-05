@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "catalog": "webnn-catalog",
+  "version": 1,
+  "description": "Hand-built WebNN graph recipes: the exact MLGraphBuilder call sequence for a tuned graph, recorded as data, plus the constants that go with it.",
+  "runtime": {
+    "loader": "runtime/loader.js",
+    "recipeSchemaVersion": 1,
+    "docs": "runtime/README.md"
+  },
+
+  "entries": [
+    {
+      "id": "sd-turbo-512-1step",
+      "title": "SD-Turbo, 512x512, one step",
+      "path": "models/sd-turbo-512-1step",
+      "readme": "models/sd-turbo-512-1step/README.md",
+      "manifest": "models/sd-turbo-512-1step/manifest.json",
+      "measurements": "models/sd-turbo-512-1step/measurements.json",
+
+      "task": "text-to-image",
+      "model": "stabilityai/sd-turbo",
+      "decoder": "madebyollin/taesd",
+      "precision": "float16",
+      "backend": "webnn-coreml",
+      "layout": "nhwc",
+      "targets": ["apple-silicon / macOS / Chrome 152+"],
+
+      "recipes": [
+        {
+          "name": "text",
+          "file": "models/sd-turbo-512-1step/recipe.text.json",
+          "role": "OpenCLIP ViT-H/14 text encoder",
+          "ops": 603,
+          "opTypes": 9,
+          "constants": 281,
+          "constantBytes": 680787544,
+          "inputs": [{ "name": "input_ids", "dataType": "int32", "shape": [1, 77] }],
+          "outputs": [{ "name": "out", "dataType": "float16", "shape": [1, 77, 1024] }]
+        },
+        {
+          "name": "image",
+          "file": "models/sd-turbo-512-1step/recipe.image.json",
+          "role": "UNet + one Euler step + TAESD decoder + RGBA pack",
+          "ops": 1441,
+          "opTypes": 18,
+          "constants": 655,
+          "constantBytes": 1730075200,
+          "inputs": [
+            { "name": "sample", "dataType": "float16", "shape": [1, 64, 64, 4] },
+            { "name": "encoder_hidden_states", "dataType": "float16", "shape": [1, 77, 1024] },
+            { "name": "latent_raw", "dataType": "float16", "shape": [1, 64, 64, 4] }
+          ],
+          "outputs": [
+            { "name": "out", "dataType": "int32", "shape": [1, 512, 512], "role": "RGBA-packed pixels" },
+            { "name": "latent", "dataType": "float16", "shape": [1, 64, 64, 4], "role": "debug output; must still be bound" }
+          ]
+        }
+      ],
+
+      "weights": [
+        {
+          "name": "image",
+          "file": "image-pass4.bin",
+          "bytes": 1730075200,
+          "sha256": "329d16b641923069ed42d0d1802d7f4e78cc9bacd2019c24ecbaba3263f0c2da",
+          "url": null
+        },
+        {
+          "name": "text",
+          "file": "textenc-best.bin",
+          "bytes": 680787544,
+          "sha256": "8b8f4a909233f183389bd5fc9f9537c46f699d7c2fd91ba809ba07d605713e8a",
+          "url": null
+        }
+      ],
+      "weightsPublished": false,
+      "weightsNote": "The blobs are not in this repo and not yet published. scripts/publish-weights.sh uploads them and writes the URLs into the manifest. Until then, point --weights at a local directory.",
+
+      "verification": {
+        "path": "models/sd-turbo-512-1step/verification",
+        "spec": "models/sd-turbo-512-1step/verification/expected.json",
+        "prompt": "a photo of a cat wearing sunglasses, studio lighting",
+        "seed": 42,
+        "outputSha256": "5838ed1aa81430bae7d3cb2af9bec6bfd462f9dd2769478ace5be2af6ada0f2f",
+        "bars": {
+          "outputSha256": "exact match",
+          "psnrVsExpectedImage": ">= 55 dB and max byte diff <= 2",
+          "psnrVsReferenceImage": ">= 40 dB",
+          "textEncoderMaxAbs": "<= 0.046"
+        },
+        "observed": {
+          "psnrVsExpectedImage": 60.937,
+          "psnrVsReferenceImage": 44.121,
+          "textEncoderMaxAbs": 0.03125,
+          "tokenizer": "12/12 vs HuggingFace CLIPTokenizer"
+        },
+        "quality": { "imagePsnrVsFp32Chain": 44.28, "fp16ChainCeiling": 45.36 },
+        "runner": "scripts/verify.mjs"
+      },
+
+      "measurements": {
+        "machine": "Apple M5 Pro, 20 GPU cores, 64 GB",
+        "os": "macOS 26.6.2",
+        "browser": "Chrome 152.0.7977.77",
+        "backend": "WebNN / Core ML, deviceType gpu",
+        "newPromptMs": 67.85,
+        "cachedPromptMs": 60,
+        "stages": { "tokenize": 0.008, "textEncoder": 7.15, "imageGraph": 62 },
+        "baselines": { "ortWebGPU": 916, "ortWebNN": 237, "nativeMPS": 94.5 },
+        "buildOnceMs": { "image": 25317, "text": 18726 },
+        "floorMs": 60,
+        "optionalFastVariantMs": 54.6
+      }
+    }
+  ],
+
+  "conventions": {
+    "recipe": "The exact MLGraphBuilder call sequence, with the shapes the backend inferred. Not a model format: no autodiff, no training metadata, no framework. See runtime/README.md for the schema.",
+    "constants": "Never in git. A separate blob whose byteOffsets the recipe indexes, published to a content host and pinned by sha256.",
+    "measurements": "Always name the machine, the OS, the browser build and the protocol. A number without those is not a measurement.",
+    "provenance": "Every entry's README is a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like."
+  }
+}

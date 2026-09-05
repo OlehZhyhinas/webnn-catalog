@@ -1,0 +1,151 @@
+{
+  "note": "The reference case. Everything here is fixed input, so a correct replay of the recipe is deterministic to the byte on this machine and browser.",
+  "case": {
+    "prompt": "a photo of a cat wearing sunglasses, studio lighting",
+    "seed": 42,
+    "seedGenerator": "torch.Generator(device='mps').manual_seed(42), diffusers randn_tensor for a [1,4,64,64] float16 latent",
+    "resolution": 512,
+    "steps": 1,
+    "guidanceScale": 0,
+    "timestep": 999,
+    "sigma_0": 14.614646911621094
+  },
+  "inputs": {
+    "input_ids": {
+      "file": "input_ids.json",
+      "dataType": "int32",
+      "shape": [
+        1,
+        77
+      ]
+    },
+    "latent_raw": {
+      "file": "latent_raw.f16.bin",
+      "dataType": "float16",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "layout": "nchw",
+      "bytes": 32768,
+      "sha256": "11361d4c0384ba54492866cf572afe3d26d125fb7d7ded963768cefd7a9e066f",
+      "note": "randn(seed=42) * sigma_0. Convert to NHWC before writing: the recipe's `latent_raw` input is [1,64,64,4]."
+    },
+    "latent_scaled": {
+      "file": "latent_scaled.f16.bin",
+      "dataType": "float16",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "layout": "nchw",
+      "bytes": 32768,
+      "sha256": "48618bde8fe5a3436e8412d7bd6502ab9c34b9bf6e2a5663ac08cb5cd23f3d57",
+      "regenerate": "latent_scaled = latent_raw / 14.648819213552878 (= sqrt(sigma_0^2 + 1)), elementwise in float32 then rounded to float16. Kept as a file so the check does not depend on reproducing torch's RNG.",
+      "note": "Convert to NHWC before writing: the recipe's `sample` input is [1,64,64,4]."
+    },
+    "encoder_hidden_states": {
+      "file": "encoder_hidden_states.f16.bin",
+      "dataType": "float16",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "bytes": 157696,
+      "sha256": "e7cc1185b3d860ea0c501c30ca614eeb0a2ff2e0850fc964760c01c4353e1d31",
+      "role": "the reference embedding, for checking the text graph in isolation. The end-to-end run does NOT use it: the image graph is fed the text graph's own output."
+    }
+  },
+  "expected": {
+    "textGraph": {
+      "operand": "out",
+      "dataType": "float16",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "metric": "maxAbs vs encoder_hidden_states.f16.bin",
+      "observed": 0.03125,
+      "tolerance": 0.046,
+      "toleranceBasis": "2x the float16-on-MPS noise floor of 2.3e-2, which is the workbench's accuracy gate"
+    },
+    "imageGraph": {
+      "operand": "out",
+      "dataType": "int32",
+      "shape": [
+        1,
+        512,
+        512
+      ],
+      "bytes": 1048576,
+      "sha256": "5838ed1aa81430bae7d3cb2af9bec6bfd462f9dd2769478ace5be2af6ada0f2f",
+      "sha256Note": "sha256 of the 1,048,576-byte readback of the `out` MLTensor, little-endian int32, RGBA-packed. Recorded on the reference machine by scripts/verify.mjs; stable across runs within a session and across separate graph builds.",
+      "alpha": "every pixel's high byte must be 0xFF",
+      "recordedOn": {
+        "machine": "Apple M5 Pro, 64 GB",
+        "os": "macOS 26.6.2",
+        "browser": "Chrome 152.0.7977.77",
+        "backend": "WebNN / Core ML, deviceType gpu"
+      }
+    },
+    "images": {
+      "expected_image.png": {
+        "what": "The workbench pass-four run of this graph (bench/results/webnn-e2e-pass4-best.png), for reference. NOT bit-comparable: see notExactWhy.",
+        "sha256": "d0cd76d279d2c45c67519e73ada28cb22e8ec9687abf365ee4a31c84c4fed44a",
+        "bar": {
+          "metric": "PSNR",
+          "minDb": 55,
+          "maxByteDiff": 2
+        },
+        "observed": {
+          "psnrDb": 60.937,
+          "maxByteDiff": 2
+        },
+        "notExactWhy": "That run bound ONE graph output (`out`); this recipe was recorded with the debug `latent` output on and so declares two. A different output list is a different Core ML graph, compiled and scheduled differently, and float16 reductions reassociate. The result is a max byte difference of 2 on an 8-bit image, i.e. rounding, not a different picture."
+      },
+      "reference_image.png": {
+        "what": "Native PyTorch MPS, diffusers, float16 + TAESD, same prompt and seed. A different runtime, so not bit-comparable.",
+        "bar": {
+          "metric": "PSNR",
+          "minDb": 40
+        },
+        "observed": {
+          "psnr8VsFp32CpuChain": 44.28,
+          "psnr8VsFp16MpsChain": 44.26,
+          "psnr8Fp16ChainReference": 45.36,
+          "note": "44.28 dB is the headline quality number for this recipe. The float16-on-MPS chain itself reaches only 45.36 dB against the fp32 CPU chain, so the recipe is within about 1 dB of the precision floor.",
+          "psnrObservedByLoader": 44.121,
+          "maxByteDiffObservedByLoader": 41
+        },
+        "sha256": "9056be7f8b7a08ea2c03d51be45833ec53364268c8b28f3752144c21a5cc58a1"
+      }
+    }
+  },
+  "tolerance": {
+    "primary": "sha256 of the RGBA int32 readback equals expected.imageGraph.sha256. Every input is fixed and the graph has no RNG, so a correct replay is deterministic on the recorded machine and browser.",
+    "secondary": "PSNR >= 55 dB and max RGBA byte difference <= 2 against expected_image.png; PSNR >= 40 dB against reference_image.png; alpha 255 everywhere.",
+    "fallback": "On a different Chrome, macOS or Core ML build, exactness is not guaranteed. Then the secondary bars alone decide, and the sha256 should be re-recorded with a note naming the build.",
+    "whatBreaksExactness": "A different browser or OS build may pick a different kernel or reassociate a reduction. Changing the recipe`s declared output list is enough on its own: see expected.images[expected_image.png].notExactWhy."
+  },
+  "quality": {
+    "bar": "image PSNR >= 40 dB against the fp32 chain",
+    "observed": 44.28,
+    "unetMaxAbs": {
+      "observed": 0.00289,
+      "floor": 0.0068,
+      "ratio": 0.43
+    },
+    "textEncoderMaxAbs": {
+      "observed": 0.0199,
+      "floor": 0.023,
+      "ratio": 0.87
+    },
+    "tokenizer": "12/12 against HuggingFace CLIPTokenizer"
+  }
+}

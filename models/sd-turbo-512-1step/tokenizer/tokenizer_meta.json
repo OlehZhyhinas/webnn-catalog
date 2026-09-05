@@ -1,0 +1,56 @@
+{
+  "class": "CLIPTokenizer",
+  "model_max_length": 77,
+  "bos_token": "<|startoftext|>",
+  "bos_token_id": 49406,
+  "eos_token": "<|endoftext|>",
+  "eos_token_id": 49407,
+  "unk_token": "<|endoftext|>",
+  "unk_token_id": 49407,
+  "pad_token": "!",
+  "pad_token_id": 0,
+  "do_lower_case": true,
+  "add_prefix_space": false,
+  "errors": "replace",
+  "vocab_size": 49408,
+  "padding_side": "right",
+  "added_tokens": [
+    {
+      "id": 0,
+      "content": "!",
+      "normalized": false,
+      "special": true,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false
+    },
+    {
+      "id": 49406,
+      "content": "<|startoftext|>",
+      "normalized": true,
+      "special": true,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false
+    },
+    {
+      "id": 49407,
+      "content": "<|endoftext|>",
+      "normalized": true,
+      "special": true,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false
+    }
+  ],
+  "normalizer": "NFC -> replace(/\\s+/ -> ' ') -> lowercase",
+  "pre_tokenizer_regex": "<\\|startoftext\\|>|<\\|endoftext\\|>|'s|'t|'re|'ve|'m|'ll|'d|[\\p{L}]+|[\\p{N}]|[^\\s\\p{L}\\p{N}]+",
+  "bpe": {
+    "end_of_word_suffix": "</w>",
+    "continuing_subword_prefix": "",
+    "fuse_unk": false
+  },
+  "pipeline_call": "tokenizer(prompt, padding=\"max_length\", max_length=77, truncation=True)",
+  "pipeline_passes_attention_mask_to_text_encoder": false,
+  "pad_token_note": "CLIPTokenizer's pad_token is '!' which is vocab id 0, NOT the eos id 49407 that openai/clip-vit-* checkpoints pad with. SD 2.x / sd-turbo therefore pads the tail of the 77-token window with 0, and because CLIP's attention is causal-only (no padding mask is passed) those pad positions still produce nonzero embeddings that the UNet cross-attends to."
+}

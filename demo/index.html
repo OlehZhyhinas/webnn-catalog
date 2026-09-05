@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SD-Turbo on WebNN</title>
+    <style>
+      :root { color-scheme: dark; --bg: #101114; --fg: #e6e6e6; --dim: #8a8f98; --line: #2a2d34; --accent: #7bd88f; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 24px; background: var(--bg); color: var(--fg);
+             font: 14px/1.55 ui-sans-serif, -apple-system, system-ui, sans-serif; }
+      main { max-width: 640px; margin: 0 auto; }
+      h1 { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
+      .sub { color: var(--dim); font-size: 12px; margin-bottom: 20px; }
+      form { display: flex; gap: 8px; margin-bottom: 16px; }
+      input[type=text] { flex: 1; padding: 9px 11px; border-radius: 7px; border: 1px solid var(--line);
+                         background: #17181c; color: var(--fg); font: inherit; }
+      button { padding: 9px 16px; border-radius: 7px; border: 1px solid var(--line); background: #22242a;
+               color: var(--fg); font: inherit; cursor: pointer; }
+      button:disabled { opacity: .5; cursor: default; }
+      button:not(:disabled):hover { background: #2b2e36; }
+      canvas { width: 100%; max-width: 512px; aspect-ratio: 1; display: block; border-radius: 8px;
+               border: 1px solid var(--line); background: #17181c; image-rendering: auto; }
+      table { border-collapse: collapse; margin-top: 16px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      td { padding: 2px 14px 2px 0; }
+      td:last-child { text-align: right; color: var(--accent); }
+      #status { margin: 12px 0; color: var(--dim); font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+                white-space: pre-wrap; }
+      .err { color: #ff8080; }
+      progress { width: 100%; max-width: 512px; height: 4px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>SD-Turbo, 512&times;512, one step</h1>
+      <div class="sub">Two hand-built WebNN graphs replayed from catalog recipes. Core ML backend, float16 throughout.</div>
+
+      <form id="form">
+        <input id="prompt" type="text" value="a photo of a cat wearing sunglasses, studio lighting" />
+        <button id="go" type="submit" disabled>Loading...</button>
+      </form>
+
+      <progress id="bar" max="100" value="0"></progress>
+      <div id="status">starting...</div>
+      <canvas id="canvas" width="512" height="512"></canvas>
+      <table id="times"></table>
+    </main>
+
+    <script type="module">
+      import { loadRecipe, constantSource, assertCoreMLFingerprint } from "../runtime/loader.js";
+      import ClipTokenizer from "../models/sd-turbo-512-1step/tokenizer.js";
+
+      const MODEL = "../models/sd-turbo-512-1step";
+      const WEIGHTS = new URLSearchParams(location.search).get("weights") ?? "/weights";
+
+      const $ = (id) => document.getElementById(id);
+      const status = (s, cls = "") => { $("status").textContent = s; $("status").className = cls; };
+      const bar = (v) => { $("bar").value = v; };
+      const j = (u) => fetch(u).then((r) => r.json());
+      const buf = (u) => fetch(u).then((r) => r.arrayBuffer());
+
+      /** NCHW -> NHWC on raw float16 bytes. */
+      function nchwToNhwc16(b, C, H, W) {
+        const src = new Uint16Array(b), dst = new Uint16Array(src.length), HW = H * W;
+        for (let c = 0; c < C; c++) for (let p = 0; p < HW; p++) dst[p * C + c] = src[c * HW + p];
+        return dst;
+      }
+
+      let rig = null;
+
+      async function boot() {
+        try {
+          if (!navigator.ml) throw new Error("navigator.ml is missing. Enable WebNN: chrome://flags, or launch Chrome with --enable-features=WebMachineLearningNeuralNetwork,WebNNCoreML");
+          const ctx = await navigator.ml.createContext({ deviceType: "gpu" });
+          assertCoreMLFingerprint(ctx);
+          status("backend: Core ML. fetching recipes...");
+
+          const [manifest, imageRecipe, textRecipe] = await Promise.all([
+            j(`${MODEL}/manifest.json`), j(`${MODEL}/recipe.image.json`), j(`${MODEL}/recipe.text.json`),
+          ]);
+          const src = (k) => constantSource(manifest.constants[k], { baseUrl: WEIGHTS });
+
+          // The image graph is 1650 MiB of constants and takes about 25 s to
+          // compile; the text graph another 649 MiB and 19 s. Chromium has no
+          // compiled-graph cache, so a reload pays this again.
+          status("loading the image graph (1650 MiB, ~25 s of Core ML compilation)...");
+          const image = await loadRecipe(imageRecipe, src("image"), ctx, {
+            onProgress: (p) => { if (p.phase === "constants") bar(45 * (p.bytesRead / p.totalBytes)); },
+          });
+          bar(50);
+          status("loading the text encoder (649 MiB, ~19 s)...");
+          const text = await loadRecipe(textRecipe, src("text"), ctx, {
+            onProgress: (p) => { if (p.phase === "constants") bar(50 + 40 * (p.bytesRead / p.totalBytes)); },
+          });
+          bar(92);
+
+          status("tokenizer and latents...");
+          const tok = await ClipTokenizer.load(`${MODEL}/tokenizer/`);
+          const [rawB, scaledB] = await Promise.all([
+            buf(`${MODEL}/verification/latent_raw.f16.bin`),
+            buf(`${MODEL}/verification/latent_scaled.f16.bin`),
+          ]);
+
+          const inputIds = await ctx.createTensor({ dataType: "int32", shape: [1, 77], writable: true });
+          // One tensor is the text graph's output AND the image graph's
+          // encoder_hidden_states: the embedding never crosses into JS.
+          const embedding = await ctx.createTensor({ dataType: "float16", shape: [1, 77, 1024], readable: true });
+          const sample = await ctx.createTensor({ dataType: "float16", shape: [1, 64, 64, 4], writable: true });
+          const latentRaw = await ctx.createTensor({ dataType: "float16", shape: [1, 64, 64, 4], writable: true });
+          ctx.writeTensor(sample, nchwToNhwc16(scaledB, 4, 64, 64));
+          ctx.writeTensor(latentRaw, nchwToNhwc16(rawB, 4, 64, 64));
+
+          // Every declared output must be bound, including the debug `latent`.
+          const outs = {};
+          for (const [name, spec] of Object.entries(image.outputs))
+            outs[name] = await ctx.createTensor({ dataType: spec.dataType, shape: spec.shape, readable: name === "out" });
+
+          // The readback buffer is allocated once; the ImageData is a permanent
+          // view over it, so "convert to pixels" is literally nothing.
+          const host = new ArrayBuffer(512 * 512 * 4);
+          const hostView = new Uint8Array(host);
+          const imageData = new ImageData(new Uint8ClampedArray(host), 512, 512);
+          const g2d = $("canvas").getContext("2d");
+
+          rig = { ctx, image, text, tok, inputIds, embedding, sample, latentRaw, outs, hostView, imageData, g2d, lastIds: null };
+
+          // Warm up: the very first dispatch pays a one-off ~250 ms.
+          rig.ctx.dispatch(text.graph, { input_ids: inputIds }, { out: embedding });
+          await ctx.readTensor(embedding);
+          rig.ctx.dispatch(image.graph, { sample, encoder_hidden_states: embedding, latent_raw: latentRaw }, outs);
+          await ctx.readTensor(outs.out, hostView);
+
+          bar(100);
+          status("ready.");
+          $("go").disabled = false;
+          $("go").textContent = "Generate";
+          generate();
+        } catch (e) {
+          status(String(e.message ?? e), "err");
+          throw e;
+        }
+      }
+
+      async function generate() {
+        if (!rig) return;
+        $("go").disabled = true;
+        const { ctx, image, text, tok } = rig;
+        const t = {};
+        const clock = () => performance.now();
+
+        let t0 = clock();
+        const enc = tok.encode($("prompt").value, 77);
+        t.tokenize = clock() - t0;
+
+        // Same prompt as last time? The embedding tensor still holds it.
+        const same = rig.lastIds && enc.ids.every((v, i) => rig.lastIds[i] === v);
+        if (!same) {
+          t0 = clock();
+          ctx.writeTensor(rig.inputIds, enc.ids);
+          ctx.dispatch(text.graph, { input_ids: rig.inputIds }, { out: rig.embedding });
+          await ctx.readTensor(rig.embedding); // completion fence; the value stays on device
+          t.textEncoder = clock() - t0;
+          rig.lastIds = Array.from(enc.ids);
+        }
+
+        t0 = clock();
+        ctx.dispatch(image.graph, {
+          sample: rig.sample, encoder_hidden_states: rig.embedding, latent_raw: rig.latentRaw,
+        }, rig.outs);
+        await ctx.readTensor(rig.outs.out, rig.hostView);
+        t.imageGraph = clock() - t0;
+
+        t0 = clock();
+        rig.g2d.putImageData(rig.imageData, 0, 0);
+        t.draw = clock() - t0;
+
+        const total = Object.values(t).reduce((a, b) => a + b, 0);
+        $("times").innerHTML =
+          Object.entries({ ...t, total })
+            .map(([k, v]) => `<tr><td>${k}${k === "textEncoder" ? "" : ""}</td><td>${v.toFixed(2)} ms</td></tr>`)
+            .join("") + (same ? `<tr><td>text encoder</td><td>cached</td></tr>` : "");
+        status(`${enc.nTokens} tokens${enc.truncated ? " (truncated to 77)" : ""}`);
+        $("go").disabled = false;
+      }
+
+      $("form").addEventListener("submit", (e) => { e.preventDefault(); generate(); });
+      boot();
+    </script>
+  </body>
+</html>

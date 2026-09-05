@@ -1,0 +1,14 @@
+{
+  "name": "webnn-catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hand-built WebNN graph recipes and a generic runtime that replays them into an MLGraph.",
+  "scripts": {
+    "verify": "node scripts/verify.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

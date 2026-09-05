@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>webnn-catalog verify</title>
+    <style>
+      body { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 16px; background: #111; color: #ddd; }
+      #log { white-space: pre-wrap; }
+      canvas { image-rendering: pixelated; border: 1px solid #444; margin-top: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="log">loading...</div>
+    <canvas id="out" width="512" height="512"></canvas>
+    <script type="module">
+      import { run } from "./verify-page.js";
+      window.__verifyRun = run;
+      window.__verifyReady = true;
+    </script>
+  </body>
+</html>
