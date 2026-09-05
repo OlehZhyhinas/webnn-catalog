@@ -71,6 +71,46 @@
       },
       "notes": "The catalog's own loader replaying the two recipes: tokens identical on 18/18 images, decoded strings identical to LatexGen's recorded outputs on 18/18. Load average 5.3 at run time.",
       "source": "webnn-catalog bench/verify-texo-384.json"
+    },
+    {
+      "label": "k16-S512, 18 images, quiet machine (load 3.9)",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "interleaved-ab",
+      "newPromptMs": 22.73,
+      "stages": {
+        "encoderDispatchPlusFence": 2,
+        "perToken": 0.5521,
+        "cacheZeroingPerImage": 0.1,
+        "meanImage": 26.08,
+        "medianImageBlock2": 22.87,
+        "meanImageBlock2": 26.03
+      },
+      "runs": 10,
+      "statistic": "median over the 18 benchmark images of each image's median of 10 runs (write image + encoder + greedy decode to <eos> + tokens readback), block 1 of 2 interleaved blocks; 847 tokens in 61 dispatches",
+      "buildOnceMs": {
+        "encoder": 384.2,
+        "decoder": 3216.8,
+        "firstImageCold": 153.4
+      },
+      "quality": {
+        "tokensIdentical": "18/18",
+        "encoderMaxAbsVsFp32": 0.09764683246612549,
+        "encoderFp16Floor": 0.09032261371612549
+      },
+      "notes": "Same graphs as row 1, run after the harness waited for the 1-minute load average to fall under 4: 22.7 ms median per image, 0.55 ms per token, encoder 1.9 ms. Row 1 ran at load 5.2.",
+      "source": "webnn-workbench bench/results/texo-final-quiet.json"
     }
   ],
   "baselines": {

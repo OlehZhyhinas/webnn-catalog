@@ -73,7 +73,7 @@ parses it.
 | family | entry | variant | new prompt | quality | measured on |
 |---|---|---|---:|---|---|
 | [`sd-turbo-512-1step`](families/sd-turbo-512-1step/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **68.4 ms** | PSNR 44.28 dB vs the fp32 chain | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
-| [`texo-384`](families/texo-384/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/texo-384/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **25.9 ms** per image | greedy tokens identical to fp32 on 18/18 benchmark images | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
+| [`texo-384`](families/texo-384/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/texo-384/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **22.7 ms** per image | greedy tokens identical to fp32 on 18/18 benchmark images | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
 
 For context, on the same machine and the same model: ONNX Runtime Web on WebGPU
 is 916 ms, the same demo on ORT's WebNN EP is 237 ms, and native PyTorch MPS is

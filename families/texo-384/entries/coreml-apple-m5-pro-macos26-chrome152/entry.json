@@ -9,7 +9,7 @@
     "recorder": "bench/webnn/ir-record.js"
   },
   "title": "Texo (FormulaNet, 20M): WebNN / Core ML on Apple M5 Pro",
-  "summary": "HGNetv2 encoder with the cross-attention K/V hoisted in, and an mBART decoder unrolled 16 greedy steps per dispatch over static caches. 26 ms median per LatexGen benchmark image, tokens identical to fp32 ONNX Runtime on 18/18.",
+  "summary": "HGNetv2 encoder with the cross-attention K/V hoisted in, and an mBART decoder unrolled 16 greedy steps per dispatch over static caches. 22.7 ms median per LatexGen benchmark image on a quiet machine (25.9 at load 5), tokens identical to fp32 ONNX Runtime on 18/18.",
   "target": {
     "generatedAt": "2026-09-05T18:55:21.800Z",
     "tool": "webnn-catalog scripts/probe-target.mjs",
