@@ -1,0 +1,30 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "texo-384",
+  "constants": {
+    "encoder": {
+      "file": "texo-encoder.bin",
+      "bytes": 33354432,
+      "sha256": "3b462328e923ec4e57c15af53a246901eddeca588c6c4470a3f13d8ddd0889b5",
+      "url": null,
+      "chunks": null
+    },
+    "decoder": {
+      "file": "texo-decoder-k16.bin",
+      "bytes": 10783808,
+      "sha256": "d5b91e0ed1945d711dcb05f571422e33d5aaa17aed2fe688a1aaec73bb760637",
+      "url": null,
+      "chunks": null
+    }
+  },
+  "recipeHashes": {
+    "recipe.encoder.json": {
+      "sha256": "2786ca7c29461850c76c054b1dd100dd063002cdaa60a74cdb11dad1335c10c8",
+      "recordedFrom": "webnn-workbench/bench/webnn/ir/texo-encoder.json"
+    },
+    "recipe.decoder.json": {
+      "sha256": "e45be6443d82cb43afc4713e119d780d351d1066084e347bad0caf74d9063b07",
+      "recordedFrom": "webnn-workbench/bench/webnn/ir/texo-decoder-k16.json"
+    }
+  }
+}

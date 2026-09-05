@@ -1,0 +1,6430 @@
+{
+ "version": 1,
+ "label": "texo-384/encoder",
+ "recordedLabel": "texo-encoder",
+ "layout": "nchw",
+ "constantsBlob": "texo-encoder.bin",
+ "provenance": {
+  "summary": "Texo's HGNetv2 encoder (4 stages, hidden 2048) as one NCHW WebNN graph, plus the decoder's cross-attention K/V for both layers computed here once per image: enc_to_dec_proj and k/v_proj folded into one 2048->384 projection each, emitted as 1x1 convs on the final [1,2048,12,12] map whose output reshapes for free into K^T per head.",
+  "source": {
+   "model": "Texo / FormulaNet as shipped in LatexGen public/models/texo (fp32 ONNX: encoder_model.onnx, decoder_model_merged.onnx)",
+   "encoder_sha256": "95cccef463e5ed3623282f1541c0011a00b8a5d0828ea2cd57d6953ad4310b5b",
+   "decoder_sha256": "10be29b751f6de5f9900c3658551020dc865257eb2c3034bc4c1e016e4d0e35d",
+   "precision": "float16 throughout; no float32 ops",
+   "weightsExport": "bench/webnn/texo/export_texo.py (weights.bin sha256 0e146e4ccf63d3606d4d6c40df8a2d82dc6e59cc3f08876e38159d771ecbb8ac)"
+  },
+  "recordedFrom": {
+   "repo": "webnn-workbench",
+   "commit": "233e460",
+   "recorder": "bench/webnn/ir-record.js (Proxy around MLGraphBuilder; shapes are the backend's)",
+   "label": "texo-encoder",
+   "harness": "node bench/webnn/texo/run-texo.mjs --dump-ir encoder=texo-encoder",
+   "recordedAt": "2026-09-05",
+   "constantBytes": 33354432
+  },
+  "folds": [
+   "input channels 3 -> 1 (identical channels summed into stem1)",
+   "stem dynamic pads as constant pads (0,0,1,1) at 384x384",
+   "BatchNorm already folded into conv biases by the ONNX export",
+   "enc_to_dec_proj o k_proj / v_proj -> one 2048x384 weight per layer per side",
+   "cross-attention K emitted transposed ([1,16,24,144]) straight from the 1x1 conv output"
+  ]
+ },
+ "emitterConfig": {
+  "stats": {
+   "ops": 324,
+   "mathOps": 155,
+   "opHisto": {
+    "constant": 168,
+    "conv2d": 84,
+    "relu": 53,
+    "concat": 7,
+    "reshape": 4,
+    "pad": 2,
+    "add": 2,
+    "transpose": 2,
+    "input": 1,
+    "maxPool2d": 1
+   },
+   "fusions": {
+    "inputChannelsFolded": true,
+    "normalizationFolded": false,
+    "crossAttnKVHoisted": true,
+    "encToDecProjFoldedIntoKV": true,
+    "batchNormFolded": "already in the ONNX export",
+    "layout": "nchw"
+   }
+  }
+ },
+ "note": "One operand namespace: graph inputs keep their names, constants are k<N>, op results v<N>. Multi-output ops (split) list every result in `outputs`.",
+ "inputs": [
+  {
+   "name": "image",
+   "dataType": "float16",
+   "shape": [
+    1,
+    1,
+    384,
+    384
+   ]
+  }
+ ],
+ "outputs": [
+  {
+   "name": "enc_kT0",
+   "operand": "v146",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "role": "cross-attention K^T, layer 0, per head"
+  },
+  {
+   "name": "enc_v0",
+   "operand": "v149",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    144,
+    24
+   ],
+   "role": "cross-attention V, layer 0, per head"
+  },
+  {
+   "name": "enc_kT1",
+   "operand": "v151",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "role": "cross-attention K^T, layer 1"
+  },
+  {
+   "name": "enc_v1",
+   "operand": "v154",
+   "dataType": "float16",
+   "shape": [
+    1,
+    16,
+    144,
+    24
+   ],
+   "role": "cross-attention V, layer 1"
+  }
+ ],
+ "constants": {
+  "k0": {
+   "dataType": "float16",
+   "shape": [
+    32,
+    1,
+    3,
+    3
+   ],
+   "byteOffset": 0,
+   "byteLength": 576,
+   "tag": "stem.stem1"
+  },
+  "k1": {
+   "dataType": "float16",
+   "shape": [
+    32
+   ],
+   "byteOffset": 576,
+   "byteLength": 64,
+   "tag": "stem.stem1"
+  },
+  "k2": {
+   "dataType": "float16",
+   "shape": [
+    16,
+    32,
+    2,
+    2
+   ],
+   "byteOffset": 640,
+   "byteLength": 4096,
+   "tag": "stem.stem2a"
+  },
+  "k3": {
+   "dataType": "float16",
+   "shape": [
+    16
+   ],
+   "byteOffset": 4736,
+   "byteLength": 32,
+   "tag": "stem.stem2a"
+  },
+  "k4": {
+   "dataType": "float16",
+   "shape": [
+    32,
+    16,
+    2,
+    2
+   ],
+   "byteOffset": 4768,
+   "byteLength": 4096,
+   "tag": "stem.stem2b"
+  },
+  "k5": {
+   "dataType": "float16",
+   "shape": [
+    32
+   ],
+   "byteOffset": 8864,
+   "byteLength": 64,
+   "tag": "stem.stem2b"
+  },
+  "k6": {
+   "dataType": "float16",
+   "shape": [
+    32,
+    64,
+    3,
+    3
+   ],
+   "byteOffset": 8928,
+   "byteLength": 36864,
+   "tag": "stem.stem3"
+  },
+  "k7": {
+   "dataType": "float16",
+   "shape": [
+    32
+   ],
+   "byteOffset": 45792,
+   "byteLength": 64,
+   "tag": "stem.stem3"
+  },
+  "k8": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    32,
+    1,
+    1
+   ],
+   "byteOffset": 45856,
+   "byteLength": 3072,
+   "tag": "stem.stem4"
+  },
+  "k9": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 48928,
+   "byteLength": 96,
+   "tag": "stem.stem4"
+  },
+  "k10": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 49024,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.0"
+  },
+  "k11": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 90496,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.0"
+  },
+  "k12": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 90592,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.1"
+  },
+  "k13": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 132064,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.1"
+  },
+  "k14": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 132160,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.2"
+  },
+  "k15": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 173632,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.2"
+  },
+  "k16": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 173728,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.3"
+  },
+  "k17": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 215200,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.3"
+  },
+  "k18": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 215296,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.4"
+  },
+  "k19": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 256768,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.4"
+  },
+  "k20": {
+   "dataType": "float16",
+   "shape": [
+    48,
+    48,
+    3,
+    3
+   ],
+   "byteOffset": 256864,
+   "byteLength": 41472,
+   "tag": "stages.0.blocks.0.layers.5"
+  },
+  "k21": {
+   "dataType": "float16",
+   "shape": [
+    48
+   ],
+   "byteOffset": 298336,
+   "byteLength": 96,
+   "tag": "stages.0.blocks.0.layers.5"
+  },
+  "k22": {
+   "dataType": "float16",
+   "shape": [
+    64,
+    336,
+    1,
+    1
+   ],
+   "byteOffset": 298432,
+   "byteLength": 43008,
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  "k23": {
+   "dataType": "float16",
+   "shape": [
+    64
+   ],
+   "byteOffset": 341440,
+   "byteLength": 128,
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  "k24": {
+   "dataType": "float16",
+   "shape": [
+    128,
+    64,
+    1,
+    1
+   ],
+   "byteOffset": 341568,
+   "byteLength": 16384,
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  "k25": {
+   "dataType": "float16",
+   "shape": [
+    128
+   ],
+   "byteOffset": 357952,
+   "byteLength": 256,
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  "k26": {
+   "dataType": "float16",
+   "shape": [
+    128,
+    1,
+    3,
+    3
+   ],
+   "byteOffset": 358208,
+   "byteLength": 2304,
+   "tag": "stages.1.downsample"
+  },
+  "k27": {
+   "dataType": "float16",
+   "shape": [
+    128
+   ],
+   "byteOffset": 360512,
+   "byteLength": 256,
+   "tag": "stages.1.downsample"
+  },
+  "k28": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    128,
+    3,
+    3
+   ],
+   "byteOffset": 360768,
+   "byteLength": 221184,
+   "tag": "stages.1.blocks.0.layers.0"
+  },
+  "k29": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 581952,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.0"
+  },
+  "k30": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    96,
+    3,
+    3
+   ],
+   "byteOffset": 582144,
+   "byteLength": 165888,
+   "tag": "stages.1.blocks.0.layers.1"
+  },
+  "k31": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 748032,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.1"
+  },
+  "k32": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    96,
+    3,
+    3
+   ],
+   "byteOffset": 748224,
+   "byteLength": 165888,
+   "tag": "stages.1.blocks.0.layers.2"
+  },
+  "k33": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 914112,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.2"
+  },
+  "k34": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    96,
+    3,
+    3
+   ],
+   "byteOffset": 914304,
+   "byteLength": 165888,
+   "tag": "stages.1.blocks.0.layers.3"
+  },
+  "k35": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 1080192,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.3"
+  },
+  "k36": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    96,
+    3,
+    3
+   ],
+   "byteOffset": 1080384,
+   "byteLength": 165888,
+   "tag": "stages.1.blocks.0.layers.4"
+  },
+  "k37": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 1246272,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.4"
+  },
+  "k38": {
+   "dataType": "float16",
+   "shape": [
+    96,
+    96,
+    3,
+    3
+   ],
+   "byteOffset": 1246464,
+   "byteLength": 165888,
+   "tag": "stages.1.blocks.0.layers.5"
+  },
+  "k39": {
+   "dataType": "float16",
+   "shape": [
+    96
+   ],
+   "byteOffset": 1412352,
+   "byteLength": 192,
+   "tag": "stages.1.blocks.0.layers.5"
+  },
+  "k40": {
+   "dataType": "float16",
+   "shape": [
+    256,
+    704,
+    1,
+    1
+   ],
+   "byteOffset": 1412544,
+   "byteLength": 360448,
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  "k41": {
+   "dataType": "float16",
+   "shape": [
+    256
+   ],
+   "byteOffset": 1772992,
+   "byteLength": 512,
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  "k42": {
+   "dataType": "float16",
+   "shape": [
+    512,
+    256,
+    1,
+    1
+   ],
+   "byteOffset": 1773504,
+   "byteLength": 262144,
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  "k43": {
+   "dataType": "float16",
+   "shape": [
+    512
+   ],
+   "byteOffset": 2035648,
+   "byteLength": 1024,
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  "k44": {
+   "dataType": "float16",
+   "shape": [
+    512,
+    1,
+    3,
+    3
+   ],
+   "byteOffset": 2036672,
+   "byteLength": 9216,
+   "tag": "stages.2.downsample"
+  },
+  "k45": {
+   "dataType": "float16",
+   "shape": [
+    512
+   ],
+   "byteOffset": 2045888,
+   "byteLength": 1024,
+   "tag": "stages.2.downsample"
+  },
+  "k46": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    512,
+    1,
+    1
+   ],
+   "byteOffset": 2046912,
+   "byteLength": 196608,
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  "k47": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2243520,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  "k48": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2243904,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  "k49": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2253504,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  "k50": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 2253888,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  "k51": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2327616,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  "k52": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2328000,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  "k53": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2337600,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  "k54": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 2337984,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  "k55": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2411712,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  "k56": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2412096,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  "k57": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2421696,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  "k58": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 2422080,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  "k59": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2495808,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  "k60": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2496192,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  "k61": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2505792,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  "k62": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 2506176,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  "k63": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2579904,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  "k64": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2580288,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  "k65": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2589888,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  "k66": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 2590272,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  "k67": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2664000,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  "k68": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 2664384,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  "k69": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 2673984,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  "k70": {
+   "dataType": "float16",
+   "shape": [
+    512,
+    1664,
+    1,
+    1
+   ],
+   "byteOffset": 2674368,
+   "byteLength": 1703936,
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  "k71": {
+   "dataType": "float16",
+   "shape": [
+    512
+   ],
+   "byteOffset": 4378304,
+   "byteLength": 1024,
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  "k72": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    512,
+    1,
+    1
+   ],
+   "byteOffset": 4379328,
+   "byteLength": 1048576,
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  "k73": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 5427904,
+   "byteLength": 2048,
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  "k74": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1024,
+    1,
+    1
+   ],
+   "byteOffset": 5429952,
+   "byteLength": 393216,
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  "k75": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 5823168,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  "k76": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 5823552,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  "k77": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 5833152,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  "k78": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 5833536,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  "k79": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 5907264,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  "k80": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 5907648,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  "k81": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 5917248,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  "k82": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 5917632,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  "k83": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 5991360,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  "k84": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 5991744,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  "k85": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6001344,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  "k86": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 6001728,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  "k87": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6075456,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  "k88": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 6075840,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  "k89": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6085440,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  "k90": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 6085824,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  "k91": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6159552,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  "k92": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 6159936,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  "k93": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6169536,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  "k94": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 6169920,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  "k95": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6243648,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  "k96": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 6244032,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  "k97": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 6253632,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  "k98": {
+   "dataType": "float16",
+   "shape": [
+    512,
+    2176,
+    1,
+    1
+   ],
+   "byteOffset": 6254016,
+   "byteLength": 2228224,
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  "k99": {
+   "dataType": "float16",
+   "shape": [
+    512
+   ],
+   "byteOffset": 8482240,
+   "byteLength": 1024,
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  "k100": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    512,
+    1,
+    1
+   ],
+   "byteOffset": 8483264,
+   "byteLength": 1048576,
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  "k101": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 9531840,
+   "byteLength": 2048,
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  "k102": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1024,
+    1,
+    1
+   ],
+   "byteOffset": 9533888,
+   "byteLength": 393216,
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  "k103": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 9927104,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  "k104": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 9927488,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  "k105": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 9937088,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  "k106": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 9937472,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  "k107": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10011200,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  "k108": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 10011584,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  "k109": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10021184,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  "k110": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 10021568,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  "k111": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10095296,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  "k112": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 10095680,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  "k113": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10105280,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  "k114": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 10105664,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  "k115": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10179392,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  "k116": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 10179776,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  "k117": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10189376,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  "k118": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 10189760,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  "k119": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10263488,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  "k120": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 10263872,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  "k121": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10273472,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  "k122": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    192,
+    1,
+    1
+   ],
+   "byteOffset": 10273856,
+   "byteLength": 73728,
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  "k123": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10347584,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  "k124": {
+   "dataType": "float16",
+   "shape": [
+    192,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 10347968,
+   "byteLength": 9600,
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  "k125": {
+   "dataType": "float16",
+   "shape": [
+    192
+   ],
+   "byteOffset": 10357568,
+   "byteLength": 384,
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  "k126": {
+   "dataType": "float16",
+   "shape": [
+    512,
+    2176,
+    1,
+    1
+   ],
+   "byteOffset": 10357952,
+   "byteLength": 2228224,
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  "k127": {
+   "dataType": "float16",
+   "shape": [
+    512
+   ],
+   "byteOffset": 12586176,
+   "byteLength": 1024,
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  "k128": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    512,
+    1,
+    1
+   ],
+   "byteOffset": 12587200,
+   "byteLength": 1048576,
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  "k129": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 13635776,
+   "byteLength": 2048,
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  "k130": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    1,
+    3,
+    3
+   ],
+   "byteOffset": 13637824,
+   "byteLength": 18432,
+   "tag": "stages.3.downsample"
+  },
+  "k131": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 13656256,
+   "byteLength": 2048,
+   "tag": "stages.3.downsample"
+  },
+  "k132": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1024,
+    1,
+    1
+   ],
+   "byteOffset": 13658304,
+   "byteLength": 786432,
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  "k133": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 14444736,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  "k134": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 14445504,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  "k135": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 14464704,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  "k136": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384,
+    1,
+    1
+   ],
+   "byteOffset": 14465472,
+   "byteLength": 294912,
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  "k137": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 14760384,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  "k138": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 14761152,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  "k139": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 14780352,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  "k140": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384,
+    1,
+    1
+   ],
+   "byteOffset": 14781120,
+   "byteLength": 294912,
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  "k141": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15076032,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  "k142": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 15076800,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  "k143": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15096000,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  "k144": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384,
+    1,
+    1
+   ],
+   "byteOffset": 15096768,
+   "byteLength": 294912,
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  "k145": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15391680,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  "k146": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 15392448,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  "k147": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15411648,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  "k148": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384,
+    1,
+    1
+   ],
+   "byteOffset": 15412416,
+   "byteLength": 294912,
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  "k149": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15707328,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  "k150": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 15708096,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  "k151": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 15727296,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  "k152": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    384,
+    1,
+    1
+   ],
+   "byteOffset": 15728064,
+   "byteLength": 294912,
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  "k153": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 16022976,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  "k154": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    1,
+    5,
+    5
+   ],
+   "byteOffset": 16023744,
+   "byteLength": 19200,
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  "k155": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 16042944,
+   "byteLength": 768,
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  "k156": {
+   "dataType": "float16",
+   "shape": [
+    1024,
+    3328,
+    1,
+    1
+   ],
+   "byteOffset": 16043712,
+   "byteLength": 6815744,
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  "k157": {
+   "dataType": "float16",
+   "shape": [
+    1024
+   ],
+   "byteOffset": 22859456,
+   "byteLength": 2048,
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  "k158": {
+   "dataType": "float16",
+   "shape": [
+    2048,
+    1024,
+    1,
+    1
+   ],
+   "byteOffset": 22861504,
+   "byteLength": 4194304,
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  "k159": {
+   "dataType": "float16",
+   "shape": [
+    2048
+   ],
+   "byteOffset": 27055808,
+   "byteLength": 4096,
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  "k160": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    2048,
+    1,
+    1
+   ],
+   "byteOffset": 27059904,
+   "byteLength": 1572864,
+   "tag": "hoisted_kv.layer0.k"
+  },
+  "k161": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 28632768,
+   "byteLength": 768,
+   "tag": "hoisted_kv.layer0.k"
+  },
+  "k162": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    2048,
+    1,
+    1
+   ],
+   "byteOffset": 28633536,
+   "byteLength": 1572864,
+   "tag": "hoisted_kv.layer0.v"
+  },
+  "k163": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 30206400,
+   "byteLength": 768,
+   "tag": "hoisted_kv.layer0.v"
+  },
+  "k164": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    2048,
+    1,
+    1
+   ],
+   "byteOffset": 30207168,
+   "byteLength": 1572864,
+   "tag": "hoisted_kv.layer1.k"
+  },
+  "k165": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 31780032,
+   "byteLength": 768,
+   "tag": "hoisted_kv.layer1.k"
+  },
+  "k166": {
+   "dataType": "float16",
+   "shape": [
+    384,
+    2048,
+    1,
+    1
+   ],
+   "byteOffset": 31780800,
+   "byteLength": 1572864,
+   "tag": "hoisted_kv.layer1.v"
+  },
+  "k167": {
+   "dataType": "float16",
+   "shape": [
+    384
+   ],
+   "byteOffset": 33353664,
+   "byteLength": 768,
+   "tag": "hoisted_kv.layer1.v"
+  }
+ },
+ "ops": [
+  {
+   "id": 0,
+   "type": "conv2d",
+   "inputs": [
+    "image",
+    "k0",
+    "k1"
+   ],
+   "output": "v0",
+   "outputShape": [
+    1,
+    32,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     2,
+     2
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k1"
+   },
+   "tag": "stem.stem1"
+  },
+  {
+   "id": 1,
+   "type": "relu",
+   "inputs": [
+    "v0"
+   ],
+   "output": "v1",
+   "outputShape": [
+    1,
+    32,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stem.stem1"
+  },
+  {
+   "id": 2,
+   "type": "pad",
+   "inputs": [
+    "v1"
+   ],
+   "output": "v2",
+   "outputShape": [
+    1,
+    32,
+    193,
+    193
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "beginningPadding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "endingPadding": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "mode": "constant",
+    "value": 0
+   },
+   "tag": "stem.pad"
+  },
+  {
+   "id": 3,
+   "type": "conv2d",
+   "inputs": [
+    "v2",
+    "k2",
+    "k3"
+   ],
+   "output": "v3",
+   "outputShape": [
+    1,
+    16,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k3"
+   },
+   "tag": "stem.stem2a"
+  },
+  {
+   "id": 4,
+   "type": "relu",
+   "inputs": [
+    "v3"
+   ],
+   "output": "v4",
+   "outputShape": [
+    1,
+    16,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stem.stem2a"
+  },
+  {
+   "id": 5,
+   "type": "pad",
+   "inputs": [
+    "v4"
+   ],
+   "output": "v5",
+   "outputShape": [
+    1,
+    16,
+    193,
+    193
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "beginningPadding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "endingPadding": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "mode": "constant",
+    "value": 0
+   },
+   "tag": "stem.pad2"
+  },
+  {
+   "id": 6,
+   "type": "conv2d",
+   "inputs": [
+    "v5",
+    "k4",
+    "k5"
+   ],
+   "output": "v6",
+   "outputShape": [
+    1,
+    32,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k5"
+   },
+   "tag": "stem.stem2b"
+  },
+  {
+   "id": 7,
+   "type": "relu",
+   "inputs": [
+    "v6"
+   ],
+   "output": "v7",
+   "outputShape": [
+    1,
+    32,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stem.stem2b"
+  },
+  {
+   "id": 8,
+   "type": "maxPool2d",
+   "inputs": [
+    "v2"
+   ],
+   "output": "v8",
+   "outputShape": [
+    1,
+    32,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "windowDimensions": [
+     2,
+     2
+    ],
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "layout": "nchw"
+   },
+   "tag": "stem.pool"
+  },
+  {
+   "id": 9,
+   "type": "concat",
+   "inputs": [
+    "v8",
+    "v7"
+   ],
+   "output": "v9",
+   "outputShape": [
+    1,
+    64,
+    192,
+    192
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stem.concat"
+  },
+  {
+   "id": 10,
+   "type": "conv2d",
+   "inputs": [
+    "v9",
+    "k6",
+    "k7"
+   ],
+   "output": "v10",
+   "outputShape": [
+    1,
+    32,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     2,
+     2
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k7"
+   },
+   "tag": "stem.stem3"
+  },
+  {
+   "id": 11,
+   "type": "relu",
+   "inputs": [
+    "v10"
+   ],
+   "output": "v11",
+   "outputShape": [
+    1,
+    32,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stem.stem3"
+  },
+  {
+   "id": 12,
+   "type": "conv2d",
+   "inputs": [
+    "v11",
+    "k8",
+    "k9"
+   ],
+   "output": "v12",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k9"
+   },
+   "tag": "stem.stem4"
+  },
+  {
+   "id": 13,
+   "type": "relu",
+   "inputs": [
+    "v12"
+   ],
+   "output": "v13",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stem.stem4"
+  },
+  {
+   "id": 14,
+   "type": "conv2d",
+   "inputs": [
+    "v13",
+    "k10",
+    "k11"
+   ],
+   "output": "v14",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k11"
+   },
+   "tag": "stages.0.blocks.0.layers.0"
+  },
+  {
+   "id": 15,
+   "type": "relu",
+   "inputs": [
+    "v14"
+   ],
+   "output": "v15",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.0"
+  },
+  {
+   "id": 16,
+   "type": "conv2d",
+   "inputs": [
+    "v15",
+    "k12",
+    "k13"
+   ],
+   "output": "v16",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k13"
+   },
+   "tag": "stages.0.blocks.0.layers.1"
+  },
+  {
+   "id": 17,
+   "type": "relu",
+   "inputs": [
+    "v16"
+   ],
+   "output": "v17",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.1"
+  },
+  {
+   "id": 18,
+   "type": "conv2d",
+   "inputs": [
+    "v17",
+    "k14",
+    "k15"
+   ],
+   "output": "v18",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k15"
+   },
+   "tag": "stages.0.blocks.0.layers.2"
+  },
+  {
+   "id": 19,
+   "type": "relu",
+   "inputs": [
+    "v18"
+   ],
+   "output": "v19",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.2"
+  },
+  {
+   "id": 20,
+   "type": "conv2d",
+   "inputs": [
+    "v19",
+    "k16",
+    "k17"
+   ],
+   "output": "v20",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k17"
+   },
+   "tag": "stages.0.blocks.0.layers.3"
+  },
+  {
+   "id": 21,
+   "type": "relu",
+   "inputs": [
+    "v20"
+   ],
+   "output": "v21",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.3"
+  },
+  {
+   "id": 22,
+   "type": "conv2d",
+   "inputs": [
+    "v21",
+    "k18",
+    "k19"
+   ],
+   "output": "v22",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k19"
+   },
+   "tag": "stages.0.blocks.0.layers.4"
+  },
+  {
+   "id": 23,
+   "type": "relu",
+   "inputs": [
+    "v22"
+   ],
+   "output": "v23",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.4"
+  },
+  {
+   "id": 24,
+   "type": "conv2d",
+   "inputs": [
+    "v23",
+    "k20",
+    "k21"
+   ],
+   "output": "v24",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k21"
+   },
+   "tag": "stages.0.blocks.0.layers.5"
+  },
+  {
+   "id": 25,
+   "type": "relu",
+   "inputs": [
+    "v24"
+   ],
+   "output": "v25",
+   "outputShape": [
+    1,
+    48,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.layers.5"
+  },
+  {
+   "id": 26,
+   "type": "concat",
+   "inputs": [
+    "v13",
+    "v15",
+    "v17",
+    "v19",
+    "v21",
+    "v23",
+    "v25"
+   ],
+   "output": "v26",
+   "outputShape": [
+    1,
+    336,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  {
+   "id": 27,
+   "type": "conv2d",
+   "inputs": [
+    "v26",
+    "k22",
+    "k23"
+   ],
+   "output": "v27",
+   "outputShape": [
+    1,
+    64,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k23"
+   },
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  {
+   "id": 28,
+   "type": "relu",
+   "inputs": [
+    "v27"
+   ],
+   "output": "v28",
+   "outputShape": [
+    1,
+    64,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  {
+   "id": 29,
+   "type": "conv2d",
+   "inputs": [
+    "v28",
+    "k24",
+    "k25"
+   ],
+   "output": "v29",
+   "outputShape": [
+    1,
+    128,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k25"
+   },
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  {
+   "id": 30,
+   "type": "relu",
+   "inputs": [
+    "v29"
+   ],
+   "output": "v30",
+   "outputShape": [
+    1,
+    128,
+    96,
+    96
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.0.blocks.0.aggregation"
+  },
+  {
+   "id": 31,
+   "type": "conv2d",
+   "inputs": [
+    "v30",
+    "k26",
+    "k27"
+   ],
+   "output": "v31",
+   "outputShape": [
+    1,
+    128,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     2,
+     2
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 128,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k27"
+   },
+   "tag": "stages.1.downsample"
+  },
+  {
+   "id": 32,
+   "type": "conv2d",
+   "inputs": [
+    "v31",
+    "k28",
+    "k29"
+   ],
+   "output": "v32",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k29"
+   },
+   "tag": "stages.1.blocks.0.layers.0"
+  },
+  {
+   "id": 33,
+   "type": "relu",
+   "inputs": [
+    "v32"
+   ],
+   "output": "v33",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.0"
+  },
+  {
+   "id": 34,
+   "type": "conv2d",
+   "inputs": [
+    "v33",
+    "k30",
+    "k31"
+   ],
+   "output": "v34",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k31"
+   },
+   "tag": "stages.1.blocks.0.layers.1"
+  },
+  {
+   "id": 35,
+   "type": "relu",
+   "inputs": [
+    "v34"
+   ],
+   "output": "v35",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.1"
+  },
+  {
+   "id": 36,
+   "type": "conv2d",
+   "inputs": [
+    "v35",
+    "k32",
+    "k33"
+   ],
+   "output": "v36",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k33"
+   },
+   "tag": "stages.1.blocks.0.layers.2"
+  },
+  {
+   "id": 37,
+   "type": "relu",
+   "inputs": [
+    "v36"
+   ],
+   "output": "v37",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.2"
+  },
+  {
+   "id": 38,
+   "type": "conv2d",
+   "inputs": [
+    "v37",
+    "k34",
+    "k35"
+   ],
+   "output": "v38",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k35"
+   },
+   "tag": "stages.1.blocks.0.layers.3"
+  },
+  {
+   "id": 39,
+   "type": "relu",
+   "inputs": [
+    "v38"
+   ],
+   "output": "v39",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.3"
+  },
+  {
+   "id": 40,
+   "type": "conv2d",
+   "inputs": [
+    "v39",
+    "k36",
+    "k37"
+   ],
+   "output": "v40",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k37"
+   },
+   "tag": "stages.1.blocks.0.layers.4"
+  },
+  {
+   "id": 41,
+   "type": "relu",
+   "inputs": [
+    "v40"
+   ],
+   "output": "v41",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.4"
+  },
+  {
+   "id": 42,
+   "type": "conv2d",
+   "inputs": [
+    "v41",
+    "k38",
+    "k39"
+   ],
+   "output": "v42",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k39"
+   },
+   "tag": "stages.1.blocks.0.layers.5"
+  },
+  {
+   "id": 43,
+   "type": "relu",
+   "inputs": [
+    "v42"
+   ],
+   "output": "v43",
+   "outputShape": [
+    1,
+    96,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.layers.5"
+  },
+  {
+   "id": 44,
+   "type": "concat",
+   "inputs": [
+    "v31",
+    "v33",
+    "v35",
+    "v37",
+    "v39",
+    "v41",
+    "v43"
+   ],
+   "output": "v44",
+   "outputShape": [
+    1,
+    704,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  {
+   "id": 45,
+   "type": "conv2d",
+   "inputs": [
+    "v44",
+    "k40",
+    "k41"
+   ],
+   "output": "v45",
+   "outputShape": [
+    1,
+    256,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k41"
+   },
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  {
+   "id": 46,
+   "type": "relu",
+   "inputs": [
+    "v45"
+   ],
+   "output": "v46",
+   "outputShape": [
+    1,
+    256,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  {
+   "id": 47,
+   "type": "conv2d",
+   "inputs": [
+    "v46",
+    "k42",
+    "k43"
+   ],
+   "output": "v47",
+   "outputShape": [
+    1,
+    512,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k43"
+   },
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  {
+   "id": 48,
+   "type": "relu",
+   "inputs": [
+    "v47"
+   ],
+   "output": "v48",
+   "outputShape": [
+    1,
+    512,
+    48,
+    48
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.1.blocks.0.aggregation"
+  },
+  {
+   "id": 49,
+   "type": "conv2d",
+   "inputs": [
+    "v48",
+    "k44",
+    "k45"
+   ],
+   "output": "v49",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     2,
+     2
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 512,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k45"
+   },
+   "tag": "stages.2.downsample"
+  },
+  {
+   "id": 50,
+   "type": "conv2d",
+   "inputs": [
+    "v49",
+    "k46",
+    "k47"
+   ],
+   "output": "v50",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k47"
+   },
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  {
+   "id": 51,
+   "type": "conv2d",
+   "inputs": [
+    "v50",
+    "k48",
+    "k49"
+   ],
+   "output": "v51",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k49"
+   },
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  {
+   "id": 52,
+   "type": "relu",
+   "inputs": [
+    "v51"
+   ],
+   "output": "v52",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.0"
+  },
+  {
+   "id": 53,
+   "type": "conv2d",
+   "inputs": [
+    "v52",
+    "k50",
+    "k51"
+   ],
+   "output": "v53",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k51"
+   },
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  {
+   "id": 54,
+   "type": "conv2d",
+   "inputs": [
+    "v53",
+    "k52",
+    "k53"
+   ],
+   "output": "v54",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k53"
+   },
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  {
+   "id": 55,
+   "type": "relu",
+   "inputs": [
+    "v54"
+   ],
+   "output": "v55",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.1"
+  },
+  {
+   "id": 56,
+   "type": "conv2d",
+   "inputs": [
+    "v55",
+    "k54",
+    "k55"
+   ],
+   "output": "v56",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k55"
+   },
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  {
+   "id": 57,
+   "type": "conv2d",
+   "inputs": [
+    "v56",
+    "k56",
+    "k57"
+   ],
+   "output": "v57",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k57"
+   },
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  {
+   "id": 58,
+   "type": "relu",
+   "inputs": [
+    "v57"
+   ],
+   "output": "v58",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.2"
+  },
+  {
+   "id": 59,
+   "type": "conv2d",
+   "inputs": [
+    "v58",
+    "k58",
+    "k59"
+   ],
+   "output": "v59",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k59"
+   },
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  {
+   "id": 60,
+   "type": "conv2d",
+   "inputs": [
+    "v59",
+    "k60",
+    "k61"
+   ],
+   "output": "v60",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k61"
+   },
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  {
+   "id": 61,
+   "type": "relu",
+   "inputs": [
+    "v60"
+   ],
+   "output": "v61",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.3"
+  },
+  {
+   "id": 62,
+   "type": "conv2d",
+   "inputs": [
+    "v61",
+    "k62",
+    "k63"
+   ],
+   "output": "v62",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k63"
+   },
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  {
+   "id": 63,
+   "type": "conv2d",
+   "inputs": [
+    "v62",
+    "k64",
+    "k65"
+   ],
+   "output": "v63",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k65"
+   },
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  {
+   "id": 64,
+   "type": "relu",
+   "inputs": [
+    "v63"
+   ],
+   "output": "v64",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.4"
+  },
+  {
+   "id": 65,
+   "type": "conv2d",
+   "inputs": [
+    "v64",
+    "k66",
+    "k67"
+   ],
+   "output": "v65",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k67"
+   },
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  {
+   "id": 66,
+   "type": "conv2d",
+   "inputs": [
+    "v65",
+    "k68",
+    "k69"
+   ],
+   "output": "v66",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k69"
+   },
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  {
+   "id": 67,
+   "type": "relu",
+   "inputs": [
+    "v66"
+   ],
+   "output": "v67",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.layers.5"
+  },
+  {
+   "id": 68,
+   "type": "concat",
+   "inputs": [
+    "v49",
+    "v52",
+    "v55",
+    "v58",
+    "v61",
+    "v64",
+    "v67"
+   ],
+   "output": "v68",
+   "outputShape": [
+    1,
+    1664,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  {
+   "id": 69,
+   "type": "conv2d",
+   "inputs": [
+    "v68",
+    "k70",
+    "k71"
+   ],
+   "output": "v69",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k71"
+   },
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  {
+   "id": 70,
+   "type": "relu",
+   "inputs": [
+    "v69"
+   ],
+   "output": "v70",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  {
+   "id": 71,
+   "type": "conv2d",
+   "inputs": [
+    "v70",
+    "k72",
+    "k73"
+   ],
+   "output": "v71",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k73"
+   },
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  {
+   "id": 72,
+   "type": "relu",
+   "inputs": [
+    "v71"
+   ],
+   "output": "v72",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.0.aggregation"
+  },
+  {
+   "id": 73,
+   "type": "conv2d",
+   "inputs": [
+    "v72",
+    "k74",
+    "k75"
+   ],
+   "output": "v73",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k75"
+   },
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  {
+   "id": 74,
+   "type": "conv2d",
+   "inputs": [
+    "v73",
+    "k76",
+    "k77"
+   ],
+   "output": "v74",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k77"
+   },
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  {
+   "id": 75,
+   "type": "relu",
+   "inputs": [
+    "v74"
+   ],
+   "output": "v75",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.0"
+  },
+  {
+   "id": 76,
+   "type": "conv2d",
+   "inputs": [
+    "v75",
+    "k78",
+    "k79"
+   ],
+   "output": "v76",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k79"
+   },
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  {
+   "id": 77,
+   "type": "conv2d",
+   "inputs": [
+    "v76",
+    "k80",
+    "k81"
+   ],
+   "output": "v77",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k81"
+   },
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  {
+   "id": 78,
+   "type": "relu",
+   "inputs": [
+    "v77"
+   ],
+   "output": "v78",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.1"
+  },
+  {
+   "id": 79,
+   "type": "conv2d",
+   "inputs": [
+    "v78",
+    "k82",
+    "k83"
+   ],
+   "output": "v79",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k83"
+   },
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  {
+   "id": 80,
+   "type": "conv2d",
+   "inputs": [
+    "v79",
+    "k84",
+    "k85"
+   ],
+   "output": "v80",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k85"
+   },
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  {
+   "id": 81,
+   "type": "relu",
+   "inputs": [
+    "v80"
+   ],
+   "output": "v81",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.2"
+  },
+  {
+   "id": 82,
+   "type": "conv2d",
+   "inputs": [
+    "v81",
+    "k86",
+    "k87"
+   ],
+   "output": "v82",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k87"
+   },
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  {
+   "id": 83,
+   "type": "conv2d",
+   "inputs": [
+    "v82",
+    "k88",
+    "k89"
+   ],
+   "output": "v83",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k89"
+   },
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  {
+   "id": 84,
+   "type": "relu",
+   "inputs": [
+    "v83"
+   ],
+   "output": "v84",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.3"
+  },
+  {
+   "id": 85,
+   "type": "conv2d",
+   "inputs": [
+    "v84",
+    "k90",
+    "k91"
+   ],
+   "output": "v85",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k91"
+   },
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  {
+   "id": 86,
+   "type": "conv2d",
+   "inputs": [
+    "v85",
+    "k92",
+    "k93"
+   ],
+   "output": "v86",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k93"
+   },
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  {
+   "id": 87,
+   "type": "relu",
+   "inputs": [
+    "v86"
+   ],
+   "output": "v87",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.4"
+  },
+  {
+   "id": 88,
+   "type": "conv2d",
+   "inputs": [
+    "v87",
+    "k94",
+    "k95"
+   ],
+   "output": "v88",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k95"
+   },
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  {
+   "id": 89,
+   "type": "conv2d",
+   "inputs": [
+    "v88",
+    "k96",
+    "k97"
+   ],
+   "output": "v89",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k97"
+   },
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  {
+   "id": 90,
+   "type": "relu",
+   "inputs": [
+    "v89"
+   ],
+   "output": "v90",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.layers.5"
+  },
+  {
+   "id": 91,
+   "type": "concat",
+   "inputs": [
+    "v72",
+    "v75",
+    "v78",
+    "v81",
+    "v84",
+    "v87",
+    "v90"
+   ],
+   "output": "v91",
+   "outputShape": [
+    1,
+    2176,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  {
+   "id": 92,
+   "type": "conv2d",
+   "inputs": [
+    "v91",
+    "k98",
+    "k99"
+   ],
+   "output": "v92",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k99"
+   },
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  {
+   "id": 93,
+   "type": "relu",
+   "inputs": [
+    "v92"
+   ],
+   "output": "v93",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  {
+   "id": 94,
+   "type": "conv2d",
+   "inputs": [
+    "v93",
+    "k100",
+    "k101"
+   ],
+   "output": "v94",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k101"
+   },
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  {
+   "id": 95,
+   "type": "relu",
+   "inputs": [
+    "v94"
+   ],
+   "output": "v95",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.aggregation"
+  },
+  {
+   "id": 96,
+   "type": "add",
+   "inputs": [
+    "v95",
+    "v72"
+   ],
+   "output": "v96",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.1.residual"
+  },
+  {
+   "id": 97,
+   "type": "conv2d",
+   "inputs": [
+    "v96",
+    "k102",
+    "k103"
+   ],
+   "output": "v97",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k103"
+   },
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  {
+   "id": 98,
+   "type": "conv2d",
+   "inputs": [
+    "v97",
+    "k104",
+    "k105"
+   ],
+   "output": "v98",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k105"
+   },
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  {
+   "id": 99,
+   "type": "relu",
+   "inputs": [
+    "v98"
+   ],
+   "output": "v99",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.0"
+  },
+  {
+   "id": 100,
+   "type": "conv2d",
+   "inputs": [
+    "v99",
+    "k106",
+    "k107"
+   ],
+   "output": "v100",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k107"
+   },
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  {
+   "id": 101,
+   "type": "conv2d",
+   "inputs": [
+    "v100",
+    "k108",
+    "k109"
+   ],
+   "output": "v101",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k109"
+   },
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  {
+   "id": 102,
+   "type": "relu",
+   "inputs": [
+    "v101"
+   ],
+   "output": "v102",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.1"
+  },
+  {
+   "id": 103,
+   "type": "conv2d",
+   "inputs": [
+    "v102",
+    "k110",
+    "k111"
+   ],
+   "output": "v103",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k111"
+   },
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  {
+   "id": 104,
+   "type": "conv2d",
+   "inputs": [
+    "v103",
+    "k112",
+    "k113"
+   ],
+   "output": "v104",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k113"
+   },
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  {
+   "id": 105,
+   "type": "relu",
+   "inputs": [
+    "v104"
+   ],
+   "output": "v105",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.2"
+  },
+  {
+   "id": 106,
+   "type": "conv2d",
+   "inputs": [
+    "v105",
+    "k114",
+    "k115"
+   ],
+   "output": "v106",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k115"
+   },
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  {
+   "id": 107,
+   "type": "conv2d",
+   "inputs": [
+    "v106",
+    "k116",
+    "k117"
+   ],
+   "output": "v107",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k117"
+   },
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  {
+   "id": 108,
+   "type": "relu",
+   "inputs": [
+    "v107"
+   ],
+   "output": "v108",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.3"
+  },
+  {
+   "id": 109,
+   "type": "conv2d",
+   "inputs": [
+    "v108",
+    "k118",
+    "k119"
+   ],
+   "output": "v109",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k119"
+   },
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  {
+   "id": 110,
+   "type": "conv2d",
+   "inputs": [
+    "v109",
+    "k120",
+    "k121"
+   ],
+   "output": "v110",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k121"
+   },
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  {
+   "id": 111,
+   "type": "relu",
+   "inputs": [
+    "v110"
+   ],
+   "output": "v111",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.4"
+  },
+  {
+   "id": 112,
+   "type": "conv2d",
+   "inputs": [
+    "v111",
+    "k122",
+    "k123"
+   ],
+   "output": "v112",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k123"
+   },
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  {
+   "id": 113,
+   "type": "conv2d",
+   "inputs": [
+    "v112",
+    "k124",
+    "k125"
+   ],
+   "output": "v113",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 192,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k125"
+   },
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  {
+   "id": 114,
+   "type": "relu",
+   "inputs": [
+    "v113"
+   ],
+   "output": "v114",
+   "outputShape": [
+    1,
+    192,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.layers.5"
+  },
+  {
+   "id": 115,
+   "type": "concat",
+   "inputs": [
+    "v96",
+    "v99",
+    "v102",
+    "v105",
+    "v108",
+    "v111",
+    "v114"
+   ],
+   "output": "v115",
+   "outputShape": [
+    1,
+    2176,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  {
+   "id": 116,
+   "type": "conv2d",
+   "inputs": [
+    "v115",
+    "k126",
+    "k127"
+   ],
+   "output": "v116",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k127"
+   },
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  {
+   "id": 117,
+   "type": "relu",
+   "inputs": [
+    "v116"
+   ],
+   "output": "v117",
+   "outputShape": [
+    1,
+    512,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  {
+   "id": 118,
+   "type": "conv2d",
+   "inputs": [
+    "v117",
+    "k128",
+    "k129"
+   ],
+   "output": "v118",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k129"
+   },
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  {
+   "id": 119,
+   "type": "relu",
+   "inputs": [
+    "v118"
+   ],
+   "output": "v119",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.aggregation"
+  },
+  {
+   "id": 120,
+   "type": "add",
+   "inputs": [
+    "v119",
+    "v96"
+   ],
+   "output": "v120",
+   "outputShape": [
+    1,
+    1024,
+    24,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.2.blocks.2.residual"
+  },
+  {
+   "id": 121,
+   "type": "conv2d",
+   "inputs": [
+    "v120",
+    "k130",
+    "k131"
+   ],
+   "output": "v121",
+   "outputShape": [
+    1,
+    1024,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     2,
+     2
+    ],
+    "padding": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1024,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k131"
+   },
+   "tag": "stages.3.downsample"
+  },
+  {
+   "id": 122,
+   "type": "conv2d",
+   "inputs": [
+    "v121",
+    "k132",
+    "k133"
+   ],
+   "output": "v122",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k133"
+   },
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  {
+   "id": 123,
+   "type": "conv2d",
+   "inputs": [
+    "v122",
+    "k134",
+    "k135"
+   ],
+   "output": "v123",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k135"
+   },
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  {
+   "id": 124,
+   "type": "relu",
+   "inputs": [
+    "v123"
+   ],
+   "output": "v124",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.0"
+  },
+  {
+   "id": 125,
+   "type": "conv2d",
+   "inputs": [
+    "v124",
+    "k136",
+    "k137"
+   ],
+   "output": "v125",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k137"
+   },
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  {
+   "id": 126,
+   "type": "conv2d",
+   "inputs": [
+    "v125",
+    "k138",
+    "k139"
+   ],
+   "output": "v126",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k139"
+   },
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  {
+   "id": 127,
+   "type": "relu",
+   "inputs": [
+    "v126"
+   ],
+   "output": "v127",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.1"
+  },
+  {
+   "id": 128,
+   "type": "conv2d",
+   "inputs": [
+    "v127",
+    "k140",
+    "k141"
+   ],
+   "output": "v128",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k141"
+   },
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  {
+   "id": 129,
+   "type": "conv2d",
+   "inputs": [
+    "v128",
+    "k142",
+    "k143"
+   ],
+   "output": "v129",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k143"
+   },
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  {
+   "id": 130,
+   "type": "relu",
+   "inputs": [
+    "v129"
+   ],
+   "output": "v130",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.2"
+  },
+  {
+   "id": 131,
+   "type": "conv2d",
+   "inputs": [
+    "v130",
+    "k144",
+    "k145"
+   ],
+   "output": "v131",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k145"
+   },
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  {
+   "id": 132,
+   "type": "conv2d",
+   "inputs": [
+    "v131",
+    "k146",
+    "k147"
+   ],
+   "output": "v132",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k147"
+   },
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  {
+   "id": 133,
+   "type": "relu",
+   "inputs": [
+    "v132"
+   ],
+   "output": "v133",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.3"
+  },
+  {
+   "id": 134,
+   "type": "conv2d",
+   "inputs": [
+    "v133",
+    "k148",
+    "k149"
+   ],
+   "output": "v134",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k149"
+   },
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  {
+   "id": 135,
+   "type": "conv2d",
+   "inputs": [
+    "v134",
+    "k150",
+    "k151"
+   ],
+   "output": "v135",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k151"
+   },
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  {
+   "id": 136,
+   "type": "relu",
+   "inputs": [
+    "v135"
+   ],
+   "output": "v136",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.4"
+  },
+  {
+   "id": 137,
+   "type": "conv2d",
+   "inputs": [
+    "v136",
+    "k152",
+    "k153"
+   ],
+   "output": "v137",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k153"
+   },
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  {
+   "id": 138,
+   "type": "conv2d",
+   "inputs": [
+    "v137",
+    "k154",
+    "k155"
+   ],
+   "output": "v138",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     2,
+     2,
+     2,
+     2
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 384,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k155"
+   },
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  {
+   "id": 139,
+   "type": "relu",
+   "inputs": [
+    "v138"
+   ],
+   "output": "v139",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.layers.5"
+  },
+  {
+   "id": 140,
+   "type": "concat",
+   "inputs": [
+    "v121",
+    "v124",
+    "v127",
+    "v130",
+    "v133",
+    "v136",
+    "v139"
+   ],
+   "output": "v140",
+   "outputShape": [
+    1,
+    3328,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "axis": 1
+   },
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  {
+   "id": 141,
+   "type": "conv2d",
+   "inputs": [
+    "v140",
+    "k156",
+    "k157"
+   ],
+   "output": "v141",
+   "outputShape": [
+    1,
+    1024,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k157"
+   },
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  {
+   "id": 142,
+   "type": "relu",
+   "inputs": [
+    "v141"
+   ],
+   "output": "v142",
+   "outputShape": [
+    1,
+    1024,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  {
+   "id": 143,
+   "type": "conv2d",
+   "inputs": [
+    "v142",
+    "k158",
+    "k159"
+   ],
+   "output": "v143",
+   "outputShape": [
+    1,
+    2048,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k159"
+   },
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  {
+   "id": 144,
+   "type": "relu",
+   "inputs": [
+    "v143"
+   ],
+   "output": "v144",
+   "outputShape": [
+    1,
+    2048,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {},
+   "tag": "stages.3.blocks.0.aggregation"
+  },
+  {
+   "id": 145,
+   "type": "conv2d",
+   "inputs": [
+    "v144",
+    "k160",
+    "k161"
+   ],
+   "output": "v145",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k161"
+   },
+   "tag": "hoisted_kv.layer0.k"
+  },
+  {
+   "id": 146,
+   "type": "reshape",
+   "inputs": [
+    "v145"
+   ],
+   "output": "v146",
+   "outputShape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     24,
+     144
+    ]
+   },
+   "tag": "hoisted_kv.layer0.k"
+  },
+  {
+   "id": 147,
+   "type": "conv2d",
+   "inputs": [
+    "v144",
+    "k162",
+    "k163"
+   ],
+   "output": "v147",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k163"
+   },
+   "tag": "hoisted_kv.layer0.v"
+  },
+  {
+   "id": 148,
+   "type": "reshape",
+   "inputs": [
+    "v147"
+   ],
+   "output": "v148",
+   "outputShape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     24,
+     144
+    ]
+   },
+   "tag": "hoisted_kv.layer0.v"
+  },
+  {
+   "id": 149,
+   "type": "transpose",
+   "inputs": [
+    "v148"
+   ],
+   "output": "v149",
+   "outputShape": [
+    1,
+    16,
+    144,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "hoisted_kv.layer0.v"
+  },
+  {
+   "id": 150,
+   "type": "conv2d",
+   "inputs": [
+    "v144",
+    "k164",
+    "k165"
+   ],
+   "output": "v150",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k165"
+   },
+   "tag": "hoisted_kv.layer1.k"
+  },
+  {
+   "id": 151,
+   "type": "reshape",
+   "inputs": [
+    "v150"
+   ],
+   "output": "v151",
+   "outputShape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     24,
+     144
+    ]
+   },
+   "tag": "hoisted_kv.layer1.k"
+  },
+  {
+   "id": 152,
+   "type": "conv2d",
+   "inputs": [
+    "v144",
+    "k166",
+    "k167"
+   ],
+   "output": "v152",
+   "outputShape": [
+    1,
+    384,
+    12,
+    12
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "strides": [
+     1,
+     1
+    ],
+    "padding": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dilations": [
+     1,
+     1
+    ],
+    "groups": 1,
+    "inputLayout": "nchw",
+    "filterLayout": "oihw",
+    "bias": "k167"
+   },
+   "tag": "hoisted_kv.layer1.v"
+  },
+  {
+   "id": 153,
+   "type": "reshape",
+   "inputs": [
+    "v152"
+   ],
+   "output": "v153",
+   "outputShape": [
+    1,
+    16,
+    24,
+    144
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "newShape": [
+     1,
+     16,
+     24,
+     144
+    ]
+   },
+   "tag": "hoisted_kv.layer1.v"
+  },
+  {
+   "id": 154,
+   "type": "transpose",
+   "inputs": [
+    "v153"
+   ],
+   "output": "v154",
+   "outputShape": [
+    1,
+    16,
+    144,
+    24
+   ],
+   "outputDataType": "float16",
+   "options": {
+    "permutation": [
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "tag": "hoisted_kv.layer1.v"
+  }
+ ]
+}
