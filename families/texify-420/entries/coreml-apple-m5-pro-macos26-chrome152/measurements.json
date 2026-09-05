@@ -1,0 +1,110 @@
+{
+  "entry": "coreml-apple-m5-pro-macos26-chrome152",
+  "family": "texify-420",
+  "rows": [
+    {
+      "label": "greedy, 18 LatexGen benchmark images",
+      "host": {
+        "backend": "coreml",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "e2e",
+      "newPromptMs": 145.7,
+      "stages": {
+        "encoderDispatchMedianMs": 9.3,
+        "decodeStepMedianMs": 3.7
+      },
+      "runs": 1,
+      "statistic": "median over the 18 LatexGen benchmark images of one greedy pass each (encoder + decode-step loop to EOS or forced EOS at 384), after encoder/decode-step verification on the same page. Isolated encoder 9.3 ms and decode-step 3.7 ms are 5 warmup + 20 runs.",
+      "buildOnceMs": {
+        "encoder": 5899.8,
+        "decode": 8848.4
+      },
+      "quality": {
+        "tokensIdentical": "18/18",
+        "encoderKVMaxAbsVsFp32": 0.04044318199157715,
+        "encoderFp16Floor": 0.07659149169921875,
+        "preferredInputLayout": "nchw",
+        "perImageMs": {
+          "pythagorean": 1219.3,
+          "quadratic": 99.6,
+          "euler": 52.7,
+          "circle-area": 1201.8,
+          "gaussian": 126.6,
+          "basel": 141.6,
+          "binomial": 149.8,
+          "derivative": 135.6,
+          "det2x2": 89.8,
+          "schrodinger": 265.4,
+          "cauchy": 141.6,
+          "zeta": 189.5,
+          "maxwell": 256.9,
+          "newton-text": 130.8,
+          "epsilon-delta-text": 166.6,
+          "gaussian-text": 206.8,
+          "quadratic-tiny": 109.4,
+          "basel-dark": 1217.4
+        }
+      },
+      "loadAvg": 4.26,
+      "source": "webnn-workbench-texify/bench/webnn/texify/catalog/measurements.json"
+    }
+  ],
+  "baselines": {
+    "latexgenOrtWebgpuInt4": {
+      "perImageMs": 810,
+      "runtime": "ONNX Runtime Web WebGPU EP, int4, as LatexGen docs/benchmarks.md"
+    },
+    "latexgenOrtCpuInt8": {
+      "perImageMs": 8000,
+      "runtime": "ONNX Runtime Web CPU, int8, as LatexGen docs/benchmarks.md"
+    }
+  },
+  "floor": {
+    "encoderOps": 1049,
+    "decodeOps": 349,
+    "ortEncoderNodes": 16003,
+    "encoderOpHisto": {
+      "conv2d": 1,
+      "transpose": 140,
+      "layerNormalization": 44,
+      "reshape": 340,
+      "matmul": 139,
+      "add": 166,
+      "split": 20,
+      "softmax": 20,
+      "gelu": 20,
+      "slice": 98,
+      "concat": 40,
+      "pad": 21
+    },
+    "decodeOpHisto": {
+      "add": 98,
+      "gather": 4,
+      "layerNormalization": 26,
+      "reshape": 51,
+      "matmul": 81,
+      "split": 8,
+      "mul": 24,
+      "transpose": 32,
+      "softmax": 16,
+      "gelu": 8,
+      "argMax": 1
+    },
+    "note": "1049 WebNN encoder ops vs 16003 ORT int8 encoder nodes. Isolated encoder 9.3 ms, decode-step 3.7 ms. Cap images (~1.2 s) are 384 dispatches; the median across 18 images is 146 ms."
+  },
+  "sources": [
+    "webnn-workbench docs/texify.md",
+    "webnn-workbench bench/results/webnn-texify-greedy-18.json",
+    "webnn-workbench bench/results/texify-fp16-range.md"
+  ]
+}
