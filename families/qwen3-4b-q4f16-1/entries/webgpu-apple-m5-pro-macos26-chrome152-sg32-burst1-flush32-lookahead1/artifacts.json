@@ -1,0 +1,37 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-lookahead1",
+  "family": "qwen3-4b-q4f16-1",
+  "runtimeJs": [
+    {
+      "name": "web-llm-0.2.84-qwen-m5-lookahead.js",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/2efcfd5804a39bc2c1af40389e16d8a0a4e73d4a/qwen3-1.7b-q4f16-1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-lookahead1/web-llm-0.2.84-qwen-m5-lookahead.js",
+      "bytes": 6598408,
+      "sha256": "163177f1c2842ca60a52644109867c48e7ee6865530149a69ac3fd827d4cce35",
+      "mediaType": "text/javascript",
+      "role": "Hash-verified WebLLM ESM runtime with K-step decode, WebGPU runtime-overlap flags and the greedy lookahead pipeline; reused without duplication from the 1.7B lookahead catalog artifact"
+    }
+  ],
+  "modelWasm": [
+    {
+      "name": "qwen3-4b-argmax-chunk256-sg32-tr32.wasm",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/170ebdf3b1707f939833511cf1d295305227c921/qwen3-4b-q4f16-1/v1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32/qwen3-4b-argmax-chunk256-sg32-tr32.wasm",
+      "bytes": 5844976,
+      "sha256": "61867ba3af26196f99e7091d044193b7069688e7e2733bd19f3a1a4a6f7a3b36",
+      "mediaType": "application/wasm",
+      "role": "Qwen3-4B model library with subgroup-32, chunk-256 argmax and GEMV TR=32"
+    }
+  ],
+  "modelResources": [
+    {
+      "name": "mlc-ai/Qwen3-4B-q4f16_1-MLC snapshot",
+      "url": "https://huggingface.co/mlc-ai/Qwen3-4B-q4f16_1-MLC/resolve/a5c9fab855e3ccbdfed2e7e69683d75f30332161/",
+      "repository": "mlc-ai/Qwen3-4B-q4f16_1-MLC",
+      "revision": "a5c9fab855e3ccbdfed2e7e69683d75f30332161",
+      "bytes": 2274342846,
+      "license": "Apache-2.0",
+      "mediaType": "application/vnd.huggingface.repository",
+      "role": "Immutable upstream weights, tokenizer and MLC chat configuration"
+    }
+  ],
+  "notes": "The model library WASM and upstream model repository are byte-identical to the sibling burst4-flush32 entry and referenced at its existing published path; only the runtime bundle is new here, and it is reused by immutable URL and hash from the 1.7B lookahead catalog entry rather than uploaded again."
+}
