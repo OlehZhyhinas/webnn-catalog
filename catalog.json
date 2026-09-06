@@ -1,13 +1,15 @@
 {
   "catalog": "webnn-catalog",
-  "version": 2,
-  "description": "Hand-built WebNN graphs, stored as data and keyed by the configuration they were built for. The catalog stores and describes; it does not select.",
+  "version": 3,
+  "description": "WebNN graph recipes and WebLLM runtime artifacts, stored as data and keyed by the configuration they were built for. The catalog stores and describes; it does not select.",
   "schema": {
     "dir": "schema/",
-    "catalog": "schema/catalog.schema.json"
+    "catalog": "schema/catalog.schema.json",
+    "artifactManifest": "schema/artifact-manifest.schema.json"
   },
   "runtime": {
     "loader": "runtime/loader.js",
+    "webllmLoader": "runtime/webllm-loader.js",
     "docs": "runtime/README.md",
     "recipeSchemaVersion": 1
   },
@@ -37,9 +39,12 @@
           "newPromptMs": 68.4,
           "measuredHosts": 1,
           "constantBytes": 2410862744,
-          "weightsPublished": true
+          "weightsPublished": true,
+          "runtimeKind": "webnn",
+          "artifactBytes": 2410862744
         }
-      ]
+      ],
+      "runtimeKind": "webnn"
     },
     "texo-384": {
       "path": "families/texo-384",
@@ -66,9 +71,12 @@
           "newPromptMs": 25.85,
           "measuredHosts": 1,
           "constantBytes": 44138240,
-          "weightsPublished": true
+          "weightsPublished": true,
+          "runtimeKind": "webnn",
+          "artifactBytes": 44138240
         }
-      ]
+      ],
+      "runtimeKind": "webnn"
     },
     "intellitex-t5-220m": {
       "path": "families/intellitex-t5-220m",
@@ -99,9 +107,12 @@
           "newPromptMs": 146.2,
           "measuredHosts": 1,
           "constantBytes": 1041776392,
-          "weightsPublished": true
+          "weightsPublished": true,
+          "runtimeKind": "webnn",
+          "artifactBytes": 1041776392
         }
-      ]
+      ],
+      "runtimeKind": "webnn"
     },
     "texify-420": {
       "path": "families/texify-420",
@@ -128,7 +139,35 @@
           "newPromptMs": 145.7,
           "measuredHosts": 1,
           "constantBytes": 626579624,
-          "weightsPublished": true
+          "weightsPublished": true,
+          "runtimeKind": "webnn",
+          "artifactBytes": 626579624
+        }
+      ],
+      "runtimeKind": "webnn"
+    },
+    "qwen3-0.6b-q4f16-1": {
+      "path": "families/qwen3-0.6b-q4f16-1",
+      "family": "families/qwen3-0.6b-q4f16-1/family.json",
+      "name": "Qwen3-0.6B q4f16_1, OpenAI-compatible chat",
+      "runtimeKind": "webllm",
+      "task": "text-generation",
+      "model": "mlc-ai/Qwen3-0.6B-q4f16_1-MLC",
+      "entries": [
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4",
+          "path": "families/qwen3-0.6b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4",
+          "entry": "families/qwen3-0.6b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-06",
+          "measuredHosts": 1,
+          "artifactBytes": 358945290
         }
       ]
     }
@@ -137,6 +176,7 @@
     "selection": "The catalog stores and describes; it does not select. There is no ranking, no fallback and no default entry here. Probing the machine and choosing an entry is the consuming product's policy.",
     "entry": "One family built and tuned for one configuration. `target` is what it was built FOR, `compat.requires` is what must hold for it to work at all, and the two are different claims.",
     "recipe": "The exact MLGraphBuilder call sequence, with the shapes the backend inferred. Not a model format. schema/recipe.schema.json is the contract; runtime/loader.js is one reader of it.",
+    "webllm": "A first-class runtime entry with hash-pinned JavaScript and model-library WASM plus revision-pinned upstream model resources. runtime/webllm-loader.js verifies executable bytes before use.",
     "constants": "Never in git. A separate blob whose byteOffsets the recipe indexes, published to a content host and pinned by sha256 in the entry's manifest.",
     "measurements": "One row per host, each naming the machine, the OS, the browser build and the protocol. A number without those is not a measurement, and a row's load average is never borrowed from another moment.",
     "provenance": "Every entry has a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like.",

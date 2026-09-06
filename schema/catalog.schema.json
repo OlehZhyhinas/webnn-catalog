@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/catalog.schema.json",
-  "title": "Catalog index, version 2",
+  "title": "Catalog index, version 3",
   "description": "An index of families and the entries under them. Summary rows only: every field here is a copy of something the entry directory owns, kept so a consumer can fetch one small file, decide what it wants by its own policy, and then fetch that entry. The index states no preference and has no default entry.",
 
   "type": "object",
@@ -9,7 +9,7 @@
   "additionalProperties": false,
   "properties": {
     "catalog": { "const": "webnn-catalog" },
-    "version": { "const": 2 },
+    "version": { "const": 3 },
     "description": { "type": "string" },
     "generatedAt": { "type": "string" },
     "schema": {
@@ -22,6 +22,7 @@
       "additionalProperties": false,
       "properties": {
         "loader": { "type": "string" },
+        "webllmLoader": { "type": "string" },
         "docs": { "type": "string" },
         "recipeSchemaVersion": { "type": "integer" },
         "note": { "type": "string" }
@@ -31,27 +32,29 @@
     "families": {
       "type": "object",
       "description": "Keyed by family id.",
-      "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+      "propertyNames": { "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
       "additionalProperties": {
         "type": "object",
-        "required": ["path", "family", "name", "task", "entries"],
+        "required": ["path", "family", "name", "runtimeKind", "task", "entries"],
         "additionalProperties": false,
         "properties": {
           "path": { "type": "string" },
           "family": { "type": "string", "description": "Path to family.json." },
           "name": { "type": "string" },
+          "runtimeKind": { "enum": ["webnn", "webllm"] },
           "task": { "type": "string" },
           "model": { "type": "string" },
           "entries": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["id", "path", "entry", "variant", "backend"],
+              "required": ["id", "path", "entry", "runtimeKind", "variant", "backend", "artifactBytes"],
               "additionalProperties": false,
               "properties": {
                 "id": { "type": "string" },
                 "path": { "type": "string" },
                 "entry": { "type": "string", "description": "Path to entry.json, which is the only authoritative record." },
+                "runtimeKind": { "enum": ["webnn", "webllm"] },
                 "variant": { "type": "string" },
                 "backend": { "type": "string" },
                 "browser": { "type": "string" },
@@ -63,8 +66,24 @@
                 "newPromptMs": { "type": ["number", "null"], "description": "The first measurement row's headline number, on the machine that row names. Not a promise about any other machine." },
                 "measuredHosts": { "type": "integer", "minimum": 0 },
                 "constantBytes": { "type": ["integer", "null"] },
+                "artifactBytes": { "type": ["integer", "null"], "minimum": 1, "description": "Total downloadable bytes in the runtime-specific manifest." },
                 "weightsPublished": { "type": "boolean" }
-              }
+              },
+              "allOf": [
+                {
+                  "if": { "properties": { "runtimeKind": { "const": "webnn" } }, "required": ["runtimeKind"] },
+                  "then": { "required": ["graphs", "constantBytes", "weightsPublished"] },
+                  "else": {
+                    "not": {
+                      "anyOf": [
+                        { "required": ["graphs"] },
+                        { "required": ["constantBytes"] },
+                        { "required": ["weightsPublished"] }
+                      ]
+                    }
+                  }
+                }
+              ]
             }
           }
         }

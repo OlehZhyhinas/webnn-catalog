@@ -1,0 +1,95 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4",
+  "family": "qwen3-0.6b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4 under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-05",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 3.9895,
+      "tokensPerSecond": 250.655,
+      "pairedSpeedup": {
+        "baseline": "same JS/WASM/model, greedy K=1",
+        "candidate": "same JS/WASM/model, greedy K=4",
+        "baselineMsPerToken": 6.7406,
+        "candidateMsPerToken": 3.9895,
+        "speedup": 1.692
+      },
+      "loadAvg": [
+        16.004,
+        18.153
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 K=4 outputs byte-identical to paired K=1",
+        "qualityCorpusExact": "4/4 K=4 outputs byte-identical to paired K=1",
+        "throughputQuartilesTokensPerSecond": [
+          238.833,
+          252.18
+        ],
+        "throughputMad": 4.92,
+        "pairedRatioQuartiles": [
+          1.635,
+          1.711
+        ],
+        "pairedRatioMad": 0.027
+      },
+      "notes": "The 3.9895 ms/token value is the reciprocal of the measured 250.655 tokens/s median. The paired 1.692x statistic is the median of per-round ratios, so it need not equal the ratio of the two independent throughput medians.",
+      "source": "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-fresh-prompts-burst-orca.json"
+    },
+    {
+      "kind": "projected",
+      "label": "Quiet-machine K=4 projection",
+      "date": "2026-09-05",
+      "projection": {
+        "method": "Apply the independently measured chunk-256/TR=32 and fresh-prompt K=4 paired ratios to the last quiet 5.97 ms/token subgroup-32 result.",
+        "assumptions": [
+          "The relative tuning and K=4 ratios persist once the unrelated ORCA workload ends.",
+          "The prompt/context distribution remains comparable to the measured short fresh-prompt corpus.",
+          "No claim is made that this is a direct quiet-machine timing."
+        ],
+        "metrics": {
+          "warmDecodeMsPerToken": 3.4,
+          "tokensPerSecond": 295,
+          "speedup": 1.9
+        }
+      },
+      "source": "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 docs/qwen-m5-webgpu-report.md",
+      "notes": "Projection only. Do not present these values as measured."
+    }
+  ],
+  "baselines": {
+    "originalWebLLM": {
+      "warmDecodeMsPerToken": 6.4,
+      "tokensPerSecond": 157,
+      "notes": "User-provided same-machine baseline."
+    },
+    "publishedSubgroup32Quiet": {
+      "warmDecodeMsPerToken": 5.97,
+      "tokensPerSecond": 167.6,
+      "notes": "Last quiet direct timing before ORCA."
+    }
+  },
+  "sources": [
+    "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 docs/qwen-m5-webgpu-report.md",
+    "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-fresh-prompts-burst-orca.json",
+    "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-quality-corpus-burst-orca.json"
+  ],
+  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline; quiet numbers remain a projection until directly rerun."
+}

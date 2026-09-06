@@ -1,0 +1,16 @@
+# Third-party notices
+
+The WebLLM runtime bundle and Qwen model-library WASM are derivative works of
+MLC WebLLM, MLC-LLM, and Apache TVM. They are distributed under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+- WebLLM source and license:
+  <https://github.com/OlehZhyhinas/web-llm-qwen/tree/40233f370831fab7e180402d5d2629f10b281ef4>
+- MLC-LLM source and license:
+  <https://github.com/mlc-ai/mlc-llm/tree/ed1c7f65f7fc4f08c53db1294c721f4c0ba49a35>
+- Apache TVM source and license:
+  <https://github.com/apache/tvm>
+- Qwen3-0.6B q4f16_1 model repository:
+  <https://huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC/tree/8c14ce481d4c692769976ad52afea453a102df19>
+
+The catalog metadata and loader do not change upstream model license terms.

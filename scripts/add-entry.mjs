@@ -123,6 +123,8 @@ const family = readJson(famFile);
   const errs = v.validate("family.schema.json", family, path.relative(ROOT, famFile));
   if (errs.length) { console.error(`${path.relative(ROOT, famFile)} is not valid:\n  ${errs.join("\n  ")}`); process.exit(2); }
 }
+if (family.runtimeKind !== "webnn")
+  throw new Error(`scripts/add-entry.mjs creates WebNN recipe entries only; ${o.family} is ${family.runtimeKind}`);
 
 // The entry id is a readable summary of the target, not a key anything parses.
 const entryId = o.entryId ?? [
@@ -244,6 +246,7 @@ const requires = Object.keys(o.requires).length
 const entry = {
   id: entryId,
   family: o.family,
+  runtimeKind: "webnn",
   variant: o.variant,
   created: new Date().toISOString().slice(0, 10),
   ...(o.producedBy ? { producedBy: { workbench: o.producedBy, date: new Date().toISOString().slice(0, 10), ...(o.recorder ? { recorder: o.recorder } : {}) } } : {}),
@@ -270,13 +273,17 @@ writeJson(path.join(entryDir, "entry.json"), entry);
 // ---------------------------------------------------------------------------
 // Catalog index: a summary row, and nothing that is not a copy of the entry.
 const catalogPath = path.join(ROOT, "catalog.json");
-const catalog = fs.existsSync(catalogPath) && readJson(catalogPath).version === 2
+const catalog = fs.existsSync(catalogPath) && readJson(catalogPath).version === 3
   ? readJson(catalogPath)
   : {
       catalog: "webnn-catalog",
-      version: 2,
-      description: "Hand-built WebNN graphs, stored as data and keyed by the configuration they were built for. The catalog stores and describes; it does not select.",
-      schema: { dir: "schema/", catalog: "schema/catalog.schema.json" },
+      version: 3,
+      description: "WebNN graph recipes and WebLLM runtime artifacts, stored as data and keyed by the configuration they were built for. The catalog stores and describes; it does not select.",
+      schema: {
+        dir: "schema/",
+        catalog: "schema/catalog.schema.json",
+        artifactManifest: "schema/artifact-manifest.schema.json",
+      },
       runtime: { loader: "runtime/loader.js", docs: "runtime/README.md", recipeSchemaVersion: 1 },
       families: {},
       conventions: {},
@@ -301,6 +308,7 @@ const row = {
   id: entryId,
   path: path.relative(ROOT, entryDir),
   entry: path.relative(ROOT, path.join(entryDir, "entry.json")),
+  runtimeKind: "webnn",
   variant: o.variant,
   backend: target.backend.name,
   browser: `${target.browser.name} ${target.browser.major}`,
@@ -312,6 +320,7 @@ const row = {
   newPromptMs: measurements.rows[0]?.newPromptMs ?? null,
   measuredHosts: new Set(measurements.rows.map((r) => r.host.chip ?? r.host.browser)).size,
   constantBytes: Object.values(constants).reduce((a, c) => a + c.bytes, 0),
+  artifactBytes: Object.values(constants).reduce((a, c) => a + c.bytes, 0),
   weightsPublished: Object.values(constants).every((c) => c.url !== null),
 };
 
@@ -319,12 +328,14 @@ catalog.families[o.family] ??= {
   path: path.relative(ROOT, famDir),
   family: path.relative(ROOT, famFile),
   name: family.name,
+  runtimeKind: family.runtimeKind,
   task: family.task,
   ...(family.source?.model ? { model: family.source.model } : {}),
   entries: [],
 };
 const fam = catalog.families[o.family];
 fam.name = family.name;
+fam.runtimeKind = family.runtimeKind;
 fam.task = family.task;
 // Rows whose entry directory is gone are stale: the index is a copy of what is
 // on disk, so it never keeps something disk does not have.

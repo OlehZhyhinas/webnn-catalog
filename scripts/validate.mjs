@@ -198,6 +198,30 @@ export function createValidator(dir = SCHEMA_DIR) {
 
 const readJson = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const sha256File = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+const artifactBytes = (manifest) =>
+  ["runtimeJs", "modelWasm", "modelResources"]
+    .flatMap((key) => manifest[key] ?? [])
+    .reduce((sum, artifact) => sum + (artifact.bytes ?? 0), 0);
+
+function isPublicHttpsUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+    if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local")) return false;
+    if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) return false;
+    const octets = host.split(".").map(Number);
+    if (octets.length === 4 && octets.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+      if (octets[0] === 10 || octets[0] === 127 || octets[0] === 0) return false;
+      if (octets[0] === 169 && octets[1] === 254) return false;
+      if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return false;
+      if (octets[0] === 192 && octets[1] === 168) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const BYTES_PER_ELEMENT = { float32: 4, float16: 2, int32: 4, uint32: 4, int64: 8, uint64: 8, int8: 1, uint8: 1 };
 
@@ -265,6 +289,7 @@ export function validateCatalog({ only = null, quiet = false } = {}) {
     if (family.id !== famId) bad(`${rel(famFile)}: id "${family.id}" is not its catalog key "${famId}"`);
     if (family.name !== famRow.name) bad(`catalog.json: families.${famId}.name disagrees with family.json`);
     if (family.task !== famRow.task) bad(`catalog.json: families.${famId}.task disagrees with family.json`);
+    if (family.runtimeKind !== famRow.runtimeKind) bad(`catalog.json: families.${famId}.runtimeKind disagrees with family.json`);
     for (const f of family.tokenizer?.files ?? [])
       if (!fs.existsSync(path.join(famDir, f))) bad(`${rel(famFile)}: tokenizer file ${f} is missing`);
     if (family.tokenizer?.module && !fs.existsSync(path.join(famDir, family.tokenizer.module)))
@@ -289,6 +314,8 @@ export function validateCatalog({ only = null, quiet = false } = {}) {
       if (entry.id !== row.id) bad(`${rel(entryFile)}: id "${entry.id}" is not its directory name "${row.id}"`);
       if (entry.id !== path.basename(entryDir)) bad(`${rel(entryFile)}: id does not match the directory it is in`);
       if (entry.family !== famId) bad(`${rel(entryFile)}: family "${entry.family}" is not "${famId}"`);
+      if (entry.runtimeKind !== family.runtimeKind) bad(`${rel(entryFile)}: runtimeKind "${entry.runtimeKind}" disagrees with family.json`);
+      if (entry.runtimeKind !== row.runtimeKind) bad(`catalog.json: ${famId}/${row.id}.runtimeKind disagrees with entry.json`);
       if (entry.variant !== row.variant) bad(`catalog.json: ${famId}/${row.id}.variant disagrees with entry.json`);
       if (entry.target.backend.name !== row.backend) bad(`catalog.json: ${famId}/${row.id}.backend disagrees with entry.json`);
 
@@ -299,77 +326,115 @@ export function validateCatalog({ only = null, quiet = false } = {}) {
         else if (got !== want) bad(`${rel(entryFile)}: compat.requires["${dotted}"] is ${JSON.stringify(want)} but target says ${JSON.stringify(got)}`);
       }
 
-      // manifest
-      const manifestPath = path.join(entryDir, entry.constants);
-      if (!fs.existsSync(manifestPath)) { bad(`${rel(entryFile)}: constants -> missing ${entry.constants}`); continue; }
-      const manifest = readJson(manifestPath);
-      for (const e of v.validate("manifest.schema.json", manifest, rel(manifestPath))) bad(e);
-      if (manifest.entry !== entry.id || manifest.family !== entry.family)
-        bad(`${rel(manifestPath)}: entry/family do not match entry.json`);
-      const allPublished = Object.values(manifest.constants).every((c) => c.url !== null);
-      if (row.weightsPublished !== allPublished)
-        bad(`catalog.json: ${famId}/${row.id}.weightsPublished is ${row.weightsPublished} but manifest.json ${allPublished ? "has" : "lacks"} a url for every blob`);
+      if (entry.runtimeKind === "webnn") {
+        // WebNN manifest
+        const manifestPath = path.join(entryDir, entry.constants);
+        if (!fs.existsSync(manifestPath)) { bad(`${rel(entryFile)}: constants -> missing ${entry.constants}`); continue; }
+        const manifest = readJson(manifestPath);
+        for (const e of v.validate("manifest.schema.json", manifest, rel(manifestPath))) bad(e);
+        if (manifest.entry !== entry.id || manifest.family !== entry.family)
+          bad(`${rel(manifestPath)}: entry/family do not match entry.json`);
+        const allPublished = Object.values(manifest.constants).every((c) => c.url !== null);
+        if (row.weightsPublished !== allPublished)
+          bad(`catalog.json: ${famId}/${row.id}.weightsPublished is ${row.weightsPublished} but manifest.json ${allPublished ? "has" : "lacks"} a url for every blob`);
+        const totalBytes = Object.values(manifest.constants).reduce((sum, c) => sum + c.bytes, 0);
+        if (row.constantBytes !== totalBytes)
+          bad(`catalog.json: ${famId}/${row.id}.constantBytes disagrees with manifest.json`);
+        if (row.artifactBytes !== totalBytes)
+          bad(`catalog.json: ${famId}/${row.id}.artifactBytes disagrees with manifest.json`);
 
-      // graphs: recipes exist, hash, and agree with the entry's declared I/O
-      const graphNames = Object.keys(entry.graphs).filter((k) => k !== "chain");
-      if (!graphNames.length) bad(`${rel(entryFile)}: no graphs`);
-      const loaded = {};
-      for (const g of graphNames) {
-        const spec = entry.graphs[g];
-        const recipePath = path.join(entryDir, spec.recipe);
-        if (!fs.existsSync(recipePath)) { bad(`${rel(entryFile)}: graphs.${g}.recipe -> missing ${spec.recipe}`); continue; }
-        const recipe = readJson(recipePath);
-        loaded[g] = recipe;
-        for (const e of v.validate("recipe.schema.json", recipe, rel(recipePath))) bad(e);
-        for (const e of checkRecipe(recipe, rel(recipePath))) bad(e);
-        const hash = manifest.recipeHashes?.[spec.recipe]?.sha256;
-        if (!hash) bad(`${rel(manifestPath)}: no recipeHashes entry for ${spec.recipe}`);
-        else if (hash !== sha256File(recipePath))
-          bad(`${rel(recipePath)}: sha256 does not match manifest.recipeHashes (the file was edited by hand?)`);
-        if (!manifest.constants[spec.constants])
-          bad(`${rel(entryFile)}: graphs.${g}.constants "${spec.constants}" is not in manifest.json`);
-        const same = (a, b) =>
-          a.length === b.length &&
-          a.every((x, i) => x.name === b[i].name && x.dataType === b[i].dataType && String(x.shape) === String(b[i].shape));
-        if (!same(spec.inputs, recipe.inputs.map((i) => ({ name: i.name, dataType: i.dataType, shape: i.shape }))))
-          bad(`${rel(entryFile)}: graphs.${g}.inputs disagree with ${spec.recipe}`);
-        if (!same(spec.outputs.map((o) => ({ name: o.name, dataType: o.dataType, shape: o.shape })),
-                  recipe.outputs.map((o) => ({ name: o.name, dataType: o.dataType, shape: o.shape }))))
-          bad(`${rel(entryFile)}: graphs.${g}.outputs disagree with ${spec.recipe}`);
-        if (spec.ops !== undefined && spec.ops !== recipe.ops.length)
-          bad(`${rel(entryFile)}: graphs.${g}.ops says ${spec.ops}, the recipe has ${recipe.ops.length}`);
-        note(rel(recipePath));
-      }
-
-      // chain links must name a real output and a real input of the same shape
-      for (const [from, to] of entry.graphs.chain) {
-        const [fg, fo] = from.split(".");
-        const [tg, ti] = to.split(".");
-        const out = entry.graphs[fg]?.outputs?.find((o) => o.name === fo);
-        const inp = entry.graphs[tg]?.inputs?.find((i) => i.name === ti);
-        if (!out) bad(`${rel(entryFile)}: chain "${from}" names no such graph output`);
-        if (!inp) bad(`${rel(entryFile)}: chain "${to}" names no such graph input`);
-        if (out && inp && (out.dataType !== inp.dataType || String(out.shape) !== String(inp.shape)))
-          bad(`${rel(entryFile)}: chain ${from} -> ${to} does not typecheck`);
-      }
-
-      // family contract: the entry must actually implement it
-      const fam = readJson(famFile);
-      for (const [g, c] of Object.entries(fam.contract.graphs)) {
-        const spec = entry.graphs[g];
-        if (!spec) { bad(`${rel(entryFile)}: family contract declares graph "${g}" and the entry has none`); continue; }
-        for (const [name, want] of Object.entries(c.inputs)) {
-          const got = spec.inputs.find((i) => i.name === name);
-          if (!got) bad(`${rel(entryFile)}: graphs.${g} is missing contract input "${name}"`);
-          else if (got.dataType !== want.dataType || String(got.shape) !== String(want.shape))
-            bad(`${rel(entryFile)}: graphs.${g}.${name} is ${got.dataType}[${got.shape}], the family contract says ${want.dataType}[${want.shape}]`);
+        // graphs: recipes exist, hash, and agree with the entry's declared I/O
+        const graphNames = Object.keys(entry.graphs).filter((k) => k !== "chain");
+        if (!graphNames.length) bad(`${rel(entryFile)}: no graphs`);
+        const loaded = {};
+        for (const g of graphNames) {
+          const spec = entry.graphs[g];
+          const recipePath = path.join(entryDir, spec.recipe);
+          if (!fs.existsSync(recipePath)) { bad(`${rel(entryFile)}: graphs.${g}.recipe -> missing ${spec.recipe}`); continue; }
+          const recipe = readJson(recipePath);
+          loaded[g] = recipe;
+          for (const e of v.validate("recipe.schema.json", recipe, rel(recipePath))) bad(e);
+          for (const e of checkRecipe(recipe, rel(recipePath))) bad(e);
+          const hash = manifest.recipeHashes?.[spec.recipe]?.sha256;
+          if (!hash) bad(`${rel(manifestPath)}: no recipeHashes entry for ${spec.recipe}`);
+          else if (hash !== sha256File(recipePath))
+            bad(`${rel(recipePath)}: sha256 does not match manifest.recipeHashes (the file was edited by hand?)`);
+          if (!manifest.constants[spec.constants])
+            bad(`${rel(entryFile)}: graphs.${g}.constants "${spec.constants}" is not in manifest.json`);
+          const same = (a, b) =>
+            a.length === b.length &&
+            a.every((x, i) => x.name === b[i].name && x.dataType === b[i].dataType && String(x.shape) === String(b[i].shape));
+          if (!same(spec.inputs, recipe.inputs.map((i) => ({ name: i.name, dataType: i.dataType, shape: i.shape }))))
+            bad(`${rel(entryFile)}: graphs.${g}.inputs disagree with ${spec.recipe}`);
+          if (!same(spec.outputs.map((o) => ({ name: o.name, dataType: o.dataType, shape: o.shape })),
+                    recipe.outputs.map((o) => ({ name: o.name, dataType: o.dataType, shape: o.shape }))))
+            bad(`${rel(entryFile)}: graphs.${g}.outputs disagree with ${spec.recipe}`);
+          if (spec.ops !== undefined && spec.ops !== recipe.ops.length)
+            bad(`${rel(entryFile)}: graphs.${g}.ops says ${spec.ops}, the recipe has ${recipe.ops.length}`);
+          note(rel(recipePath));
         }
-        for (const [name, want] of Object.entries(c.outputs)) {
-          const got = spec.outputs.find((o) => o.name === name);
-          if (!got) bad(`${rel(entryFile)}: graphs.${g} is missing contract output "${name}"`);
-          else if (got.dataType !== want.dataType || String(got.shape) !== String(want.shape))
-            bad(`${rel(entryFile)}: graphs.${g}.${name} is ${got.dataType}[${got.shape}], the family contract says ${want.dataType}[${want.shape}]`);
+
+        // chain links must name a real output and a real input of the same shape
+        for (const [from, to] of entry.graphs.chain) {
+          const [fg, fo] = from.split(".");
+          const [tg, ti] = to.split(".");
+          const out = entry.graphs[fg]?.outputs?.find((o) => o.name === fo);
+          const inp = entry.graphs[tg]?.inputs?.find((i) => i.name === ti);
+          if (!out) bad(`${rel(entryFile)}: chain "${from}" names no such graph output`);
+          if (!inp) bad(`${rel(entryFile)}: chain "${to}" names no such graph input`);
+          if (out && inp && (out.dataType !== inp.dataType || String(out.shape) !== String(inp.shape)))
+            bad(`${rel(entryFile)}: chain ${from} -> ${to} does not typecheck`);
         }
+
+        // family contract: the entry must actually implement it
+        for (const [g, c] of Object.entries(family.contract.graphs)) {
+          const spec = entry.graphs[g];
+          if (!spec) { bad(`${rel(entryFile)}: family contract declares graph "${g}" and the entry has none`); continue; }
+          for (const [name, want] of Object.entries(c.inputs)) {
+            const got = spec.inputs.find((i) => i.name === name);
+            if (!got) bad(`${rel(entryFile)}: graphs.${g} is missing contract input "${name}"`);
+            else if (got.dataType !== want.dataType || String(got.shape) !== String(want.shape))
+              bad(`${rel(entryFile)}: graphs.${g}.${name} is ${got.dataType}[${got.shape}], the family contract says ${want.dataType}[${want.shape}]`);
+          }
+          for (const [name, want] of Object.entries(c.outputs)) {
+            const got = spec.outputs.find((o) => o.name === name);
+            if (!got) bad(`${rel(entryFile)}: graphs.${g} is missing contract output "${name}"`);
+            else if (got.dataType !== want.dataType || String(got.shape) !== String(want.shape))
+              bad(`${rel(entryFile)}: graphs.${g}.${name} is ${got.dataType}[${got.shape}], the family contract says ${want.dataType}[${want.shape}]`);
+          }
+        }
+      } else if (entry.runtimeKind === "webllm") {
+        const manifestPath = path.join(entryDir, entry.artifacts);
+        if (!fs.existsSync(manifestPath)) { bad(`${rel(entryFile)}: artifacts -> missing ${entry.artifacts}`); continue; }
+        const manifest = readJson(manifestPath);
+        for (const e of v.validate("artifact-manifest.schema.json", manifest, rel(manifestPath))) bad(e);
+        if (manifest.entry !== entry.id || manifest.family !== entry.family)
+          bad(`${rel(manifestPath)}: entry/family do not match entry.json`);
+        for (const kind of ["runtimeJs", "modelWasm", "modelResources"]) {
+          for (const artifact of manifest[kind] ?? []) {
+            if (!isPublicHttpsUrl(artifact.url))
+              bad(`${rel(manifestPath)}: ${kind}.${artifact.name ?? "?"}.url must be a public HTTPS URL`);
+            if (kind !== "modelResources" && !/^[0-9a-f]{64}$/.test(artifact.sha256 ?? ""))
+              bad(`${rel(manifestPath)}: ${kind}.${artifact.name ?? "?"}.sha256 must be 64 lowercase hex characters`);
+            if (!Number.isInteger(artifact.bytes) || artifact.bytes <= 0)
+              bad(`${rel(manifestPath)}: ${kind}.${artifact.name ?? "?"}.bytes must be a positive integer`);
+          }
+        }
+        for (const resource of manifest.modelResources ?? []) {
+          if (resource.revision !== entry.model?.revision)
+            bad(`${rel(manifestPath)}: model resource revision disagrees with entry.model.revision`);
+        }
+        if (!isPublicHttpsUrl(entry.source?.repository) || !entry.source?.commit)
+          bad(`${rel(entryFile)}: WebLLM source requires a public HTTPS repository and pinned commit`);
+        if (!entry.license?.name)
+          bad(`${rel(entryFile)}: WebLLM license metadata is required`);
+        if (!entry.model?.revision)
+          bad(`${rel(entryFile)}: WebLLM model revision is required`);
+        if (typeof entry.capabilities?.fastPath?.eligible !== "boolean" || !entry.capabilities?.fastPath?.fallback)
+          bad(`${rel(entryFile)}: WebLLM fast-path eligibility and fallback are required`);
+        const totalBytes = artifactBytes(manifest);
+        if (row.artifactBytes !== totalBytes)
+          bad(`catalog.json: ${famId}/${row.id}.artifactBytes disagrees with artifact manifest`);
       }
 
       // measurements
@@ -380,8 +445,13 @@ export function validateCatalog({ only = null, quiet = false } = {}) {
           const m = readJson(mPath);
           for (const e of v.validate("measurements.schema.json", m, rel(mPath))) bad(e);
           if (m.entry !== entry.id || m.family !== entry.family) bad(`${rel(mPath)}: entry/family do not match entry.json`);
-          if (row.measuredHosts !== undefined && row.measuredHosts !== new Set(m.rows.map((r) => r.host.chip ?? r.host.browser)).size)
+          const measured = m.rows.filter((r) => r.kind === "measured");
+          if (row.measuredHosts !== undefined && row.measuredHosts !== new Set(measured.map((r) => r.host.chip ?? r.host.browser)).size)
             bad(`catalog.json: ${famId}/${row.id}.measuredHosts disagrees with measurements.json`);
+          for (const measuredRow of measured) {
+            if (measuredRow.pairedSpeedup && measuredRow.protocol !== "interleaved-ab")
+              bad(`${rel(mPath)}: pairedSpeedup requires protocol "interleaved-ab"`);
+          }
           note(rel(mPath));
         }
       }

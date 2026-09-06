@@ -5,11 +5,12 @@
   "description": "Everything that is true of every entry in the family. An entry may not change any of it: two entries of a family differ only in how the same computation is spelled for a different configuration, so they are interchangeable to a caller. Change the contract and it is a different family.",
 
   "type": "object",
-  "required": ["id", "name", "task", "source", "contract"],
+  "required": ["id", "name", "runtimeKind", "task", "source"],
   "additionalProperties": false,
   "properties": {
-    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
     "name": { "type": "string" },
+    "runtimeKind": { "enum": ["webnn", "webllm"] },
     "summary": { "type": "string" },
     "task": {
       "type": "string",
@@ -21,8 +22,20 @@
       "required": ["model"],
       "additionalProperties": false,
       "properties": {
-        "model": { "type": "string", "description": "Hugging Face id of the model the graphs were built from, e.g. \"stabilityai/sd-turbo\"." },
+        "model": { "type": "string", "description": "Upstream model id, for example a Hugging Face repository id." },
         "revision": { "type": ["string", "null"], "description": "The revision the weights were exported from. null when it was not recorded, which is a gap, not a licence." },
+        "repository": { "type": "string", "description": "Public source repository URL for the upstream model or conversion." },
+        "commit": { "type": "string", "description": "Pinned source repository commit." },
+        "license": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "spdx": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        },
         "components": {
           "type": "object",
           "description": "Other checkpoints folded into the graphs, e.g. a decoder.",
@@ -76,6 +89,44 @@
       }
     },
 
+    "chat": {
+      "type": "object",
+      "description": "WebLLM only: the OpenAI-compatible chat contract shared by every entry in the family.",
+      "required": ["api", "request", "response", "generation"],
+      "additionalProperties": false,
+      "properties": {
+        "api": { "const": "openai.chat.completions" },
+        "request": {
+          "type": "object",
+          "required": ["messages"],
+          "additionalProperties": false,
+          "properties": {
+            "messages": { "type": "string" },
+            "tools": { "type": "string" },
+            "stream": { "type": "string" }
+          }
+        },
+        "response": {
+          "type": "object",
+          "required": ["text"],
+          "additionalProperties": false,
+          "properties": {
+            "text": { "type": "string" },
+            "usage": { "type": "string" }
+          }
+        },
+        "generation": {
+          "type": "object",
+          "required": ["fastPath", "fallback"],
+          "additionalProperties": false,
+          "properties": {
+            "fastPath": { "type": "string" },
+            "fallback": { "type": "string" }
+          }
+        }
+      }
+    },
+
     "tokenizer": {
       "type": ["object", "null"],
       "description": "Data, plus the algorithm that reads it. The files are in the family directory because every entry shares them.",
@@ -118,6 +169,25 @@
 
     "notes": { "type": "string" }
   },
+
+  "allOf": [
+    {
+      "if": { "properties": { "runtimeKind": { "const": "webnn" } }, "required": ["runtimeKind"] },
+      "then": {
+        "required": ["contract"],
+        "not": { "required": ["chat"] }
+      },
+      "else": {
+        "required": ["chat"],
+        "not": {
+          "anyOf": [
+            { "required": ["contract"] },
+            { "required": ["constants"] }
+          ]
+        }
+      }
+    }
+  ],
 
   "$defs": {
     "operand": {

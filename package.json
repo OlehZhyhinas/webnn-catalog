@@ -7,6 +7,9 @@
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "verify": "node scripts/verify.mjs",
+    "verify:webllm": "node scripts/verify-webllm.mjs",
+    "verify:artifacts": "node scripts/verify-artifacts.mjs",
+    "test": "node --test",
     "probe": "node scripts/probe-target.mjs",
     "add-entry": "node scripts/add-entry.mjs",
     "add-measurement": "node scripts/add-measurement.mjs",

@@ -1,6 +1,7 @@
 {
   "id": "sd-turbo-512-1step",
   "name": "SD-Turbo, 512x512, one step",
+  "runtimeKind": "webnn",
   "summary": "SD-Turbo at 512x512 with a single Euler step, as two WebNN graphs: an OpenCLIP text encoder, and UNet + the Euler step + the TAESD decoder + an RGBA pack. float16 throughout. A prompt goes in, one int32-per-pixel image comes out.",
   "task": "text-to-image",
 
