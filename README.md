@@ -151,6 +151,23 @@ ratio was taken under CPU load and is an upper bound for a quiet machine.
 The loader applies the new `runtime.config.lookahead` flag; a loader that
 predates it runs plain K=1 on the same bundle.
 
+### Qwen3-4B WebLLM/WebGPU
+
+[`qwen3-4b-q4f16-1`](families/qwen3-4b-q4f16-1/) references the immutable
+upstream 4B weights and adds a model-specific subgroup-32, chunk-256,
+GEMV-`TR=32` library. Its M5 Pro entry uses K=4 exact-greedy decode, one
+compute pass, and a submit every 32 dispatches. The unchanged WebLLM runtime
+artifact is reused rather than duplicated.
+
+Across six warm-model, fresh-prompt paired rounds under ORCA it measured
+**73.85 tokens/s** (**13.54 ms/token**), **1.285x** the fully published
+WebLLM 0.2.84 subgroup-32 path. All six fresh outputs and completion-token
+counts, plus all four quality outputs, were byte-identical. There is no
+historical quiet 4B number, so no quiet projection is claimed.
+
+The Qwen demo accepts `?entry=` and continues to support every Qwen family;
+the existing 0.6B default is unchanged.
+
 ## Adding an entry
 
 Three commands, in this order.
