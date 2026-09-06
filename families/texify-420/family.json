@@ -1,6 +1,7 @@
 {
   "id": "texify-420",
   "name": "Texify, 420×420, Donut-Swin + mBART",
+  "runtimeKind": "webnn",
   "summary": "LatexGen's second-pass equation OCR (vikp/texify, ~300M): a Donut-Swin encoder on 420×420 RGB and an 8-layer mBART greedy decode-step, cache 384. float16 throughout. A preprocessed image goes in; greedy token ids come out.",
   "task": "image-to-latex",
   "source": {

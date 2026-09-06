@@ -1,8 +1,10 @@
 # runtime
 
-One file, `loader.js`, an ES module with no dependencies. Hand it a catalog
-entry and it gives back built `MLGraph`s; hand it a single recipe and a blob of
-constants and it gives back one.
+The runtime has two dependency-free ES module loaders, selected by an entry's
+`runtimeKind`:
+
+- `loader.js` replays WebNN recipes into built `MLGraph`s.
+- `webllm-loader.js` verifies and loads WebLLM/WebGPU artifacts.
 
 It knows nothing about diffusion, UNets or text encoders. It knows the WebNN
 builder surface and the recipe schema, and it knows the three things about this
@@ -13,6 +15,39 @@ intermediate should never cross into JS.
 It also knows nothing about *which* entry you should be running. Selection is
 the consuming product's policy; see the README's "Selection is the consumer's
 job". This module starts after that decision.
+
+## WebLLM entries
+
+```js
+import { loadWebLLMFromUrl } from "./runtime/webllm-loader.js";
+
+const rig = await loadWebLLMFromUrl(entryUrl);
+const result = await rig.engine.chat.completions.create({
+  messages: [{ role: "user", content: "Hello" }],
+  temperature: 0,
+  max_tokens: 64,
+});
+await rig.dispose();
+```
+
+`loadWebLLMFromUrl()` checks WebGPU subgroup-32 support, fetches the entry's
+artifact manifest, verifies the declared byte count and SHA-256 for both the
+runtime JavaScript and model-library WASM, and exposes those bytes through
+temporary blob URLs only after verification. The model record points at a
+revision-pinned upstream repository. `dispose()` unloads the engine and revokes
+both URLs.
+
+The Qwen entry configures K=4, but the patched runtime independently checks
+every request. `isGreedyBurstEligible()` exposes the same catalog-side rule:
+temperature zero, without logprobs, penalties, logit bias, grammar/structured
+output, or a custom logit processor. Ineligible requests use normal one-step
+sampling.
+
+`fetchVerifiedArtifact()` and `sha256Hex()` are exported for consumers that
+want to integrate artifact caching. Non-HTTPS and credential-bearing URLs are
+rejected (localhost is available only through an explicit development flag).
+
+## WebNN entries
 
 ```js
 import {

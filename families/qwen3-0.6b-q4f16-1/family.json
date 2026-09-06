@@ -1,0 +1,44 @@
+{
+  "id": "qwen3-0.6b-q4f16-1",
+  "name": "Qwen3-0.6B q4f16_1, OpenAI-compatible chat",
+  "runtimeKind": "webllm",
+  "summary": "Qwen3-0.6B quantized to q4f16_1 for WebLLM/WebGPU. Entries preserve the OpenAI-compatible chat contract while tuning runtime and model-library artifacts for a specific browser/GPU configuration.",
+  "task": "text-generation",
+  "source": {
+    "model": "mlc-ai/Qwen3-0.6B-q4f16_1-MLC",
+    "revision": "8c14ce481d4c692769976ad52afea453a102df19",
+    "repository": "https://huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC",
+    "commit": "8c14ce481d4c692769976ad52afea453a102df19",
+    "license": {
+      "name": "Apache License 2.0",
+      "spdx": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "precision": "q4f16_1 weights, float16 activations and KV cache",
+    "resolution": null,
+    "steps": null
+  },
+  "chat": {
+    "api": "openai.chat.completions",
+    "request": {
+      "messages": "Array of OpenAI role/content messages.",
+      "tools": "Optional OpenAI-compatible tool declarations; they disable the catalog's K=4 guarantee when they install a grammar or logit processor.",
+      "stream": "Boolean. Streaming chunks follow WebLLM's OpenAI-compatible delta shape."
+    },
+    "response": {
+      "text": "choices[0].message.content for non-streaming, or concatenated choices[0].delta.content for streaming.",
+      "usage": "OpenAI-compatible prompt/completion token counts plus WebLLM latency fields when enabled."
+    },
+    "generation": {
+      "fastPath": "Exact greedy K=4 only when temperature is zero and no logprobs, penalties, grammar, logit bias, structured output, or custom logit processor is active.",
+      "fallback": "All other requests use the normal WebLLM one-token sampler and keep the same API contract."
+    }
+  },
+  "tokenizer": null,
+  "verification": {
+    "case": "Six rotating fresh LaTeX prompts plus four math/prose/code/low-margin quality prompts.",
+    "bar": "K=4 output text is byte-identical to K=1 for every case.",
+    "runner": "WEBNN_MAX_LOAD=0 npm run verify:webllm"
+  },
+  "notes": "Weights and tokenizer remain in the immutable upstream MLC repository. The catalog entry carries only metadata plus verified runtime JS and model-library WASM references."
+}

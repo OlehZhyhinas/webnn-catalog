@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OlehZhyhinas/webnn-catalog/schema/artifact-manifest.schema.json",
+  "title": "WebLLM artifact manifest",
+  "description": "Content-addressed runtime and model artifacts needed by a WebLLM entry. URLs are upstream/public artifacts, not MLGraphBuilder recipes.",
+  "type": "object",
+  "required": ["entry", "family", "runtimeJs", "modelWasm", "modelResources"],
+  "additionalProperties": false,
+  "properties": {
+    "entry": { "type": "string" },
+    "family": { "type": "string" },
+    "runtimeJs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "modelWasm": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "modelResources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/modelResource" }
+    },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["name", "url", "sha256", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "mediaType": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    },
+    "modelResource": {
+      "type": "object",
+      "required": ["name", "url", "repository", "revision", "bytes", "license"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://" },
+        "repository": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "mediaType": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    }
+  }
+}

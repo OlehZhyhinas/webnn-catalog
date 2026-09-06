@@ -1,12 +1,15 @@
 # webnn-catalog
 
-Hand-built WebNN graphs, stored as data and keyed by the configuration they
-were built for.
+Configuration-keyed, verified browser inference artifacts. The catalog carries
+hand-built WebNN graph recipes and first-class WebLLM/WebGPU entries; it does
+not pretend a WebLLM model library is an `MLGraphBuilder` recipe.
 
 A **recipe** is the exact `MLGraphBuilder` call sequence that built a tuned
 graph once: every op, in order, with the operand shapes the backend itself
 inferred, recorded as JSON alongside a blob of constants. `runtime/loader.js`
-replays it into an `MLGraph`. That is the whole idea.
+replays it into an `MLGraph`. A WebLLM entry instead names hash-pinned runtime
+JavaScript and model-library WASM plus a revision-pinned upstream model
+repository. `runtimeKind` discriminates the two formats.
 
 It is not a model format. There is no autodiff, no training metadata, no
 framework, no graph optimiser. A recipe is the *output* of optimisation: the
@@ -87,6 +90,22 @@ family's `contract.chaining.autoregressive` block.
 
 Machine-readable index: [`catalog.json`](catalog.json), which holds summary rows
 only. The entry directory is authoritative for everything in them.
+
+### Qwen3-0.6B WebLLM/WebGPU
+
+[`qwen3-0.6b-q4f16-1`](families/qwen3-0.6b-q4f16-1/) is the first
+`runtimeKind: "webllm"` family. Its Apple M5 Pro entry uses subgroup-32,
+chunk-256 GPU argmax, GEMV `TR=32`, and K=4 GPU-resident greedy decode.
+On six warm-model, fresh-prompt interleaved rounds under machine load it
+measured **250.655 tokens/s**, **1.692x** the same artifact at K=1. The
+approximately 3.4 ms/token quiet result is recorded only as a projection.
+
+The [Qwen demo](demo/qwen.html) fetches the runtime bundle and model WASM,
+verifies their byte counts and SHA-256 hashes, imports the verified runtime,
+then fetches model files from an immutable upstream Hugging Face revision.
+The fast path is limited to exact greedy requests; sampling, logprobs,
+penalties, grammar/structured output, logit bias, and custom logit processors
+automatically retain the ordinary one-step WebLLM path.
 
 **Pending a dump:** the ToDo (Token Downsampling) fast variant of the SD-Turbo
 family runs at 54.6 ms, about 20% faster, for a visibly different image (PSNR

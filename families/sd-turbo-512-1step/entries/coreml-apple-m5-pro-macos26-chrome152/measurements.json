@@ -41,7 +41,8 @@
         "psnr8VsFp16Mps": 44.264
       },
       "notes": "The emitter's own run of the graph these recipes were recorded from. The machine carried an unrelated compute job throughout pass four (load 15-20), so absolutes are 1-5 ms pessimistic; the 67.85 ms headline in provenance.md is the quiet-machine pass-three reading of the same configuration, which declared one graph output instead of two.",
-      "source": "webnn-workbench bench/results/webnn-e2e-pass4-best.json"
+      "source": "webnn-workbench bench/results/webnn-e2e-pass4-best.json",
+      "kind": "measured"
     },
     {
       "label": "catalog loader replay, whole-file constants",
@@ -82,7 +83,8 @@
       },
       "loadAvg": 18.46,
       "notes": "The catalog's own runtime/loader.js rebuilding this entry from entry.json + the recipes and running the family's reference case. Same machine as the row above, carrying the same unrelated compute job (load 18.5), so absolutes are a few ms pessimistic. The RGBA readback is byte-identical to the recorded expectation, 5838ed1a...; the replay itself costs 5 ms for 1441 ops against the 3,569 ms the original emitter spent, and the ~31 s is Core ML compiling, which Chromium does not cache.",
-      "source": "webnn-catalog scripts/verify.mjs, bench/verify-v2.json"
+      "source": "webnn-catalog scripts/verify.mjs, bench/verify-v2.json",
+      "kind": "measured"
     }
   ],
   "baselines": {

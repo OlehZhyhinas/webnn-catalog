@@ -13,13 +13,13 @@
 
     "backend": {
       "type": "object",
-      "description": "Which WebNN backend the browser actually gave us, inferred from opSupportLimits(). This is the single most load-bearing field in the file: on macOS an off-the-record Chrome profile silently lands on TFLite/XNNPACK instead of Core ML.",
-      "required": ["name", "deviceType", "fingerprint", "observable"],
+      "description": "The browser compute backend: a WebNN implementation inferred from opSupportLimits(), or WebGPU as observed from the selected adapter.",
+      "required": ["name", "deviceType", "observable"],
       "additionalProperties": false,
       "properties": {
         "name": {
-          "enum": ["coreml", "dml", "tflite", "unknown"],
-          "description": "coreml: preferredInputLayout nchw and input rank max 5. tflite: nhwc. dml: nchw with rank max 8 (Windows). unknown: WebNN present but the fingerprint matches nothing known."
+          "enum": ["coreml", "dml", "tflite", "webgpu", "unknown"],
+          "description": "coreml/tflite/dml/unknown identify WebNN implementations; webgpu identifies a WebGPU runtime target."
         },
         "deviceType": { "enum": ["gpu", "npu", "cpu"], "description": "The MLContextOptions.deviceType this fingerprint was taken with." },
         "fingerprint": {
@@ -38,8 +38,44 @@
           "description": "The same fingerprint taken for every deviceType the browser would create a context for. Informational.",
           "additionalProperties": { "type": "object" }
         },
+        "webgpu": {
+          "type": "object",
+          "required": ["api", "requirements"],
+          "additionalProperties": false,
+          "properties": {
+            "api": { "type": "string", "description": "WebGPU implementation/API description, for example Dawn/Metal." },
+            "wgslLanguageFeatures": { "type": "array", "items": { "type": "string" } },
+            "requirements": {
+              "type": "object",
+              "required": ["features", "limits", "subgroups"],
+              "additionalProperties": false,
+              "properties": {
+                "features": { "type": "array", "items": { "type": "string" } },
+                "limits": { "type": "object", "additionalProperties": { "type": ["integer", "number"] } },
+                "subgroups": {
+                  "type": "object",
+                  "required": ["required"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "required": { "type": "boolean" },
+                    "minSize": { "type": ["integer", "null"], "minimum": 1 },
+                    "maxSize": { "type": ["integer", "null"], "minimum": 1 },
+                    "features": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        },
         "observable": { "const": "browser" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "name": { "const": "webgpu" } }, "required": ["name"] },
+          "then": { "required": ["webgpu"] },
+          "else": { "required": ["fingerprint"] }
+        }
+      ]
     },
 
     "browser": {

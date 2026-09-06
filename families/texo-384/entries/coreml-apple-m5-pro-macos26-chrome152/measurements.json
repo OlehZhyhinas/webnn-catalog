@@ -40,7 +40,8 @@
         "encoderFp16Floor": 0.09032261371612549
       },
       "loadAvg": 4.7,
-      "source": "webnn-workbench/bench/results/texo-final.json"
+      "source": "webnn-workbench/bench/results/texo-final.json",
+      "kind": "measured"
     },
     {
       "label": "loader replay, 18 images, scripts/verify.mjs",
@@ -70,7 +71,8 @@
         "textEncoderMaxAbs": null
       },
       "notes": "The catalog's own loader replaying the two recipes: tokens identical on 18/18 images, decoded strings identical to LatexGen's recorded outputs on 18/18. Load average 5.3 at run time.",
-      "source": "webnn-catalog bench/verify-texo-384.json"
+      "source": "webnn-catalog bench/verify-texo-384.json",
+      "kind": "measured"
     },
     {
       "label": "k16-S512, 18 images, quiet machine (load 3.9)",
@@ -110,7 +112,8 @@
         "encoderFp16Floor": 0.09032261371612549
       },
       "notes": "Same graphs as row 1, run after the harness waited for the 1-minute load average to fall under 4: 22.7 ms median per image, 0.55 ms per token, encoder 1.9 ms. Row 1 ran at load 5.2.",
-      "source": "webnn-workbench bench/results/texo-final-quiet.json"
+      "source": "webnn-workbench bench/results/texo-final-quiet.json",
+      "kind": "measured"
     }
   ],
   "baselines": {

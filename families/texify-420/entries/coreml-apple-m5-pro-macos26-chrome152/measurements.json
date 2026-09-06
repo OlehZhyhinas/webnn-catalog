@@ -56,7 +56,8 @@
         }
       },
       "loadAvg": 4.26,
-      "source": "webnn-workbench-texify/bench/webnn/texify/catalog/measurements.json"
+      "source": "webnn-workbench-texify/bench/webnn/texify/catalog/measurements.json",
+      "kind": "measured"
     }
   ],
   "baselines": {

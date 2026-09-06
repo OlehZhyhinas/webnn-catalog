@@ -45,6 +45,7 @@ const num = (v) => (typeof v === "number" ? +v.toFixed(3) : null);
 export function rowFromResults(results, target, opts = {}) {
   const host = { ...hostFromTarget(target), sameAsTarget: opts.sameAsTarget ?? true };
   const row = {
+    kind: "measured",
     ...(opts.label ? { label: opts.label } : {}),
     host,
     date: opts.date ?? new Date().toISOString().slice(0, 10),
@@ -95,9 +96,17 @@ export function rowFromResults(results, target, opts = {}) {
       psnrVsReferenceImageDb: c.vsReferenceImage?.psnrDb ?? null,
       textEncoderMaxAbs: c.textGraph?.maxAbs ?? null,
     };
-  } else if (typeof results?.newPromptMs === "number" || typeof results?.newPrompt === "number") {
+  } else if (
+    typeof results?.newPromptMs === "number" ||
+    typeof results?.newPrompt === "number" ||
+    typeof results?.warmDecodeMsPerToken === "number" ||
+    typeof results?.tokensPerSecond === "number"
+  ) {
     row.newPromptMs = num(results.newPromptMs ?? results.newPrompt);
     row.cachedMs = num(results.cachedMs ?? results.cached ?? null);
+    row.warmDecodeMsPerToken = num(results.warmDecodeMsPerToken);
+    row.tokensPerSecond = num(results.tokensPerSecond);
+    if (results.pairedSpeedup) row.pairedSpeedup = results.pairedSpeedup;
     if (results.stages) row.stages = results.stages;
     if (results.runs) row.runs = results.runs;
     if (results.statistic) row.statistic = results.statistic;
@@ -105,7 +114,7 @@ export function rowFromResults(results, target, opts = {}) {
     if (results.quality) row.quality = results.quality;
     if (results.outputSha256) row.outputSha256 = results.outputSha256;
   } else {
-    throw new Error("unrecognised --results shape: expected a workbench e2e JSON, a verify.mjs JSON, or {newPromptMs, cachedMs, stages}");
+    throw new Error("unrecognised --results shape: expected a workbench e2e JSON, a verify.mjs JSON, or measured timing fields");
   }
 
   // Load average, only if the run itself recorded one or the caller passes it.
@@ -148,8 +157,9 @@ export function refreshCatalogMeasuredHosts(family, entryId) {
   const m = readJson(mPath);
   const row = catalog.families[family]?.entries.find((e) => e.id === entryId);
   if (!row) return;
-  row.measuredHosts = new Set(m.rows.map((r) => r.host.chip ?? r.host.browser)).size;
-  row.newPromptMs = m.rows[0]?.newPromptMs ?? null;
+  const measured = m.rows.filter((r) => r.kind === "measured");
+  row.measuredHosts = new Set(measured.map((r) => r.host.chip ?? r.host.browser)).size;
+  row.newPromptMs = measured[0]?.newPromptMs ?? null;
   fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2) + "\n");
 }
 

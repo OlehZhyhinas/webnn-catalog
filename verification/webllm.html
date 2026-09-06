@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>WebLLM catalog verifier</title>
+<pre id="log">Ready.</pre>
+<script type="module">
+  import {
+    loadWebLLMFromUrl,
+    sha256Hex,
+  } from "../runtime/webllm-loader.js";
+
+  const log = document.querySelector("#log");
+  const write = (value) => {
+    log.textContent += `\n${value}`;
+    console.log(value);
+  };
+
+  async function complete(engine, messages, generation) {
+    await engine.resetChat(false);
+    let text = "";
+    const chunks = await engine.chat.completions.create({
+      messages,
+      ...generation,
+      stream: true,
+      stream_options: { include_usage: true },
+      extra_body: {
+        enable_thinking: false,
+        enable_latency_breakdown: true,
+      },
+    });
+    for await (const chunk of chunks) {
+      text += chunk.choices[0]?.delta?.content ?? "";
+    }
+    return text;
+  }
+
+  globalThis.__verifyWebLLM = async (entryUrl, { maxCases = null } = {}) => {
+    log.textContent = `Entry: ${entryUrl}`;
+    const entryResponse = await fetch(entryUrl, {
+      mode: "cors",
+      credentials: "omit",
+    });
+    if (!entryResponse.ok) {
+      throw new Error(`${entryUrl} -> HTTP ${entryResponse.status}`);
+    }
+    const entry = await entryResponse.json();
+    const corpusUrl = new URL(entry.verification, entryUrl).href;
+    const corpusResponse = await fetch(corpusUrl, {
+      mode: "cors",
+      credentials: "omit",
+    });
+    if (!corpusResponse.ok) {
+      throw new Error(`${corpusUrl} -> HTTP ${corpusResponse.status}`);
+    }
+    const corpus = await corpusResponse.json();
+    const rig = await loadWebLLMFromUrl(entryUrl, {
+      onProgress: (progress) => {
+        if (typeof progress?.text === "string") write(progress.text);
+      },
+    });
+    const cases = maxCases == null
+      ? corpus.cases
+      : corpus.cases.slice(0, maxCases);
+    const rows = [];
+    try {
+      for (const item of cases) {
+        const started = performance.now();
+        const text = await complete(rig.engine, item.messages, {
+          ...corpus.generation,
+          ...(item.generation ?? {}),
+        });
+        const actualSha256 = await sha256Hex(new TextEncoder().encode(text));
+        const exact =
+          text === item.expectedText && actualSha256 === item.expectedSha256;
+        const row = {
+          id: item.id,
+          exact,
+          actualSha256,
+          expectedSha256: item.expectedSha256,
+          elapsedMs: +(performance.now() - started).toFixed(1),
+        };
+        rows.push(row);
+        write(`${exact ? "PASS" : "FAIL"} ${item.id} ${actualSha256}`);
+        if (!exact) {
+          throw new Error(
+            `${item.id} output mismatch\nexpected ${JSON.stringify(item.expectedText)}\nactual   ${JSON.stringify(text)}`,
+          );
+        }
+      }
+      return {
+        ok: true,
+        entry: entry.id,
+        cases: rows,
+        capabilities: {
+          features: rig.capability.features,
+          minSubgroupSize: rig.capability.minSubgroupSize,
+          maxSubgroupSize: rig.capability.maxSubgroupSize,
+        },
+      };
+    } finally {
+      await rig.dispose();
+    }
+  };
+</script>

@@ -39,7 +39,8 @@
         "tokensIdentical": "15/15",
         "encoderMaxAbsVsFp32": 0.019094400107860565
       },
-      "source": "webnn-workbench-intellitex-catalog/bench/webnn/intellitex/catalog/measurements.json"
+      "source": "webnn-workbench-intellitex-catalog/bench/webnn/intellitex/catalog/measurements.json",
+      "kind": "measured"
     }
   ],
   "baselines": {

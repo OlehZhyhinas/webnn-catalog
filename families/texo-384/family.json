@@ -1,6 +1,7 @@
 {
   "id": "texo-384",
   "name": "Texo (FormulaNet, 20M), 384x384 equation OCR",
+  "runtimeKind": "webnn",
   "summary": "Texo, the ~20M-parameter formula-recognition model LatexGen uses as its first-pass equation OCR: an HGNetv2 CNN encoder over a 384x384 grayscale image and a 2-layer mBART decoder that emits LaTeX tokens greedily. Two WebNN graphs: the encoder, which also computes the decoder's cross-attention K/V once per image, and a decode graph that runs k greedy steps per dispatch over static self-attention caches. float16 throughout. A preprocessed image goes in, a token sequence comes out.",
   "task": "image-to-latex",
 

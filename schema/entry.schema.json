@@ -5,7 +5,7 @@
   "description": "An entry is a configuration-keyed record. `target` is the configuration it was BUILT and TUNED for; `compat` states the facts about where it is valid, not a policy about where it should be used. Choosing between entries is the consuming product's job; nothing in this repo does it.",
 
   "type": "object",
-  "required": ["id", "family", "variant", "created", "target", "compat", "graphs", "constants"],
+  "required": ["id", "family", "runtimeKind", "variant", "created", "target", "compat"],
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -13,7 +13,8 @@
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
       "description": "Directory name under families/<family>/entries/. Conventionally <backend>-<gpu chip slug>-<os><major>-<browser><major>, which is a readable summary of `target`, not a key anything parses."
     },
-    "family": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "family": { "type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
+    "runtimeKind": { "enum": ["webnn", "webllm"] },
     "variant": {
       "type": "string",
       "pattern": "^[a-z0-9]+([-.][a-z0-9]+)*$",
@@ -99,12 +100,113 @@
       "additionalProperties": false
     },
 
-    "constants": { "type": "string", "description": "Path to this entry's manifest.json (schema/manifest.schema.json)." },
+    "constants": { "type": "string", "description": "WebNN only: path to this entry's manifest.json (schema/manifest.schema.json)." },
+    "artifacts": { "type": "string", "description": "WebLLM only: path to schema/artifact-manifest.schema.json data." },
+    "model": {
+      "type": "object",
+      "required": ["id", "revision", "config"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 },
+        "config": { "type": "object", "description": "Model and generation configuration consumed by the runtime.", "additionalProperties": true }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["name", "version", "abi", "config"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "abi": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Runtime/model ABI identifiers that must match the pinned JS, WASM and model resources.",
+          "additionalProperties": { "type": ["string", "number", "boolean"] }
+        },
+        "config": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["repository", "commit"],
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "pattern": "^https://" },
+        "commit": { "type": "string", "minLength": 7 }
+      }
+    },
+    "license": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "spdx": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["fastPath"],
+      "additionalProperties": false,
+      "properties": {
+        "fastPath": {
+          "type": "object",
+          "required": ["eligible", "requirements", "fallback"],
+          "additionalProperties": false,
+          "properties": {
+            "eligible": { "type": "boolean" },
+            "requirements": { "type": "array", "items": { "type": "string" } },
+            "fallback": {
+              "type": "object",
+              "required": ["available", "kind"],
+              "additionalProperties": false,
+              "properties": {
+                "available": { "type": "boolean" },
+                "kind": { "type": "string", "minLength": 1 },
+                "notes": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
     "verification": { "type": "string", "description": "Path to the verification directory." },
     "measurements": { "type": "string", "description": "Path to measurements.json (schema/measurements.schema.json)." },
     "provenance": { "type": "string", "description": "Path to the ledger: what was folded, what was rejected and by which number, what the backend turned out to be like." },
     "tokenizerFromFamily": { "type": "boolean", "description": "True when the family's tokenizer is what turns a prompt into this entry's graph inputs." }
   },
+
+  "allOf": [
+    {
+      "if": { "properties": { "runtimeKind": { "const": "webnn" } }, "required": ["runtimeKind"] },
+      "then": {
+        "required": ["graphs", "constants"],
+        "not": {
+          "anyOf": [
+            { "required": ["artifacts"] },
+            { "required": ["model"] },
+            { "required": ["runtime"] },
+            { "required": ["source"] },
+            { "required": ["license"] },
+            { "required": ["capabilities"] }
+          ]
+        }
+      },
+      "else": {
+        "required": ["artifacts", "model", "runtime", "source", "license", "capabilities", "measurements", "verification", "provenance"],
+        "not": {
+          "anyOf": [
+            { "required": ["graphs"] },
+            { "required": ["constants"] },
+            { "required": ["tokenizerFromFamily"] }
+          ]
+        }
+      }
+    }
+  ],
 
   "$defs": {
     "operandSpec": {

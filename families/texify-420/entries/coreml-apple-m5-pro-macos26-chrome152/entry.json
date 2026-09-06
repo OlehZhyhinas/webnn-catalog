@@ -1022,5 +1022,6 @@
   "verification": "verification/",
   "measurements": "measurements.json",
   "provenance": "provenance.md",
-  "tokenizerFromFamily": true
+  "tokenizerFromFamily": true,
+  "runtimeKind": "webnn"
 }
