@@ -1,0 +1,37 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32",
+  "family": "qwen3-1.7b-q4f16-1",
+  "runtimeJs": [
+    {
+      "name": "web-llm-0.2.84-qwen-m5-overlap.js",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/5adde901b11cd9faa70ca4c1eade2566dd4a00e8/qwen3-1.7b-q4f16-1/v1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32/web-llm-0.2.84-qwen-m5-overlap.js",
+      "bytes": 6593519,
+      "sha256": "d36ca3f7560c51b54c8574f0f0df6346738584df14ada37fb3f1c12d10067ccc",
+      "mediaType": "text/javascript",
+      "role": "Hash-verified WebLLM ESM runtime with K-step decode and WebGPU runtime-overlap flags"
+    }
+  ],
+  "modelWasm": [
+    {
+      "name": "qwen3-1.7b-argmax-chunk256-sg32-tr32.wasm",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/5adde901b11cd9faa70ca4c1eade2566dd4a00e8/qwen3-1.7b-q4f16-1/v1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32/qwen3-1.7b-argmax-chunk256-sg32-tr32.wasm",
+      "bytes": 5565556,
+      "sha256": "305bacef24635f2e72f5d0b8a6e2d4fe10c2962fe62582ed1b871676cabf74cc",
+      "mediaType": "application/wasm",
+      "role": "Qwen3-1.7B model library with subgroup-32, chunk-256 argmax and GEMV TR=32"
+    }
+  ],
+  "modelResources": [
+    {
+      "name": "mlc-ai/Qwen3-1.7B-q4f16_1-MLC snapshot",
+      "url": "https://huggingface.co/mlc-ai/Qwen3-1.7B-q4f16_1-MLC/resolve/80b3abcec6c3b3f5355dc0cc99cc4fb578f192bc/",
+      "repository": "mlc-ai/Qwen3-1.7B-q4f16_1-MLC",
+      "revision": "80b3abcec6c3b3f5355dc0cc99cc4fb578f192bc",
+      "bytes": 984156278,
+      "license": "Apache-2.0",
+      "mediaType": "application/vnd.huggingface.repository",
+      "role": "Immutable upstream weights, tokenizer and MLC chat configuration"
+    }
+  ],
+  "notes": "Runtime JS and model WASM use immutable Hugging Face revision URLs plus byte-level SHA-256. The multi-file model repository is pinned by its immutable upstream revision."
+}

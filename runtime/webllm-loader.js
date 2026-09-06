@@ -174,10 +174,20 @@ export async function loadWebLLMEntry(entry, options = {}) {
     burst: globalThis.__webllmGreedyBurst,
     argmax: globalThis.__webllmGreedyArgmax,
     cleanup: globalThis.__webllmDeferDecodeCleanup,
+    batchPass: globalThis.__tvmjsWebGPUBatchPass,
+    flushEvery: globalThis.__tvmjsWebGPUFlushEvery,
+    bindCache: globalThis.__tvmjsWebGPUBindGroupCache,
   };
   globalThis.__webllmGreedyBurst = entry.runtime.config.greedyBurst;
   globalThis.__webllmGreedyArgmax = true;
   globalThis.__webllmDeferDecodeCleanup = false;
+  globalThis.__tvmjsWebGPUBatchPass = entry.runtime.config.batchPass === true;
+  globalThis.__tvmjsWebGPUFlushEvery =
+    Number(entry.runtime.config.flushEvery) > 0
+      ? Number(entry.runtime.config.flushEvery)
+      : 0;
+  globalThis.__tvmjsWebGPUBindGroupCache =
+    entry.runtime.config.bindGroupCache === true;
 
   let engine;
   try {
@@ -210,6 +220,9 @@ export async function loadWebLLMEntry(entry, options = {}) {
           globalThis.__webllmGreedyBurst = previous.burst;
           globalThis.__webllmGreedyArgmax = previous.argmax;
           globalThis.__webllmDeferDecodeCleanup = previous.cleanup;
+          globalThis.__tvmjsWebGPUBatchPass = previous.batchPass;
+          globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
+          globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
         }
       },
     };
@@ -219,6 +232,9 @@ export async function loadWebLLMEntry(entry, options = {}) {
     globalThis.__webllmGreedyBurst = previous.burst;
     globalThis.__webllmGreedyArgmax = previous.argmax;
     globalThis.__webllmDeferDecodeCleanup = previous.cleanup;
+    globalThis.__tvmjsWebGPUBatchPass = previous.batchPass;
+    globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
+    globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
     throw error;
   }
 }

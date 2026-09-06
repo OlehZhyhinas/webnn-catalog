@@ -37,6 +37,11 @@ temporary blob URLs only after verification. The model record points at a
 revision-pinned upstream repository. `dispose()` unloads the engine and revokes
 both URLs.
 
+The loader also applies and restores each entry's runtime flags before engine
+creation: greedy burst/argmax, single-pass command encoding, periodic submit
+cadence, and optional bind-group caching. Missing overlap fields default off,
+so older WebLLM entries retain their original behavior.
+
 The Qwen entry configures K=4, but the patched runtime independently checks
 every request. `isGreedyBurstEligible()` exposes the same catalog-side rule:
 temperature zero, without logprobs, penalties, logit bias, grammar/structured

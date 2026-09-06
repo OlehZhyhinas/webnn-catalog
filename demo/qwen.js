@@ -1,11 +1,12 @@
 import { loadWebLLMFromUrl } from "../runtime/webllm-loader.js";
 
-const ENTRY =
-  new URL(
-    "../families/qwen3-0.6b-q4f16-1/entries/" +
-      "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4/entry.json",
-    location.href,
-  ).href;
+const defaultEntry =
+  "../families/qwen3-0.6b-q4f16-1/entries/" +
+  "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4/entry.json";
+const ENTRY = new URL(
+  new URLSearchParams(location.search).get("entry") ?? defaultEntry,
+  location.href,
+).href;
 
 const loadButton = document.querySelector("#load");
 const runButton = document.querySelector("#run");

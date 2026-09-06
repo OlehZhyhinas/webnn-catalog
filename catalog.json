@@ -170,6 +170,31 @@
           "artifactBytes": 358945290
         }
       ]
+    },
+    "qwen3-1.7b-q4f16-1": {
+      "path": "families/qwen3-1.7b-q4f16-1",
+      "family": "families/qwen3-1.7b-q4f16-1/family.json",
+      "name": "Qwen3-1.7B q4f16_1, OpenAI-compatible chat",
+      "runtimeKind": "webllm",
+      "task": "text-generation",
+      "model": "mlc-ai/Qwen3-1.7B-q4f16_1-MLC",
+      "entries": [
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32",
+          "path": "families/qwen3-1.7b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32",
+          "entry": "families/qwen3-1.7b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-06",
+          "measuredHosts": 1,
+          "artifactBytes": 996315353
+        }
+      ]
     }
   },
   "conventions": {
@@ -182,5 +207,5 @@
     "provenance": "Every entry has a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like.",
     "index": "Summary rows only. The entry directory is authoritative for every field copied here."
   },
-  "generatedAt": "2026-09-05T20:19:15.173Z"
+  "generatedAt": "2026-09-06T17:00:00.000Z"
 }
