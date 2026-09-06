@@ -22,7 +22,7 @@
     "api": "openai.chat.completions",
     "request": {
       "messages": "Array of OpenAI role/content messages.",
-      "tools": "Optional OpenAI-compatible tool declarations; they disable the catalog's K=4 guarantee when they install a grammar or logit processor.",
+      "tools": "Optional OpenAI-compatible tool declarations; they disable the catalog's exact-greedy fast path when they install a grammar or logit processor.",
       "stream": "Boolean. Streaming chunks follow WebLLM's OpenAI-compatible delta shape."
     },
     "response": {
@@ -30,7 +30,7 @@
       "usage": "OpenAI-compatible prompt/completion token counts plus WebLLM latency fields when enabled."
     },
     "generation": {
-      "fastPath": "Exact greedy K=4 only when temperature is zero and no logprobs, penalties, grammar, logit bias, structured output, or custom logit processor is active.",
+      "fastPath": "Exact greedy GPU-resident decode (burst size and lookahead per entry) only when temperature is zero and no logprobs, penalties, grammar, logit bias, structured output, or custom logit processor is active.",
       "fallback": "All other requests use the normal WebLLM one-token sampler and keep the same API contract."
     }
   },

@@ -1,0 +1,128 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-lookahead1",
+  "family": "qwen3-1.7b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=1 + lookahead 1 + batch pass + submit every 32, under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-06",
+      "protocol": "interleaved-ab",
+      "runs": 12,
+      "warmup": 1,
+      "statistic": "Median of twelve rotating paired observations; each observation reloads browser and model, resets KV state, and uses a different prompt. Ratio is the median of per-round ratios against the live baseline case.",
+      "warmDecodeMsPerToken": 6.3027,
+      "tokensPerSecond": 158.66,
+      "pairedSpeedup": {
+        "baseline": "sibling entry webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32 run live in the same rotation (same bundle and WASM, K=4, batch pass, flush 32); 140.24 tok/s median in this run",
+        "candidate": "same bundle/WASM/model, K=1, lookahead 1, batch pass, flush 32",
+        "baselineMsPerToken": 7.1306,
+        "candidateMsPerToken": 6.3027,
+        "speedup": 1.136
+      },
+      "loadAvg": [
+        17.2,
+        24.4
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "12/12 outputs byte-identical to the paired baseline case in the same round",
+        "pairedRatioQuartiles": [
+          1.065,
+          1.189
+        ],
+        "pairedRatioMad": 0.067,
+        "pairedRatioRange": [
+          0.999,
+          1.434
+        ],
+        "pairedEndToEndSpeedup": 1.068,
+        "ttftDeltaMs": 3.9
+      },
+      "notes": "6.3027 ms/token is the reciprocal of the measured 158.66 tokens/s median. Same run: K=2 lookahead 1 1.116x, K=1 lookahead 2 1.174x (TTFT +9.6 ms, end-to-end 1.036x), K=2 lookahead 2 1.120x, K=3 lookahead 1 1.081x. The one speculative step past EOS lands after the stream and shows up as TTFT of a back-to-back request.",
+      "source": "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-kxl-orca.json"
+    },
+    {
+      "kind": "measured",
+      "label": "Lookahead 1 at the sibling's K=4, paired under ORCA (6 and 12 rounds), plus quality corpus",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-06",
+      "protocol": "interleaved-ab",
+      "runs": 18,
+      "warmup": 1,
+      "statistic": "Medians of per-round ratios against the live sibling-entry case: 1.032x over 6 rounds (load 45-55), 1.030x over 12 rounds (load 19-32); quality corpus 1.044x over 4 rounds.",
+      "warmDecodeMsPerToken": 6.9905,
+      "tokensPerSecond": 143.06,
+      "pairedSpeedup": {
+        "baseline": "sibling entry stack run live in the same rotation; 139.06 tok/s in the 12-round run",
+        "candidate": "same, K=4, lookahead 1",
+        "baselineMsPerToken": 7.1912,
+        "candidateMsPerToken": 6.9905,
+        "speedup": 1.03
+      },
+      "loadAvg": [
+        18.6,
+        54.6
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "18/18 outputs byte-identical to the paired baseline case",
+        "qualityCorpusExact": "16/16 outputs byte-identical to the paired baseline case",
+        "pairedRatioQuartiles": [
+          1.009,
+          1.052
+        ],
+        "withoutBatchPassAndFlush": 1.007,
+        "flush64": 1.027,
+        "bindGroupCache": 1.025,
+        "k2Lookahead1": 1.114,
+        "k8Lookahead1": 0.933
+      },
+      "notes": "Lookahead alone at K=4 is a ~3% effect; most of the headline comes from K=1 removing the burst's past-EOS tail once the sync bubble is gone. K=8 with lookahead loses (0.933x, wide spread). loadAvg is the observed 1-minute range across the three runs.",
+      "source": "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-final-orca.json, qwen-qwen17-fable-final12-orca.json, qwen-qwen17-fable-quality-la1-orca.json"
+    }
+  ],
+  "baselines": {
+    "siblingEntryLive": {
+      "warmDecodeMsPerToken": 7.1306,
+      "tokensPerSecond": 140.24,
+      "notes": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32 measured live as the baseline case of the headline run; 134-142 tok/s across the runs of this pass."
+    },
+    "originalWebLLM": {
+      "warmDecodeMsPerToken": 8.9,
+      "tokensPerSecond": 113,
+      "notes": "Same-machine quiet baseline recorded by the sibling entry; not directly comparable to the loaded absolutes above."
+    }
+  },
+  "sources": [
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 docs/results.md (Qwen3-1.7B second pass; Explicit record of this pass)",
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-kxl-orca.json",
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-final12-orca.json",
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-final-orca.json",
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-quality-la1-orca.json",
+    "webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090 bench/results/qwen-qwen17-fable-gemv-ts-orca.json"
+  ],
+  "caveat": "All absolutes were taken while ORCA saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.136x is an upper bound for a quiet machine; the K=1 burst-tail component is load-independent but shrinks with output length. No quiet-machine number or projection is claimed."
+}

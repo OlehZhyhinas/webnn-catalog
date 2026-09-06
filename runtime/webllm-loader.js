@@ -177,6 +177,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
     batchPass: globalThis.__tvmjsWebGPUBatchPass,
     flushEvery: globalThis.__tvmjsWebGPUFlushEvery,
     bindCache: globalThis.__tvmjsWebGPUBindGroupCache,
+    lookahead: globalThis.__webllmBurstLookahead,
   };
   globalThis.__webllmGreedyBurst = entry.runtime.config.greedyBurst;
   globalThis.__webllmGreedyArgmax = true;
@@ -188,6 +189,11 @@ export async function loadWebLLMEntry(entry, options = {}) {
       : 0;
   globalThis.__tvmjsWebGPUBindGroupCache =
     entry.runtime.config.bindGroupCache === true;
+  // Decode steps kept queued on the GPU past the burst being read back.
+  globalThis.__webllmBurstLookahead =
+    Number(entry.runtime.config.lookahead) > 0
+      ? Number(entry.runtime.config.lookahead)
+      : 0;
 
   let engine;
   try {
@@ -223,6 +229,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
           globalThis.__tvmjsWebGPUBatchPass = previous.batchPass;
           globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
           globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
+          globalThis.__webllmBurstLookahead = previous.lookahead;
         }
       },
     };
@@ -235,6 +242,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
     globalThis.__tvmjsWebGPUBatchPass = previous.batchPass;
     globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
     globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
+    globalThis.__webllmBurstLookahead = previous.lookahead;
     throw error;
   }
 }
