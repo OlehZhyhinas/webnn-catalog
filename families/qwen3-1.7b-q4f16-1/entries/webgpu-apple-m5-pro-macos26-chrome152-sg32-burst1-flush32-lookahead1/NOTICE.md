@@ -5,7 +5,7 @@ MLC WebLLM, MLC-LLM, and Apache TVM. They are distributed under the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 - WebLLM source and license:
-  <https://github.com/OlehZhyhinas/web-llm-qwen/tree/4aa42f12768f313d6c9f95603e4731ffce077511>
+  <https://github.com/OlehZhyhinas/web-llm-qwen/tree/21698fd421d278ad0f7b3cc4e23abe3eaf4a042d>
 - MLC-LLM source and license:
   <https://github.com/mlc-ai/mlc-llm/tree/ed1c7f65f7fc4f08c53db1294c721f4c0ba49a35>
 - Apache TVM source and license:

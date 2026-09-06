@@ -8,7 +8,7 @@ step queued on the GPU while the current burst is read back, and a burst of
 one token instead of four. The complete experiment record, including the
 ordered steps, the invalidated run, what was not done, and the knob table
 for an automated sweep, is in
-`OlehZhyhinas/webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090`, `docs/results.md`, section
+`OlehZhyhinas/webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719`, `docs/results.md`, section
 "Qwen3-1.7B second pass: GPU lookahead across the burst readback" and its
 "Explicit record of this pass".
 
@@ -19,11 +19,16 @@ for an automated sweep, is in
   referenced at its existing published path. Subgroup-32, chunk-256
   two-stage full-vocabulary argmax, GEMV `TR=32`.
 - Runtime bundle: WebLLM 0.2.84 ABI, source
-  `OlehZhyhinas/web-llm-qwen@4aa42f12768f313d6c9f95603e4731ffce077511`
+  `OlehZhyhinas/web-llm-qwen@21698fd421d278ad0f7b3cc4e23abe3eaf4a042d`
   (`qwen-m5`). It embeds npm `@mlc-ai/web-runtime` 0.26.0-dev0 patched in
   place by `scripts/patch-web-runtime-{profile,batch-pass,flush-every,bind-cache,readback-tail}.mjs`
   (`patch-web-runtime-all.mjs` applies and asserts all five). SHA-256
-  `2bd7fec7…0e6bb`, 6,598,111 bytes.
+  `163177f1…4cce35`, 6,598,408 bytes. The headline was measured on the
+  previous build of the same branch (`4aa42f1`, bundle `2bd7fec7…0e6bb`);
+  `21698fd` changes only `unload()` teardown order (sync before dispose, so
+  pending lookahead readbacks settle before the device is destroyed, which
+  the catalog verifier exposed). A six-round paired sanity run on the shipped
+  bundle measured 1.137x (IQR 1.091–1.184, 6/6 byte-identical).
 - Runtime flags, applied by `runtime/webllm-loader.js` before engine
   creation: `greedyBurst: 1`, `lookahead: 1`, `batchPass: true`,
   `flushEvery: 32`, `bindGroupCache: false`. `lookahead` is new in this

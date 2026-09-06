@@ -5,7 +5,7 @@
   "variant": "exact-greedy",
   "created": "2026-09-06",
   "producedBy": {
-    "workbench": "OlehZhyhinas/webnn-workbench@212a5013413fb3da7dcce59c3c48da22b51b4090",
+    "workbench": "OlehZhyhinas/webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719",
     "date": "2026-09-06",
     "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
     "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 while ORCA remained active; every ratio paired within a round against the live sibling entry stack."
@@ -188,7 +188,7 @@
   },
   "source": {
     "repository": "https://github.com/OlehZhyhinas/web-llm-qwen",
-    "commit": "4aa42f12768f313d6c9f95603e4731ffce077511"
+    "commit": "21698fd421d278ad0f7b3cc4e23abe3eaf4a042d"
   },
   "license": {
     "name": "Apache License 2.0",
