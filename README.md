@@ -107,6 +107,21 @@ The fast path is limited to exact greedy requests; sampling, logprobs,
 penalties, grammar/structured output, logit bias, and custom logit processors
 automatically retain the ordinary one-step WebLLM path.
 
+### Qwen3-1.7B WebLLM/WebGPU
+
+[`qwen3-1.7b-q4f16-1`](families/qwen3-1.7b-q4f16-1/) uses a
+revision-pinned upstream model with a subgroup-32, chunk-256, GEMV-`TR=32`
+model library. Its M5 Pro entry adds K=4 exact-greedy decode and submits the
+single WebGPU compute pass every 32 dispatches.
+
+Across six warm-model, fresh-prompt paired rounds under ORCA it measured
+**139.86 tokens/s** (**7.15 ms/token**), **1.371x** the published subgroup-32
+path. All six fresh outputs and four quality outputs were byte-identical.
+The 6.5 ms/token quiet figure is an upper-bound projection, not a measurement.
+
+The Qwen demo accepts an optional `entry` query parameter, so either Qwen
+family can be loaded through the same verified UI.
+
 **Pending a dump:** the ToDo (Token Downsampling) fast variant of the SD-Turbo
 family runs at 54.6 ms, about 20% faster, for a visibly different image (PSNR
 24.3 dB against the exact pipeline). The workbench measured it end to end but
