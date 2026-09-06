@@ -168,6 +168,21 @@
           "created": "2026-09-06",
           "measuredHosts": 1,
           "artifactBytes": 358945290
+        },
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+          "path": "families/qwen3-0.6b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+          "entry": "families/qwen3-0.6b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-06",
+          "measuredHosts": 1,
+          "artifactBytes": 358942592
         }
       ]
     },

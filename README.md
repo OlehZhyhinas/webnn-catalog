@@ -100,6 +100,14 @@ On six warm-model, fresh-prompt interleaved rounds under machine load it
 measured **250.655 tokens/s**, **1.692x** the same artifact at K=1. The
 approximately 3.4 ms/token quiet result is recorded only as a projection.
 
+A second entry, `…-sg32-burst4-flush64`, keeps that library and burst and
+adds three runtime flags (single compute pass, `queue.submit` every 64
+dispatches so the GPU executes while JS still encodes, bind-group reuse).
+Paired live against the first entry in the same rotation it measured
+**312.6 tokens/s**, **1.243x** (IQR 1.229–1.260), byte-identical output.
+The ratio was taken under CPU load and is an upper bound for a quiet machine;
+no quiet figure is recorded. The demo defaults to this entry.
+
 The [Qwen demo](demo/qwen.html) fetches the runtime bundle and model WASM,
 verifies their byte counts and SHA-256 hashes, imports the verified runtime,
 then fetches model files from an immutable upstream Hugging Face revision.

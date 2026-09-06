@@ -1,0 +1,127 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+  "family": "qwen3-0.6b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4 + batch pass + submit every 64 + bind-group cache, under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-06",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation reloads browser and model, resets KV state, and uses a different prompt. Ratio is the median of per-round ratios against the live baseline case.",
+      "warmDecodeMsPerToken": 3.1990,
+      "tokensPerSecond": 312.6,
+      "pairedSpeedup": {
+        "baseline": "sibling entry webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4 run live in the same rotation (same WASM, K=4, overlap flags off); 251.5 tok/s median in this run",
+        "candidate": "same JS/WASM/model, K=4, batchPass + flushEvery 64 + bindGroupCache",
+        "baselineMsPerToken": 3.9761,
+        "candidateMsPerToken": 3.1990,
+        "speedup": 1.243
+      },
+      "loadAvg": [
+        16.017,
+        17.393
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 outputs byte-identical to the paired baseline case in the same round",
+        "pairedRatioQuartiles": [
+          1.229,
+          1.26
+        ],
+        "pairedRatioMad": 0.02,
+        "pairedRatioRange": [
+          1.196,
+          1.277
+        ]
+      },
+      "notes": "Same run also measured K=8 with the same flags: 1.232x median but min 1.056, so K=4 is retained. flushEvery 64 without the bind-group cache measured 1.224x in this run.",
+      "source": "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-bindcache-orca.json"
+    },
+    {
+      "kind": "measured",
+      "label": "Replications of submit-every-64 without bind-group cache, three independent paired runs under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-06",
+      "protocol": "interleaved-ab",
+      "runs": 18,
+      "warmup": 1,
+      "statistic": "Three separate six-round paired runs; medians of per-round ratios 1.215x, 1.206x, 1.224x against the live sibling-entry case.",
+      "warmDecodeMsPerToken": 3.2754,
+      "tokensPerSecond": 305.3,
+      "pairedSpeedup": {
+        "baseline": "sibling entry stack run live in the same rotation",
+        "candidate": "same, plus batchPass + flushEvery 64",
+        "baselineMsPerToken": 3.9761,
+        "candidateMsPerToken": 3.2754,
+        "speedup": 1.215
+      },
+      "loadAvg": [
+        15.0,
+        23.0
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "18/18 outputs byte-identical to the paired baseline case",
+        "cadenceSweepPairedMedians": {
+          "8": 1.178,
+          "16": 1.206,
+          "32": 1.208,
+          "64": 1.215,
+          "128": 1.17,
+          "256": 1.143
+        },
+        "batchPassOnlyPairedMedians": [
+          1.044,
+          1.053
+        ]
+      },
+      "notes": "Cadence plateaus at 16-64 dispatches per submit; 8 pays for the extra submits. Batch pass alone is the floor of the effect (~1.05x). loadAvg is the observed 1-minute range across the three runs.",
+      "source": "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushevery-orca.json, qwen-fable-flushsmall-orca.json, qwen-fable-batchpass-orca.json"
+    }
+  ],
+  "baselines": {
+    "siblingEntryLive": {
+      "warmDecodeMsPerToken": 3.9761,
+      "tokensPerSecond": 251.5,
+      "notes": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4 measured live as the baseline case of the headline run; 245-252 tok/s across the four runs of this pass."
+    },
+    "originalWebLLM": {
+      "warmDecodeMsPerToken": 6.4,
+      "tokensPerSecond": 157,
+      "notes": "Same-machine quiet baseline recorded by the sibling entry; not directly comparable to the loaded absolutes above."
+    }
+  },
+  "sources": [
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd docs/results.md (Runtime overlap; Explicit record of this pass)",
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-bindcache-orca.json",
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushevery-orca.json",
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushsmall-orca.json",
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-batchpass-orca.json"
+  ],
+  "caveat": "All absolutes were taken while ORCA saturated the CPU. The overlap flags hide JS command encoding behind GPU execution, and a saturated CPU inflates encode time, so the paired 1.22-1.24x is an upper bound for a quiet machine; the floor is the ~1.05x from batch pass alone. No quiet-machine number or projection is claimed."
+}

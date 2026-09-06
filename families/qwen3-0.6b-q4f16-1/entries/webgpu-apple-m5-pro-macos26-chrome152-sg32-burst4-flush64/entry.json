@@ -1,0 +1,219 @@
+{
+  "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+  "family": "qwen3-0.6b-q4f16-1",
+  "runtimeKind": "webllm",
+  "variant": "exact-greedy",
+  "created": "2026-09-06",
+  "producedBy": {
+    "workbench": "OlehZhyhinas/webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd",
+    "date": "2026-09-06",
+    "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent Chrome profile, WEBNN_MAX_LOAD=0 while ORCA remained active. Every ratio is paired within a round against a live case running the sibling entry's exact stack (same WASM, K=4, overlap flags off)."
+  },
+  "title": "Qwen3-0.6B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, runtime overlap",
+  "summary": "Sibling sg32-burst4 stack plus three WebGPU runtime flags: one compute pass per batch, queue submit every 64 dispatches so the GPU executes while JS still encodes the step, and bind-group reuse. Paired 1.243x over the sibling entry (IQR 1.229-1.260, n=6) with byte-identical output; 312.6 tokens/s median under ORCA.",
+  "target": {
+    "generatedAt": "2026-09-06T16:20:00.000Z",
+    "tool": "webnn-workbench bench/webnn/qwen/run-webllm.mjs",
+    "backend": {
+      "name": "webgpu",
+      "deviceType": "gpu",
+      "webgpu": {
+        "api": "Dawn over Metal 3",
+        "wgslLanguageFeatures": [],
+        "requirements": {
+          "features": [
+            "shader-f16",
+            "subgroups",
+            "subgroup-size-control"
+          ],
+          "limits": {
+            "minSubgroupSize": 32,
+            "maxSubgroupSize": 32
+          },
+          "subgroups": {
+            "required": true,
+            "minSize": 32,
+            "maxSize": 32,
+            "features": [
+              "subgroups",
+              "subgroup-size-control"
+            ]
+          }
+        }
+      },
+      "observable": "browser"
+    },
+    "browser": {
+      "name": "Chrome",
+      "version": "152.0.7977.77",
+      "major": 152,
+      "engine": "Chromium 152.0.7977.77",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "flags": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=WebGPUExperimentalFeatures",
+        "--enable-dawn-features=allow_unsafe_apis"
+      ],
+      "profile": "persistent",
+      "observable": "browser"
+    },
+    "os": {
+      "name": "macOS",
+      "version": "26.6.2",
+      "major": 26,
+      "build": "25G83",
+      "browserReported": {
+        "platform": "macOS",
+        "platformVersion": "26.6.2",
+        "architecture": "arm",
+        "bitness": "64"
+      },
+      "observable": "browser(partial)/host"
+    },
+    "gpu": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": "",
+      "subgroupMinSize": 32,
+      "subgroupMaxSize": 32,
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxBindGroups": 4,
+        "maxStorageBuffersPerShaderStage": 10
+      },
+      "observable": "browser"
+    },
+    "host": {
+      "platform": "darwin",
+      "chip": "Apple M5 Pro",
+      "gpuCores": 20,
+      "memoryGB": 64,
+      "cpuThreads": 18,
+      "loadAvg": [
+        16.017,
+        17.393,
+        17.484
+      ],
+      "unavailable": [],
+      "observable": "host"
+    },
+    "perfClass": {
+      "f16TflopsMeasured": 5.69,
+      "method": "WGSL tiled f16 matmul 2048x2048x2048, 128x128 workgroup tile, 8x8 per invocation, f32 accumulate; lower bound, not peak.",
+      "shape": [
+        2048,
+        2048,
+        2048
+      ],
+      "iterations": 53,
+      "elapsedMs": 160,
+      "checked": true,
+      "error": null,
+      "observable": "browser(probe)"
+    }
+  },
+  "compat": {
+    "requires": {
+      "backend.name": "webgpu",
+      "gpu.subgroupMinSize": 32,
+      "gpu.subgroupMaxSize": 32
+    },
+    "notes": "The tuned model library requires shader-f16 plus subgroup size 32. The verified loader checks WebGPU and subgroup support before downloading model weights. The overlap flags are read by the patched TVM WebGPU runtime inside the runtime bundle at context creation; they change command encoding only, never kernels or weights."
+  },
+  "artifacts": "artifacts.json",
+  "model": {
+    "id": "Qwen3-0.6B-q4f16_1-MLC",
+    "revision": "8c14ce481d4c692769976ad52afea453a102df19",
+    "config": {
+      "vramRequiredMB": 1403.34,
+      "lowResourceRequired": true,
+      "overrides": {
+        "context_window_size": 4096
+      }
+    }
+  },
+  "runtime": {
+    "name": "WebLLM",
+    "version": "0.2.84-qwen-m5-overlap",
+    "abi": {
+      "webllm": "0.2.84",
+      "wasmSystemLibPrefix": "Qwen3-0.6B-q4f16_1-MLC",
+      "tvmjs": "MLC WebLLM 0.2.84"
+    },
+    "config": {
+      "greedyBurst": 4,
+      "greedyArgmax": true,
+      "deferDecodeCleanup": false,
+      "argmaxChunk": 256,
+      "gemvThreadRows": 32,
+      "batchPass": true,
+      "flushEvery": 64,
+      "bindGroupCache": true,
+      "engineConfig": {}
+    }
+  },
+  "source": {
+    "repository": "https://github.com/OlehZhyhinas/web-llm-qwen",
+    "commit": "b9e2b01d3d3f4b5e1fad005da159e31430c65130"
+  },
+  "license": {
+    "name": "Apache License 2.0",
+    "spdx": "Apache-2.0",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0"
+  },
+  "capabilities": {
+    "fastPath": {
+      "eligible": true,
+      "requirements": [
+        "temperature == 0",
+        "logprobs disabled",
+        "no grammar or structured-output matcher",
+        "no logit bias or custom logit processor",
+        "frequency_penalty == 0",
+        "presence_penalty == 0",
+        "repetition_penalty == 1"
+      ],
+      "fallback": {
+        "available": true,
+        "kind": "webllm-one-step-sampler",
+        "notes": "The runtime checks each request and retains the normal one-token sampler whenever any K=4 eligibility condition fails."
+      }
+    }
+  },
+  "verification": "verification/corpus.json",
+  "measurements": "measurements.json",
+  "provenance": "provenance.md"
+}
