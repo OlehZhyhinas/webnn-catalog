@@ -39,8 +39,10 @@ both URLs.
 
 The loader also applies and restores each entry's runtime flags before engine
 creation: greedy burst/argmax, single-pass command encoding, periodic submit
-cadence, and optional bind-group caching. Missing overlap fields default off,
-so older WebLLM entries retain their original behavior.
+cadence, optional bind-group caching, and `lookahead` (decode steps kept
+queued on the GPU while the current burst is read back; the runtime rolls the
+speculative KV entries back after a stop). Missing fields default off, so
+older WebLLM entries retain their original behavior.
 
 The Qwen entry configures K=4, but the patched runtime independently checks
 every request. `isGreedyBurstEligible()` exposes the same catalog-side rule:

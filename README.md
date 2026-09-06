@@ -138,6 +138,19 @@ therefore no `todo2-nearest` entry. The numbers are in the entry's
 [`provenance.md`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/provenance.md#the-optional-fast-variant);
 the entry appears when a dump does.
 
+A second entry, `…-sg32-burst1-flush32-lookahead1`, keeps that model
+library and the submit cadence, and changes the decode loop: one decode step
+stays queued on the GPU while the current burst is read back, so the GPU
+never idles at a burst boundary, and the burst shrinks to one token, which
+streams every token and computes nothing past EOS inside the stream. Paired
+live against the first entry in the same rotation over twelve fresh-prompt
+rounds under ORCA it measured **158.66 tokens/s**, **1.136x** (IQR
+1.065–1.189), byte-identical output; the one speculative step past EOS adds
+about 4 ms to the TTFT of a back-to-back request (1.068x end-to-end). The
+ratio was taken under CPU load and is an upper bound for a quiet machine.
+The loader applies the new `runtime.config.lookahead` flag; a loader that
+predates it runs plain K=1 on the same bundle.
+
 ## Adding an entry
 
 Three commands, in this order.
