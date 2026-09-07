@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, K=4 + batch pass + submit every 64 + bind-group cache, under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4 + batch pass + submit every 64 + bind-group cache, under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -53,7 +53,7 @@
     },
     {
       "kind": "measured",
-      "label": "Replications of submit-every-64 without bind-group cache, three independent paired runs under ORCA",
+      "label": "Replications of submit-every-64 without bind-group cache, three independent paired runs under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -123,5 +123,5 @@
     "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushsmall-orca.json",
     "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-batchpass-orca.json"
   ],
-  "caveat": "All absolutes were taken while ORCA saturated the CPU. The overlap flags hide JS command encoding behind GPU execution, and a saturated CPU inflates encode time, so the paired 1.22-1.24x is an upper bound for a quiet machine; the floor is the ~1.05x from batch pass alone. No quiet-machine number or projection is claimed."
+  "caveat": "All absolutes were taken while unrelated work saturated the CPU. The overlap flags hide JS command encoding behind GPU execution, and a saturated CPU inflates encode time, so the paired 1.22-1.24x is an upper bound for a quiet machine; the floor is the ~1.05x from batch pass alone. No quiet-machine number or projection is claimed."
 }

@@ -8,10 +8,10 @@
     "workbench": "OlehZhyhinas/webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd",
     "date": "2026-09-06",
     "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
-    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent Chrome profile, WEBNN_MAX_LOAD=0 while ORCA remained active. Every ratio is paired within a round against a live case running the sibling entry's exact stack (same WASM, K=4, overlap flags off)."
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent Chrome profile, WEBNN_MAX_LOAD=0 under sustained background CPU load. Every ratio is paired within a round against a live case running the sibling entry's exact stack (same WASM, K=4, overlap flags off)."
   },
   "title": "Qwen3-0.6B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, runtime overlap",
-  "summary": "Sibling sg32-burst4 stack plus three WebGPU runtime flags: one compute pass per batch, queue submit every 64 dispatches so the GPU executes while JS still encodes the step, and bind-group reuse. Paired 1.243x over the sibling entry (IQR 1.229-1.260, n=6) with byte-identical output; 312.6 tokens/s median under ORCA.",
+  "summary": "Sibling sg32-burst4 stack plus three WebGPU runtime flags: one compute pass per batch, queue submit every 64 dispatches so the GPU executes while JS still encodes the step, and bind-group reuse. Paired 1.243x over the sibling entry (IQR 1.229-1.260, n=6) with byte-identical output; 312.6 tokens/s median under sustained background CPU load.",
   "target": {
     "generatedAt": "2026-09-06T16:20:00.000Z",
     "tool": "webnn-workbench bench/webnn/qwen/run-webllm.mjs",

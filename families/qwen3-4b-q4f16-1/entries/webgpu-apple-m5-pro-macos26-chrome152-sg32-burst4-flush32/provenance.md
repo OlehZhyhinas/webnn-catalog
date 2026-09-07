@@ -32,7 +32,7 @@ revision.
 
 Every browser run used a separate real Google Chrome persistent context, the
 dedicated `bench/.chrome-profile-qwen4` profile, port 8908, and the shared
-machine GPU lock. ORCA continued saturating the CPU; `WEBNN_MAX_LOAD=0`
+machine GPU lock. The CPU remained saturated by unrelated work; `WEBNN_MAX_LOAD=0`
 disabled load gating rather than stopping or starving it.
 
 The headline uses six rotating paired rounds. The model and GPU pipelines are

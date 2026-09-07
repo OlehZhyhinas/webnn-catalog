@@ -1,496 +1,316 @@
 # webnn-catalog
 
-Configuration-keyed, verified browser inference artifacts. The catalog carries
-hand-built WebNN graph recipes and first-class WebLLM/WebGPU entries; it does
-not pretend a WebLLM model library is an `MLGraphBuilder` recipe.
+Pre-tuned browser inference, published as data. Point a loader at an entry and
+get a running model — no build step, no server, no native install.
 
-A **recipe** is the exact `MLGraphBuilder` call sequence that built a tuned
-graph once: every op, in order, with the operand shapes the backend itself
-inferred, recorded as JSON alongside a blob of constants. `runtime/loader.js`
-replays it into an `MLGraph`. A WebLLM entry instead names hash-pinned runtime
-JavaScript and model-library WASM plus a revision-pinned upstream model
-repository. `runtimeKind` discriminates the two formats.
+SD-Turbo generates a 512×512 image from a new prompt in **68 ms** on an M5 Pro
+in Chrome. ONNX Runtime Web on WebGPU takes 916 ms on the same machine for the
+same model; native PyTorch on MPS takes 94.5 ms.
 
-It is not a model format. There is no autodiff, no training metadata, no
-framework, no graph optimiser. A recipe is the *output* of optimisation: the
-folds, the rewrites and the spelling choices are already baked in, and the
-ledger next to it says which ones, and what each was worth in milliseconds.
+That gap is the point. This is not a new runtime — it is the WebNN and WebGPU
+your browser already ships, driven in an order somebody tuned by hand and then
+recorded so you do not have to.
 
-**The catalog stores and describes. It does not select.** Nothing here probes
-your machine, ranks entries, or picks a default. That is the consuming
-product's policy, and it is the one thing this repo deliberately does not have
-an opinion about. See [Selection is the consumer's job](#selection-is-the-consumers-job).
+There is no npm package. `runtime/` holds two dependency-free ES modules —
+vendor them, or serve them from your own static host.
 
-## Families and entries
+---
 
-```
-families/<family-id>/family.json                    the contract
-families/<family-id>/entries/<entry-id>/entry.json  one configuration
-```
+## What you can run
 
-A **family** is one model, one task, one I/O contract: what you hand in, what
-comes back, which tokenizer turns a prompt into graph inputs, how the graphs
-chain on device. Every entry of a family meets it exactly. If a change would
-falsify any of it, that is a new family, not a new entry.
+### Image and LaTeX — WebNN / Core ML
 
-An **entry** is that family built and tuned for one configuration. Two entries
-of a family compute the same thing; they differ in how it is spelled, because
-what is fast on Core ML is not what is fast on DirectML, and what a browser
-will even build changes with its version. An entry carries its own recipes,
-its own constants manifest, its own verification bars, its own timings and its
-own ledger.
+| family | task | in → out | download | new prompt |
+|---|---|---|---:|---:|
+| [`sd-turbo-512-1step`](families/sd-turbo-512-1step/) | text → image | prompt → 512×512 RGBA | 2.41 GB | **68.4 ms** |
+| [`texo-384`](families/texo-384/) | image → LaTeX | 384×384 grayscale crop → LaTeX | 44 MB | **25.9 ms** |
+| [`texify-420`](families/texify-420/) | image → LaTeX | 420×420 RGB crop → LaTeX | 627 MB | **145.7 ms** |
+| [`intellitex-t5-220m`](families/intellitex-t5-220m/) | text → LaTeX | English → LaTeX | 1.04 GB | **146.2 ms** |
 
-### The configuration key
+Fidelity against the fp32 reference each was built from: SD-Turbo PSNR 44.28 dB;
+Texo and Texify greedy tokens identical on 18/18 benchmark images; IntelliTeX
+tokens identical to fp32 Hugging Face on 15/15 items.
 
-`entry.target` is the configuration the entry was **built and tuned for**. It
-is produced by `scripts/probe-target.mjs` on the machine that produced the
-entry, and every field is tagged with how it was observed:
+For Texo, LatexGen's own ONNX Runtime Web path takes 770 ms per image on WASM
+fp32 or 780 ms on WebGPU, against this catalog's 25.9 ms.
 
-| field | `observable` | what it is |
-|---|---|---|
-| `backend` | `browser` | Which WebNN backend the browser actually gave you, inferred from `opSupportLimits()`, plus the raw fields it was inferred from |
-| `browser` | `browser` | Brand, full version, major, and the flags the harness launched with |
-| `os` | `browser(partial)/host` | Name and version. A page sees a coarsened `platformVersion`; the build id needs a shell |
-| `gpu` | `browser` | WebGPU `adapter.info` vendor / architecture / device / description, plus a limits summary |
-| `host` | `host` | Chip name, GPU core count, RAM. Never visible to a page |
-| `perfClass` | `browser(probe)` | A measured f16 matmul throughput, as a lower bound, so two machines can be put in rough classes |
+### Chat — WebLLM / WebGPU
 
-The split matters because it tells a consumer what it can actually match on at
-runtime. `backend.name`, `gpu.vendor` and `browser.major` are readable in the
-page. `host.chip` is not, and no product should pretend otherwise.
+OpenAI-compatible chat, exact greedy decode. Every family ships two entries
+except the 8B; they share a model library and differ in decode tuning.
 
-`entry.compat` states **facts, not policy**: `requires` is what must hold for
-the graphs to build and compute correctly (for the entry below, only that the
-backend is Core ML), and `ops` is the set of `MLGraphBuilder` methods the
-recipes call, so a browser missing one cannot build them whatever else matches.
-Everything else in `target` is where the entry was tuned and timed, which is a
-weaker claim, and `measurements.json` says exactly which machines the numbers
-came from.
+| family | entry | download | throughput | vs baseline |
+|---|---|---:|---:|---:|
+| [`qwen3-0.6b-q4f16-1`](families/qwen3-0.6b-q4f16-1/) | `…-sg32-burst4` | 359 MB | 250.7 tok/s | 1.692× |
+| | `…-sg32-burst4-flush64` | 359 MB | **312.6 tok/s** | 1.243× |
+| [`qwen3-1.7b-q4f16-1`](families/qwen3-1.7b-q4f16-1/) | `…-sg32-burst4-flush32` | 996 MB | 139.9 tok/s | 1.371× |
+| | `…-burst1-flush32-lookahead1` | 996 MB | **158.7 tok/s** | 1.136× |
+| [`qwen3-4b-q4f16-1`](families/qwen3-4b-q4f16-1/) | `…-sg32-burst4-flush32` | 2.29 GB | 73.9 tok/s | 1.285× |
+| | `…-burst1-flush32-lookahead1` | 2.29 GB | **78.5 tok/s** | 1.063× |
+| [`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) | `…-sg32-burst4-flush32` | 4.64 GB | **46.2 tok/s** | 1.187× |
 
-The **entry id** is `<backend>-<chip slug>-<os><major>-<browser><major>`. It is
-a readable summary of `target` for humans reading a directory listing. Nothing
-parses it.
+Output is byte-identical to the baseline each entry was paired against. The
+`lookahead1` entries stream every token; the `burst4` entries emit in blocks of
+four.
 
-## The catalog today
+Every number on this page was measured on Apple M5 Pro / macOS 26.6.2 /
+Chrome 152. Each entry directory carries its own `measurements.json` and
+`provenance.md` with the baseline, the protocol, the host and the conditions —
+read those before quoting a figure anywhere it matters.
 
-| family | entry | variant | new prompt | quality | measured on |
-|---|---|---|---:|---|---|
-| [`sd-turbo-512-1step`](families/sd-turbo-512-1step/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **68.4 ms** | PSNR 44.28 dB vs the fp32 chain | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
-| [`texo-384`](families/texo-384/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/texo-384/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **22.7 ms** per image | greedy tokens identical to fp32 on 18/18 benchmark images | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
-| [`intellitex-t5-220m`](families/intellitex-t5-220m/) | [`coreml-apple-m5-pro-macos26-chrome152`](families/intellitex-t5-220m/entries/coreml-apple-m5-pro-macos26-chrome152/) | `exact` | **146.2 ms** | tokens identical to fp32 Hugging Face on 15/15 items | WebNN / Core ML, Apple M5 Pro, macOS 26.6.2, Chrome 152 |
+Machine-readable index: [`catalog.json`](catalog.json).
 
-For context, on the same machine and the same model: ONNX Runtime Web on WebGPU
-is 916 ms, the same demo on ORT's WebNN EP is 237 ms, and native PyTorch MPS is
-94.5 ms. For Texo, LatexGen's own ONNX Runtime Web path takes 770 ms per image
-(WASM fp32) or 780 ms (WebGPU); "new prompt" for that family means one
-preprocessed image in, a LaTeX token sequence out, and the entry is
-autoregressive: a decode graph that runs 16 greedy steps per dispatch over
-static caches, driven by `runtime/loader.js`'s `autoregressive()` from the
-family's `contract.chaining.autoregressive` block.
+## What you need
 
-Machine-readable index: [`catalog.json`](catalog.json), which holds summary rows
-only. The entry directory is authoritative for everything in them.
+- **Chrome 152 or newer.**
+- **WebNN entries:** WebNN enabled, and a **non-incognito profile**. Chromium
+  gates the Core ML backend on it — an off-the-record profile silently falls
+  back to CPU and runs about 50× slower with no error. Call
+  `assertCoreMLFingerprint(ctx)` and fail loudly instead.
+- **WebLLM entries:** WebGPU with `shader-f16` and subgroup size 32. The loader
+  checks before it downloads anything.
+- **Room for the download.** See the tables. WebNN constants stream in chunks,
+  so peak resident memory stays ~64–98 MiB regardless of blob size.
 
-### Qwen3-0.6B WebLLM/WebGPU
+Every entry here was tuned on Apple silicon. `entry.compat.requires` states what
+must hold for an entry to work at all — filter on that, and see
+[choosing an entry](#choosing-an-entry).
 
-[`qwen3-0.6b-q4f16-1`](families/qwen3-0.6b-q4f16-1/) is the first
-`runtimeKind: "webllm"` family. Its Apple M5 Pro entry uses subgroup-32,
-chunk-256 GPU argmax, GEMV `TR=32`, and K=4 GPU-resident greedy decode.
-On six warm-model, fresh-prompt interleaved rounds under machine load it
-measured **250.655 tokens/s**, **1.692x** the same artifact at K=1. The
-approximately 3.4 ms/token quiet result is recorded only as a projection.
+## Using it
 
-A second entry, `…-sg32-burst4-flush64`, keeps that library and burst and
-adds three runtime flags (single compute pass, `queue.submit` every 64
-dispatches so the GPU executes while JS still encodes, bind-group reuse).
-Paired live against the first entry in the same rotation it measured
-**312.6 tokens/s**, **1.243x** (IQR 1.229–1.260), byte-identical output.
-The ratio was taken under CPU load and is an upper bound for a quiet machine;
-no quiet figure is recorded. The demo defaults to this entry.
+Two loaders, selected by an entry's `runtimeKind`.
 
-The [Qwen demo](demo/qwen.html) fetches the runtime bundle and model WASM,
-verifies their byte counts and SHA-256 hashes, imports the verified runtime,
-then fetches model files from an immutable upstream Hugging Face revision.
-The fast path is limited to exact greedy requests; sampling, logprobs,
-penalties, grammar/structured output, logit bias, and custom logit processors
-automatically retain the ordinary one-step WebLLM path.
+### Chat — `runtimeKind: "webllm"`
 
-### Qwen3-1.7B WebLLM/WebGPU
+```js
+import { loadWebLLMFromUrl } from "./runtime/webllm-loader.js";
 
-[`qwen3-1.7b-q4f16-1`](families/qwen3-1.7b-q4f16-1/) uses a
-revision-pinned upstream model with a subgroup-32, chunk-256, GEMV-`TR=32`
-model library. Its M5 Pro entry adds K=4 exact-greedy decode and submits the
-single WebGPU compute pass every 32 dispatches.
+const rig = await loadWebLLMFromUrl(entryUrl);
 
-Across six warm-model, fresh-prompt paired rounds under ORCA it measured
-**139.86 tokens/s** (**7.15 ms/token**), **1.371x** the published subgroup-32
-path. All six fresh outputs and four quality outputs were byte-identical.
-The 6.5 ms/token quiet figure is an upper-bound projection, not a measurement.
+const out = await rig.engine.chat.completions.create({
+  messages: [{ role: "user", content: "Explain WebGPU subgroups briefly." }],
+  temperature: 0,
+  max_tokens: 256,
+});
+console.log(out.choices[0].message.content);
 
-The Qwen demo accepts an optional `entry` query parameter, so either Qwen
-family can be loaded through the same verified UI.
-
-**Pending a dump:** the ToDo (Token Downsampling) fast variant of the SD-Turbo
-family runs at 54.6 ms, about 20% faster, for a visibly different image (PSNR
-24.3 dB against the exact pipeline). The workbench measured it end to end but
-never recorded its `MLGraphBuilder` call sequence, so there is no recipe and
-therefore no `todo2-nearest` entry. The numbers are in the entry's
-[`provenance.md`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/provenance.md#the-optional-fast-variant);
-the entry appears when a dump does.
-
-A second entry, `…-sg32-burst1-flush32-lookahead1`, keeps that model
-library and the submit cadence, and changes the decode loop: one decode step
-stays queued on the GPU while the current burst is read back, so the GPU
-never idles at a burst boundary, and the burst shrinks to one token, which
-streams every token and computes nothing past EOS inside the stream. Paired
-live against the first entry in the same rotation over twelve fresh-prompt
-rounds under ORCA it measured **158.66 tokens/s**, **1.136x** (IQR
-1.065–1.189), byte-identical output; the one speculative step past EOS adds
-about 4 ms to the TTFT of a back-to-back request (1.068x end-to-end). The
-ratio was taken under CPU load and is an upper bound for a quiet machine.
-The loader applies the new `runtime.config.lookahead` flag; a loader that
-predates it runs plain K=1 on the same bundle.
-
-### Qwen3-4B WebLLM/WebGPU
-
-[`qwen3-4b-q4f16-1`](families/qwen3-4b-q4f16-1/) references the immutable
-upstream 4B weights and adds a model-specific subgroup-32, chunk-256,
-GEMV-`TR=32` library. Its M5 Pro entry uses K=4 exact-greedy decode, one
-compute pass, and a submit every 32 dispatches. The unchanged WebLLM runtime
-artifact is reused rather than duplicated.
-
-Across six warm-model, fresh-prompt paired rounds under ORCA it measured
-**73.85 tokens/s** (**13.54 ms/token**), **1.285x** the fully published
-WebLLM 0.2.84 subgroup-32 path. All six fresh outputs and completion-token
-counts, plus all four quality outputs, were byte-identical. There is no
-historical quiet 4B number, so no quiet projection is claimed.
-
-The Qwen demo accepts `?entry=` and continues to support every Qwen family;
-the existing 0.6B default is unchanged.
-
-### Qwen3-8B WebLLM/WebGPU
-
-[`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) references the immutable
-upstream 8B weights and adds a model-specific subgroup-32, chunk-256,
-GEMV-`TR=32` library. Its M5 Pro entry uses K=4 exact-greedy decode, one
-compute pass, and a submit every 32 dispatches. The unchanged WebLLM runtime
-artifact is reused rather than duplicated. Lookahead is not on this headline.
-
-Across six warm-model, fresh-prompt paired rounds under ORCA it measured
-**46.19 tokens/s** (**21.65 ms/token**), **1.187x** the fully published
-WebLLM 0.2.84 subgroup-32 path. All six fresh outputs and completion-token
-counts were byte-identical to that published path. Quality prompts matched
-local K=1 full-vocabulary argmax 4/4; the published temperature-zero sampler
-is not deterministic on the math item. There is no historical quiet 8B
-number, so no quiet projection is claimed.
-
-The Qwen demo accepts `?entry=` and continues to support every Qwen family;
-the existing 0.6B default is unchanged.
-
-## Adding an entry
-
-Three commands, in this order.
-
-```bash
-# 1. Describe the machine you are about to build on.
-node scripts/probe-target.mjs --out target.json
-
-# 2. Write the entry from what the tuning run produced.
-node scripts/add-entry.mjs \
-  --family sd-turbo-512-1step \
-  --target target.json \
-  --recipe image=<dump>.json --recipe text=<dump>.json \
-  --constants image=<blob>.bin --constants text=<blob>.bin \
-  --chain text.out=image.encoder_hidden_states \
-  --variant exact \
-  --verification <dir> --provenance <ledger>.md \
-  --measurements <results>.json \
-  --produced-by "webnn-workbench@<commit>"
-
-# 3. Check everything, against the schemas and against the hardware.
-node scripts/validate.mjs
-node scripts/verify.mjs --entry sd-turbo-512-1step/<entry-id>
+await rig.dispose();
 ```
 
-`add-entry.mjs` reads the recipes to fill in the entry's I/O, hashes the
-constants blobs **where they lie** (they are 1.65 GB and 649 MB and they never
-enter git), writes `entry.json`, `manifest.json` and `measurements.json`, copies
-the verification set and the ledger in, adds a summary row to `catalog.json`,
-and refuses to overwrite an existing entry without `--force`. It validates what
-it wrote before it exits.
+`loadWebLLMFromUrl()` checks subgroup-32 support, fetches the entry's artifact
+manifest, verifies the byte count and SHA-256 of both the runtime JavaScript and
+the model-library WASM, and only then exposes them through temporary blob URLs.
+Model weights come from a revision-pinned upstream Hugging Face repository — the
+catalog never rehosts them. `dispose()` unloads the engine and revokes the URLs.
 
-The family itself is authored by hand: `family.json` is the contract, and a tool
-that guessed at a contract would be guessing at the one thing entries are not
-allowed to disagree about.
+The exact-greedy fast path applies when `temperature` is 0 and no logprobs,
+penalties, logit bias, grammar, structured output, or custom logit processor is
+active. Anything else transparently uses WebLLM's ordinary sampler with the same
+API. `isGreedyBurstEligible()` exposes that rule if you want to check first.
 
-A second machine running the same entry is a **row**, not an entry:
-
-```bash
-node scripts/probe-target.mjs --out target.json
-node scripts/add-measurement.mjs --entry <family>/<entry-id> \
-  --results <results>.json --target target.json --protocol e2e
-```
-
-Each row carries its own host fingerprint, so one entry can accumulate timings
-from several machines without becoming several entries.
-
-## Loading an entry
-
-`runtime/loader.js` is the serving interface: hand it an entry, get finished
-graphs.
+### Image and LaTeX — `runtimeKind: "webnn"`
 
 ```js
 import {
   loadEntry, createEntryTensors, assertCoreMLFingerprint,
 } from "./runtime/loader.js";
 
-const dir   = "/families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152";
 const entry = await (await fetch(`${dir}/entry.json`)).json();
 
 const ctx = await navigator.ml.createContext({ deviceType: "gpu" });
-assertCoreMLFingerprint(ctx);   // see below; this line saves afternoons
+assertCoreMLFingerprint(ctx);   // this line saves afternoons
 
-const rig = await loadEntry(entry, "/weights", ctx, { baseUrl: dir });
-// -> { graphs: {text, image}, chain, inputs, outputs, manifest, stats }
+// null: fetch constants from where the manifest publishes them, in the chunks
+// it names. A base URL ("/weights") points at a local mount instead.
+const rig = await loadEntry(entry, null, ctx, { baseUrl: dir });
+const t   = await createEntryTensors(ctx, rig);
 
-const t = await createEntryTensors(ctx, rig);
-ctx.writeTensor(t.get("text", "input_ids"), ids);
-
+ctx.writeTensor(t.get("text", "input_ids"), ids);   // 77 CLIP ids, int32
 ctx.dispatch(rig.graphs.text.graph,  t.inputsFor("text"),  t.outputsFor("text"));
 await ctx.readTensor(t.get("text", "out"));            // a completion fence
 ctx.dispatch(rig.graphs.image.graph, t.inputsFor("image"), t.outputsFor("image"));
-await ctx.readTensor(t.get("image", "out"), hostView); // 1 MB, into your buffer
+await ctx.readTensor(t.get("image", "out"), hostView); // 1 MB RGBA
 ```
 
-`createEntryTensors` reads `entry.graphs.chain` and allocates **one** MLTensor
-for each link, so the text graph's output *is* the image graph's
-`encoder_hidden_states` and the embedding never crosses into JS. It also
-allocates the outputs an entry marks non-readable, because WebNN requires every
-declared graph output to be bound at dispatch, debug outputs included.
+`createEntryTensors` allocates **one** MLTensor per chain link, so the text
+graph's output *is* the image graph's `encoder_hidden_states` and the embedding
+never crosses into JS. It also allocates outputs an entry marks non-readable,
+because WebNN requires every declared output to be bound at dispatch.
 
-Constants arrive either as one fetch or, if the manifest lists `chunks`, as
-ranged fetches released as they are consumed, so a 1.65 GB blob does not have to
-sit in the JS heap in one piece. Both paths are exercised by `scripts/verify.mjs`
-and produce the same output byte for byte.
+The three LaTeX families decode token by token. Run the encoder once, then hand
+the decode graph to `autoregressive()`, which is driven entirely by the family's
+`contract.chaining.autoregressive` block:
+
+```js
+ctx.dispatch(rig.graphs.encoder.graph,
+             t.inputsFor("encoder"), t.outputsFor("encoder"));
+await ctx.readTensor(t.get("encoder", "enc_kT0"));   // fence
+
+const { tokens } = await autoregressive(
+  ctx, rig, t, family.contract.chaining.autoregressive, { maxNewTokens: 512 },
+);
+```
+
+Input names differ per family — Texo's encoder takes `image`, Texify's takes
+`pixel_values`, IntelliTeX's takes `input_ids` plus `pad_bias` — so read the
+family's `contract.graphs` block rather than copying names.
 
 Full API: [`runtime/README.md`](runtime/README.md).
 
-### `assertCoreMLFingerprint` is not optional
+### Weights, and streaming them
 
-Chromium gates the Core ML backend on a **non-incognito** profile. An
-off-the-record profile, which is what `chromium.launch()` and an incognito
-window both give you, silently falls back to TFLite/XNNPACK on the CPU. Nothing
-errors. The graph builds in milliseconds instead of ~25 seconds and runs about
-50x slower.
+WebLLM entries pull weights from a revision-pinned upstream repo. WebNN
+constants are a separate blob, never in git, pinned by sha256 in each entry's
+`manifest.json` and published to
+[`ozhyhinas/webnn-catalog-sd-turbo`](https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo)
+and [`ozhyhinas/webnn-catalog`](https://huggingface.co/datasets/ozhyhinas/webnn-catalog).
+Pass `null` and the loader uses those URLs; pass a base URL to serve your own
+mirror, and the manifest's sha256 still pins what you get.
 
-| | Core ML | TFLite/XNNPACK |
-|---|---|---|
-| `opSupportLimits().preferredInputLayout` | `nchw` | `nhwc` |
-| `input.rankRange.max` | 5 | 8 |
+When a manifest lists **chunks**, the loader never holds a whole blob: it
+fetches one range at a time and releases it before the next, so a multi-gigabyte
+blob costs tens of megabytes resident instead of its full size. Boundaries sit on
+constant starts, so nothing straddles a seam and every view stays zero-copy.
+Without a chunk list the loader fetches the blob in one piece.
 
-Call it right after `createContext()`. It is the same fingerprint
-`probe-target.mjs` writes into `target.backend`.
+### Tokenizers and preprocessing
 
-## The data contract
+Each family ships the tokenizer files its entries were verified against.
+SD-Turbo and Texo include a small JS implementation (`ClipTokenizer`,
+`TexoTokenizer`); Texify and IntelliTeX ship `tokenizer.json` for transformers.js
+or equivalent. WebLLM entries get their tokenizer from upstream.
 
-The schemas in [`schema/`](schema/) are the interface, and `validate.mjs`
-enforces them over the whole repo.
+Preprocessing stays on your side, and each `family.json` states the exact recipe.
+The verification set holds what Chrome's canvas actually produced, byte for byte.
+
+## Choosing an entry
+
+**Nothing here picks an entry for you.** No ranking function, no fallback chain,
+no "best entry" field. The catalog publishes facts; which entry a given user gets
+is product policy, it changes per product, and it rots when frozen into a data
+repo.
+
+Filter on `entry.compat.requires` — what must hold for the entry to work at all.
+Then prefer by your own policy: same GPU vendor, then browser major, then OS
+major. Decide deliberately what you do when nothing matches, and whether an
+approximating `variant` is acceptable to your users.
+
+`entry.target` is where an entry was built and tuned. It is a hint about
+performance, not a requirement, and every field is tagged with how it was
+observed — `backend.name`, `gpu.vendor` and `browser.major` are readable in the
+page; `host.chip` is not, and no product should pretend otherwise.
+
+## How it is organized
+
+```
+families/<family-id>/family.json                    the contract
+families/<family-id>/entries/<entry-id>/entry.json  one configuration
+```
+
+A **family** is one model, one task, one I/O contract. Every entry of a family
+meets it exactly; if a change would falsify any of it, that is a new family.
+
+An **entry** is that family built and tuned for one configuration. Two entries of
+a family compute the same thing and differ in how it is spelled, because what is
+fast on one backend is not what is fast on another.
+
+`runtimeKind` says which kind of entry it is. A **WebNN** entry carries a
+*recipe*: the exact `MLGraphBuilder` call sequence that built a tuned graph once,
+every op in order, with the shapes the backend inferred, alongside a constants
+blob. A **WebLLM** entry instead names hash-pinned runtime JavaScript and
+model-library WASM plus a revision-pinned upstream model repository. The catalog
+does not pretend a model library is a recipe.
+
+A recipe is not a model format — no autodiff, no training metadata, no graph
+optimizer. It is the *output* of optimization, with the folds and rewrites
+already baked in.
+
+## Reading a recipe yourself
+
+You do not have to use the loader. A WebNN recipe is JSON and replaying it is a
+loop. Four things the schema says that a reader must act on, all recorded in
+`recipe.schema.json` under `x-callForms`:
+
+**One operand namespace.** Inputs keep their names, constants are `k<N>`, results
+are `v<N>`. Ops are in order, so an op's inputs are always already defined.
+
+**Operand-valued options appear twice.** An op's `inputs` is
+`[...positional operands, ...operand-valued options]`, because an options bag is
+always the last argument. Shear them off the tail by count to recover the
+positional list.
+
+**Some `options` keys are really positional arguments.** The recorder flattens
+positional non-operand arguments into the options bag, so the JSON alone cannot
+tell `softmax(x, 2)` from `softmax(x, {axis: 2})`. `x-callForms.positional` is
+that table, inverted — plus `variadic` (`concat`) and `multiOutput` (`split`).
+
+**Constants index the blob by byte offset, in increasing order.** That is what
+lets a chunked reader release each range as it goes.
+
+### Schemas
 
 | schema | file it defines |
 |---|---|
 | [`recipe.schema.json`](schema/recipe.schema.json) | a graph recipe: inputs, outputs, constants, the op list |
 | [`entry.schema.json`](schema/entry.schema.json) | `entry.json`: target, compat, graphs, chain, the paths |
-| [`family.schema.json`](schema/family.schema.json) | `family.json`: source model, I/O contract, tokenizer, scheduler |
-| [`target.schema.json`](schema/target.schema.json) | `target.json`: the configuration, field by field, with `observable` |
-| [`manifest.schema.json`](schema/manifest.schema.json) | `manifest.json`: constants blobs by sha256, recipe hashes |
-| [`measurements.schema.json`](schema/measurements.schema.json) | `measurements.json`: one row per host, each with its own fingerprint |
+| [`family.schema.json`](schema/family.schema.json) | `family.json`: source model, I/O contract, tokenizer |
+| [`target.schema.json`](schema/target.schema.json) | `target.json`: the configuration, with `observable` |
+| [`manifest.schema.json`](schema/manifest.schema.json) | `manifest.json`: constants blobs by sha256, chunk lists |
+| [`artifact-manifest.schema.json`](schema/artifact-manifest.schema.json) | `artifacts.json`: hash-pinned WebLLM artifacts |
+| [`measurements.schema.json`](schema/measurements.schema.json) | `measurements.json`: one row per host |
 | [`catalog.schema.json`](schema/catalog.schema.json) | `catalog.json`: the index, summary rows only |
 
-### The recipe IR
-
-A product does not have to use `runtime/loader.js`. The recipe is JSON, and
-replaying it is a loop:
-
-```jsonc
-{
-  "version": 1,
-  "label": "sd-turbo-512-1step/image",
-  "layout": "nhwc",
-  "inputs":  [{ "name": "sample", "dataType": "float16", "shape": [1,64,64,4] }],
-  "outputs": [{ "name": "out", "operand": "v1488", "dataType": "int32", "shape": [1,512,512] }],
-  "constants": {
-    "k0": { "dataType": "float16", "shape": [320,3,3,4], "byteOffset": 0, "byteLength": 23040, "tag": "conv_in" }
-  },
-  "ops": [
-    { "id": 1, "type": "conv2d", "inputs": ["sample","k0","k1"], "output": "v1",
-      "outputShape": [1,64,64,320], "outputDataType": "float16",
-      "options": { "strides":[1,1], "padding":[1,1,1,1], "dilations":[1,1],
-                   "inputLayout":"nhwc", "filterLayout":"ohwi", "bias":"k1" },
-      "tag": "conv_in" }
-  ]
-}
-```
-
-Four things the schema says that a reader has to act on. All four are recorded
-in `recipe.schema.json` under `x-callForms`, so they are data, not folklore.
-
-**One operand namespace.** Graph inputs keep their own names, constants are
-`k<N>`, op results are `v<N>`. Ops are in order, so an op's inputs are always
-already defined.
-
-**Operand-valued options appear twice.** An op's `inputs` is
-`[...positional operands, ...operand-valued options]`, in that order, because an
-options bag is always the last argument. `conv2d`'s bias is both `options.bias`
-and the tail of `inputs`. Shear the operand-valued options off the tail by count
-to recover the positional list.
-
-**Some `options` keys are really positional arguments.** The recorder flattens a
-call's positional non-operand arguments into the same bag as the real options
-dictionary, so the JSON alone cannot tell `softmax(x, 2)` from
-`softmax(x, {axis: 2})`. `x-callForms.positional` is the recorder's table,
-inverted:
-
-```js
-reshape: ["newShape"],  expand: ["newShape"],  softmax: ["axis"],
-cast: ["type"],         concat: ["axis"],      split: ["splits"],
-tile: ["repetitions"],  pad: ["beginningPadding", "endingPadding"],
-argMin: ["axis"],       argMax: ["axis"],
-```
-
-Plus `variadic` (`concat` takes an array of operands, not one) and `multiOutput`
-(`split` returns several, and its op carries `outputs` / `outputShapes` arrays
-alongside `output` / `outputShape`).
-
-**Constants index the blob by byte offset, in increasing order.** That is what
-lets a chunked reader release each range as it goes. A constant that straddles a
-chunk seam is copied out and stitched.
-
-A version 2 of the recipe schema should record the argument list positionally,
-or name the call form explicitly, and then the positional table can go.
-
-## Selection is the consumer's job
-
-Nothing in this repo matches an entry to a machine. There is no `query.js`, no
-ranking function, no fallback chain, and no "best entry" field. The catalog
-publishes facts; deciding which entry a given user gets is product policy, it
-changes per product, and it is exactly the kind of thing that rots when it is
-frozen into a data repo.
-
-What a product might do, as **guidance only**, not part of the catalog:
-
-```js
-// 1. Probe, in the page, using only what is browser-observable.
-const ctx     = await navigator.ml.createContext({ deviceType: "gpu" });
-const limits  = ctx.opSupportLimits();
-const backend = limits.preferredInputLayout === "nchw" && limits.input.rankRange.max === 5
-  ? "coreml" : limits.preferredInputLayout === "nhwc" ? "tflite" : "unknown";
-const adapter = await navigator.gpu.requestAdapter();
-const ua      = await navigator.userAgentData.getHighEntropyValues(["platformVersion"]);
-
-// 2. Filter on what MUST hold: entry.compat.requires, then the ops the browser
-//    actually exposes.
-const family  = catalog.families["sd-turbo-512-1step"];
-let usable    = family.entries.filter((e) => e.backend === backend);
-
-// 3. Prefer, by your own policy, not the catalog's. For example: the same GPU
-//    vendor, then the same browser major, then the same OS major.
-usable.sort(byYourPreference(adapter.info.vendor, browserMajor, osMajor));
-
-// 4. Fall back to any entry of the family with the same backend, and accept
-//    that its timings were measured somewhere else.
-const chosen = usable[0] ?? family.entries.find((e) => e.backend === backend);
-```
-
-Two things worth deciding deliberately when you write that: whether an
-approximating `variant` is acceptable to your users at all, and what you do when
-nothing matches. The catalog will not decide either for you.
-
-## Running it
+## Trying it locally
 
 ```bash
 npm install
-
-# Validate every file against schema/, plus the cross-file facts.
-node scripts/validate.mjs
-
-# Verify an entry on real hardware, against a local weights directory
-# (default: the workbench IR dir).
-node scripts/verify.mjs --entry sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152 \
-  --weights ../webnn-workbench/bench/webnn/ir
-
-# ...or serve the catalog and open the demo.
-node scripts/serve.mjs --weights ../webnn-workbench/bench/webnn/ir
-open "http://localhost:8903/demo/index.html?entry=sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152"
+node scripts/serve.mjs
 ```
 
-`scripts/verify.mjs` launches Chrome with a **persistent** profile and the WebNN
-flags, builds every graph the entry declares, runs the family's reference case,
-checks the sha256 of the RGBA readback and the PSNR against two reference
-images, times 20 runs and prints a table. `--chunk-mb N` exercises the ranged
-constant path. It runs the entry you name and reports what happened; it does not
-look for an entry that suits the machine.
-
-`scripts/validate.mjs` is dependency-free. It implements the subset of JSON
-Schema the schemas use, refuses a schema keyword it does not know rather than
-passing it silently, and then checks what a schema cannot: that referenced files
-exist, that each recipe still hashes to what its manifest says, that an entry's
-declared I/O equals its recipes' and meets its family's contract, that every
-chain link typechecks, and that the index agrees with the entries it indexes.
-
-## What is in the repo, and what is not
-
-Recipes, manifests, verification references, ledgers, the schemas, the loader
-and the tooling are here. **The constants blobs are not**: 1.65 GB and 649 MB do
-not belong in git. They are the published artifact, pinned by sha256 in each
-entry's manifest and fetched from a URL.
+Then open either demo:
 
 ```
-catalog.json                    the index: families -> entries, summary rows only
-schema/                         JSON Schema for every file type in here
-families/<family>/
-  family.json                   the contract: source model, I/O, tokenizer, chaining
-  tokenizer.js, tokenizer/      shared by every entry of the family
-  entries/<entry>/
-    entry.json                  the configuration record
-    recipe.image.json           1441 ops, 655 constants
-    recipe.text.json            603 ops, 281 constants
-    manifest.json               blob sizes, sha256s, URLs; recipe hashes
-    measurements.json           one row per host, each with its own fingerprint
-    verification/               the reference case, this entry's bars, references
-    provenance.md               the ledger
-runtime/
-  loader.js                     recipe -> MLGraph, entry -> graphs; no dependencies
-  README.md                     API, constant sources, the chaining pattern
-scripts/
-  probe-target.mjs              write target.json for this machine
-  add-entry.mjs                 create an entry from a tuning run's output
-  add-measurement.mjs           append a row from another host
-  validate.mjs                  schema + cross-file checks over the whole catalog
-  verify.mjs                    Playwright, real Chrome, real Core ML
-  serve.mjs                     static server with Range support, for the demo
-  publish-weights.sh            upload the blobs, write their URLs into a manifest
-demo/index.html                 prompt box, image, per-stage ms; ?entry=<family>/<id>
+http://localhost:8903/demo/index.html?entry=sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152
+http://localhost:8903/demo/qwen.html
 ```
 
-## Five conventions
+The WebNN demo streams constants from the published URLs chunk by chunk and
+shows per-stage milliseconds. The Qwen demo verifies every artifact hash before
+importing it, and takes `?entry=` to load any Qwen family.
+
+## Upstream models
+
+Each family is a hand-tuned rebuild of a published model. The upstream license
+governs its weights — check it before shipping, particularly commercially.
+
+| family | upstream | license |
+|---|---|---|
+| `qwen3-*-q4f16-1` | [`mlc-ai/Qwen3-*-q4f16_1-MLC`](https://huggingface.co/mlc-ai), revision-pinned | Apache-2.0 |
+| `sd-turbo-512-1step` | [`stabilityai/sd-turbo`](https://huggingface.co/stabilityai/sd-turbo) + [`madebyollin/taesd`](https://huggingface.co/madebyollin/taesd) | see upstream |
+| `texify-420` | [`vikp/texify`](https://huggingface.co/vikp/texify) | see upstream |
+| `intellitex-t5-220m` | [`duanxianpi/IntelliTex`](https://huggingface.co/duanxianpi/IntelliTex) | see upstream |
+| `texo-384` | Texo / FormulaNet as shipped in LatexGen | see upstream |
+
+WebLLM entries carry a `NOTICE.md` with full third-party attribution.
+
+## Conventions
+
+**The catalog describes; it does not choose.** An entry says what it is and where
+it was built. It never says it is the right one.
 
 **A recipe is the exact call sequence, with backend-inferred shapes.** Not a
-re-derivation. If the recorder computes the shapes itself, the recipe can
-disagree with the graph that was measured, and eventually will. `manifest.json`
-pins each recipe's sha256 so a hand edit is detectable, and `validate.mjs`
-checks it.
+re-derivation. `manifest.json` pins each recipe's sha256.
 
 **Constants never enter git.** A separate blob, pinned by sha256, whose byte
 offsets the recipe indexes.
 
 **A number without a machine, an OS, a browser build and a protocol is not a
-measurement.** Every row in `measurements.json` carries all four, including how
-the A/B was run and what the noise floor is. A row's `loadAvg` is never borrowed
-from somewhere else.
+measurement.** Every row in `measurements.json` carries all four.
 
-**Every entry has a ledger.** What was folded and what it was worth; what was
-tried and rejected, with the number that killed it; and what the backend turned
-out to be like. The op list survives on its own. The reasoning does not.
+**Every entry has a ledger.** `provenance.md` records what was folded and what it
+was worth, and what was tried and rejected with the number that killed it.
 
-**The catalog describes; it does not choose.** An entry says what it is and
-where it was built. It never says it is the right one.
+## Contributing
+
+Adding a family, building an entry for new hardware, or contributing a timing row
+from your machine: see [`CONTRIBUTING.md`](CONTRIBUTING.md).

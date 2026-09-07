@@ -8,10 +8,10 @@
     "workbench": "OlehZhyhinas/webnn-workbench@ca301a9c0154c9788ad5585a20048a5c2a850642",
     "date": "2026-09-06",
     "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
-    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 while ORCA remained active."
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under sustained background CPU load."
   },
   "title": "Qwen3-1.7B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro",
-  "summary": "Subgroup-32, chunk-256 two-stage GPU argmax, GEMV TR=32, K=4 GPU-resident greedy decode, and runtime submit cadence 32. Measured 139.86 tokens/s and 1.371x paired versus the published subgroup-32 path under ORCA.",
+  "summary": "Subgroup-32, chunk-256 two-stage GPU argmax, GEMV TR=32, K=4 GPU-resident greedy decode, and runtime submit cadence 32. Measured 139.86 tokens/s and 1.371x paired versus the published subgroup-32 path under sustained background CPU load.",
   "target": {
     "generatedAt": "2026-09-06T17:00:00.000Z",
     "tool": "webnn-workbench bench/webnn/qwen/run-webllm-interleaved.mjs",

@@ -8,10 +8,10 @@
     "workbench": "OlehZhyhinas/webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989",
     "date": "2026-09-06",
     "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
-    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 while ORCA remained active; every ratio paired within a round against the live sibling entry stack."
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under sustained background CPU load; every ratio paired within a round against the live sibling entry stack."
   },
   "title": "Qwen3-4B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, K=1 with GPU lookahead",
-  "summary": "Sibling flush32 stack (subgroup-32, chunk-256 GPU argmax, GEMV TR=32, batch pass, submit every 32 dispatches) with a burst of one token and one decode step kept queued on the GPU across each readback. Measured 78.50 tokens/s and 1.063x paired decode against the live sibling stack under ORCA, byte-identical output, per-token streaming.",
+  "summary": "Sibling flush32 stack (subgroup-32, chunk-256 GPU argmax, GEMV TR=32, batch pass, submit every 32 dispatches) with a burst of one token and one decode step kept queued on the GPU across each readback. Measured 78.50 tokens/s and 1.063x paired decode against the live sibling stack under sustained background CPU load, byte-identical output, per-token streaming.",
   "target": {
     "generatedAt": "2026-09-06T23:50:00.000Z",
     "tool": "webnn-workbench bench/webnn/qwen/run-webllm-interleaved.mjs",

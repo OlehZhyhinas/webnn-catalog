@@ -308,7 +308,7 @@ against the reference embedding, the sha256 of the RGBA readback against
 ### What it gave, replaying these recipes
 
 Three builds on the reference machine, two constant paths, all under an
-unrelated compute job (load average 16 to 18, an ORCA SCF run plus a VM), so
+unrelated compute job (load average 16 to 18), so
 the absolutes are 0 to 5 ms pessimistic in the way the workbench documented.
 
 | run | new prompt | cached | image graph | text graph |

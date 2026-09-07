@@ -56,7 +56,7 @@ Rotating interleaved paired rounds, browser and model reloaded per case per
 round, fresh prompt per round with KV reset before timing, output SHA-256
 compared to the baseline case in the same round. The baseline case in every
 run was the sibling entry's exact stack run live (same bundle, K=4, batch
-pass, flush 32), not its recorded numbers. ORCA kept the CPU saturated
+pass, flush 32), not its recorded numbers. Unrelated work kept the CPU saturated
 (1-minute load 17–24 in the headline run).
 
 - Headline (`qwen-qwen17-fable-kxl-orca.json`, 12 rounds): **158.66

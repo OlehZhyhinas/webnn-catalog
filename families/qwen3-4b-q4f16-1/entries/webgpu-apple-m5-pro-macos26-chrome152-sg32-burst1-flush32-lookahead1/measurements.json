@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, K=1 + lookahead 1 + batch pass + submit every 32, under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=1 + lookahead 1 + batch pass + submit every 32, under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -60,7 +60,7 @@
     },
     {
       "kind": "measured",
-      "label": "Lookahead variants on the lookahead bundle (K=1/K=2, lookahead 1/2) at the sibling's K=4 baseline, plus quality corpus, paired under ORCA",
+      "label": "Lookahead variants on the lookahead bundle (K=1/K=2, lookahead 1/2) at the sibling's K=4 baseline, plus quality corpus, paired under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -123,5 +123,5 @@
   "sources": [
     "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead (2026-09-06); Explicit record of this pass)"
   ],
-  "caveat": "All absolutes were taken while ORCA saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.063x is an upper bound for a quiet machine. A 4B decode step is roughly twice the GPU work of the 1.7B sibling entry's step, so the fixed per-burst cost the lookahead hides is a smaller fraction of the token; that is the reason this ratio is smaller than the 1.7B entry's 1.136x. No quiet-machine number or projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#16, branch qwen4-fable) that recorded this pass is not yet merged."
+  "caveat": "All absolutes were taken while unrelated work saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.063x is an upper bound for a quiet machine. A 4B decode step is roughly twice the GPU work of the 1.7B sibling entry's step, so the fixed per-burst cost the lookahead hides is a smaller fraction of the token; that is the reason this ratio is smaller than the 1.7B entry's 1.136x. No quiet-machine number or projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#16, branch qwen4-fable) that recorded this pass is not yet merged."
 }

@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-32 stack under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-32 stack under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -58,9 +58,9 @@
       "label": "Quiet-machine upper-bound projection",
       "date": "2026-09-06",
       "projection": {
-        "method": "Mechanically apply the ORCA paired ratio to the historical same-machine quiet 8.9 ms/token result.",
+        "method": "Mechanically apply the under-load paired ratio to the historical same-machine quiet 8.9 ms/token result.",
         "assumptions": [
-          "The relative ratio persists after ORCA ends, although CPU/GPU overlap is likely less valuable on a quiet CPU.",
+          "The relative ratio persists after the background load ends, although CPU/GPU overlap is likely less valuable on a quiet CPU.",
           "The prompt/context distribution remains comparable to the measured short fresh-prompt corpus.",
           "This is explicitly an upper-bound projection, not a direct quiet-machine timing."
         ],
@@ -80,10 +80,10 @@
       "tokensPerSecond": 113,
       "notes": "Historical same-machine quiet baseline."
     },
-    "publishedSubgroup32UnderOrca": {
+    "publishedSubgroup32UnderLoad": {
       "warmDecodeMsPerToken": 9.496,
       "tokensPerSecond": 105.305,
-      "notes": "Paired six-round published subgroup-32 baseline under ORCA."
+      "notes": "Paired six-round published subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
@@ -91,5 +91,5 @@
     "webnn-workbench@ca301a9c0154c9788ad5585a20048a5c2a850642 bench/results/qwen-qwen17-published-vs-tuned-f32-orca.json",
     "webnn-workbench@ca301a9c0154c9788ad5585a20048a5c2a850642 bench/results/qwen-qwen17-quality-published-vs-tuned-f32-orca.json"
   ],
-  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline; the quiet number is explicitly an upper-bound projection."
+  "caveat": "Absolute measured throughput was taken while unrelated work saturated the CPU. The paired ratio is the robust headline; the quiet number is explicitly an upper-bound projection."
 }

@@ -42,7 +42,7 @@ removes bind-group creation from the encode path.
 Rotating interleaved paired rounds, browser and model reloaded per case per
 round, six fresh prompts with KV reset before timing, output SHA-256 compared
 to the baseline case in the same round. The baseline case in every run was
-the sibling entry's exact stack run live, not its recorded numbers. ORCA kept
+the sibling entry's exact stack run live, not its recorded numbers. Unrelated work kept
 the CPU saturated (1-minute load 15–23) throughout.
 
 - Headline (`qwen-fable-bindcache-orca.json`): **312.6 tokens/s** median,

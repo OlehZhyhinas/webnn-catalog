@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-32 stack under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-32 stack under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -55,14 +55,14 @@
     }
   ],
   "baselines": {
-    "publishedBaseUnderOrcaSmoke": {
+    "publishedBaseUnderLoadSmoke": {
       "tokensPerSecond": 51.1,
       "notes": "Single warm smoke, recorded for completeness; not the paired baseline."
     },
-    "publishedSubgroup32UnderOrca": {
+    "publishedSubgroup32UnderLoad": {
       "warmDecodeMsPerToken": 17.319,
       "tokensPerSecond": 57.74,
-      "notes": "Paired six-round published WebLLM 0.2.84 subgroup-32 baseline under ORCA."
+      "notes": "Paired six-round published WebLLM 0.2.84 subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
@@ -70,5 +70,5 @@
     "webnn-workbench@2744881fe3af9b2003df1fa8809779c0784c6399 bench/results/qwen-qwen4-published-vs-tuned-f32-orca.json",
     "webnn-workbench@2744881fe3af9b2003df1fa8809779c0784c6399 bench/results/qwen-qwen4-quality-published-vs-tuned-f32-orca.json"
   ],
-  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline. There is no historical quiet 4B number and no quiet projection is claimed."
+  "caveat": "Absolute measured throughput was taken while unrelated work saturated the CPU. The paired ratio is the robust headline. There is no historical quiet 4B number and no quiet projection is claimed."
 }

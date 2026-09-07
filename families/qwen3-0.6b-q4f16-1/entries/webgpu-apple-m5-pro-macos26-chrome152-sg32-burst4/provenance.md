@@ -28,7 +28,7 @@ the immutable upstream Hugging Face revision.
 
 The headline is a rotating interleaved A/B run with a warm model and warm
 pipelines but a reset KV cache and a distinct uncached prompt in each of six
-rounds. The machine remained under the unrelated ORCA workload:
+rounds. The machine remained under an unrelated background workload:
 
 - K=1 median: 148.355 tokens/s.
 - K=4 median: **250.655 tokens/s**.

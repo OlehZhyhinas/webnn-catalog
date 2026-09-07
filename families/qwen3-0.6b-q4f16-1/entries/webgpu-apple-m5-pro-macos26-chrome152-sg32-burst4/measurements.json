@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, K=4 under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4 under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -60,7 +60,7 @@
       "projection": {
         "method": "Apply the independently measured chunk-256/TR=32 and fresh-prompt K=4 paired ratios to the last quiet 5.97 ms/token subgroup-32 result.",
         "assumptions": [
-          "The relative tuning and K=4 ratios persist once the unrelated ORCA workload ends.",
+          "The relative tuning and K=4 ratios persist once the background load ends.",
           "The prompt/context distribution remains comparable to the measured short fresh-prompt corpus.",
           "No claim is made that this is a direct quiet-machine timing."
         ],
@@ -83,7 +83,7 @@
     "publishedSubgroup32Quiet": {
       "warmDecodeMsPerToken": 5.97,
       "tokensPerSecond": 167.6,
-      "notes": "Last quiet direct timing before ORCA."
+      "notes": "Last quiet direct timing before the background load."
     }
   },
   "sources": [
@@ -91,5 +91,5 @@
     "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-fresh-prompts-burst-orca.json",
     "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-quality-corpus-burst-orca.json"
   ],
-  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline; quiet numbers remain a projection until directly rerun."
+  "caveat": "Absolute measured throughput was taken while unrelated work saturated the CPU. The paired ratio is the robust headline; quiet numbers remain a projection until directly rerun."
 }

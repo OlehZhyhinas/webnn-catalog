@@ -58,7 +58,7 @@ paired ratio is below the 1.7B sibling entry's 1.136x.
 
 Rotating interleaved paired rounds, browser and model reloaded per case per
 round, fresh prompt per round with KV reset before timing, output SHA-256
-compared to the baseline case in the same round. ORCA kept the CPU saturated
+compared to the baseline case in the same round. Unrelated work kept the CPU saturated
 throughout (`WEBNN_MAX_LOAD=0` disabled load gating rather than stopping or
 starving it).
 

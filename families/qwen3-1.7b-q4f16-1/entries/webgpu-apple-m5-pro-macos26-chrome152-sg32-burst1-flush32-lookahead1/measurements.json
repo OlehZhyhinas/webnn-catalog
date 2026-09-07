@@ -4,7 +4,7 @@
   "rows": [
     {
       "kind": "measured",
-      "label": "Warm model and pipelines, fresh uncached prompts, K=1 + lookahead 1 + batch pass + submit every 32, under ORCA",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=1 + lookahead 1 + batch pass + submit every 32, under sustained background CPU load",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -55,7 +55,7 @@
     },
     {
       "kind": "measured",
-      "label": "Lookahead 1 at the sibling's K=4, paired under ORCA (6 and 12 rounds), plus quality corpus",
+      "label": "Lookahead 1 at the sibling's K=4, paired under sustained background CPU load (6 and 12 rounds), plus quality corpus",
       "host": {
         "backend": "webgpu",
         "deviceType": "gpu",
@@ -125,5 +125,5 @@
     "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-gemv-ts-orca.json",
     "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-shipped-bundle-orca.json"
   ],
-  "caveat": "All absolutes were taken while ORCA saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.136x is an upper bound for a quiet machine; the K=1 burst-tail component is load-independent but shrinks with output length. No quiet-machine number or projection is claimed."
+  "caveat": "All absolutes were taken while unrelated work saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.136x is an upper bound for a quiet machine; the K=1 burst-tail component is load-independent but shrinks with output length. No quiet-machine number or projection is claimed."
 }

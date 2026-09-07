@@ -30,7 +30,7 @@ immutable upstream model revision.
 
 Every browser run used a real Google Chrome persistent context, the dedicated
 `bench/.chrome-profile-qwen17` profile, port 8907, and the shared machine GPU
-lock. ORCA continued saturating the CPU; `WEBNN_MAX_LOAD=0` disabled load
+lock. The CPU remained saturated by unrelated work; `WEBNN_MAX_LOAD=0` disabled load
 gating rather than stopping or starving it.
 
 The headline uses six rotating paired rounds. The model and GPU pipelines are
@@ -48,7 +48,7 @@ before taking the median.
   byte-identical to the published path.
 
 The 6.5 ms/token / 155 tokens/s quiet figure is only a mechanical upper-bound
-projection. Runtime overlap hides CPU encoding behind GPU work, so ORCA likely
+projection. Runtime overlap hides CPU encoding behind GPU work, so the background load likely
 makes this optimization more valuable than a quiet CPU would.
 
 ## Tuning record and negative results
