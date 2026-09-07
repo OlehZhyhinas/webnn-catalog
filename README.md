@@ -168,6 +168,25 @@ historical quiet 4B number, so no quiet projection is claimed.
 The Qwen demo accepts `?entry=` and continues to support every Qwen family;
 the existing 0.6B default is unchanged.
 
+### Qwen3-8B WebLLM/WebGPU
+
+[`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) references the immutable
+upstream 8B weights and adds a model-specific subgroup-32, chunk-256,
+GEMV-`TR=32` library. Its M5 Pro entry uses K=4 exact-greedy decode, one
+compute pass, and a submit every 32 dispatches. The unchanged WebLLM runtime
+artifact is reused rather than duplicated. Lookahead is not on this headline.
+
+Across six warm-model, fresh-prompt paired rounds under ORCA it measured
+**46.19 tokens/s** (**21.65 ms/token**), **1.187x** the fully published
+WebLLM 0.2.84 subgroup-32 path. All six fresh outputs and completion-token
+counts were byte-identical to that published path. Quality prompts matched
+local K=1 full-vocabulary argmax 4/4; the published temperature-zero sampler
+is not deterministic on the math item. There is no historical quiet 8B
+number, so no quiet projection is claimed.
+
+The Qwen demo accepts `?entry=` and continues to support every Qwen family;
+the existing 0.6B default is unchanged.
+
 ## Adding an entry
 
 Three commands, in this order.
