@@ -73,8 +73,8 @@ at Donut-Swin stage 2 (512-dim, values ~1e3).
 ## Reproduce
 
 ```bash
-# from /Users/oleh/personal/webnn-workbench-texify, branch texify
-/Users/oleh/personal/webnn-workbench/.venv/bin/python bench/webnn/texify/export_texify.py
+# from a webnn-workbench checkout, branch texify
+.venv/bin/python bench/webnn/texify/export_texify.py
 node bench/webnn/texify/run.mjs --stage encoder --label smoke --images pythagorean --port 8905
 node bench/webnn/texify/run.mjs --stage e2e --label greedy-18 --port 8905
 node bench/webnn/texify/make-recipes.mjs
