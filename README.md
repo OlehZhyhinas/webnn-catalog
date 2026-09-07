@@ -167,11 +167,11 @@ and [`ozhyhinas/webnn-catalog`](https://huggingface.co/datasets/ozhyhinas/webnn-
 Pass `null` and the loader uses those URLs; pass a base URL to serve your own
 mirror, and the manifest's sha256 still pins what you get.
 
-When a manifest lists **chunks**, the loader never holds a whole blob: it
-fetches one range at a time and releases it before the next, so a multi-gigabyte
-blob costs tens of megabytes resident instead of its full size. Boundaries sit on
-constant starts, so nothing straddles a seam and every view stays zero-copy.
-Without a chunk list the loader fetches the blob in one piece.
+Any blob big enough to need one carries a **chunk list**, so you never hold a
+whole blob. The loader fetches one range at a time and releases it before the next: the 1.65 GiB
+SD-Turbo image blob becomes 32 requests with 63 MiB resident. Boundaries sit on
+constant starts, so nothing straddles a seam and every view stays zero-copy. The
+two ~97 MiB peaks are single embedding matrices, which no chunking can split.
 
 ### Tokenizers and preprocessing
 
