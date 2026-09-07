@@ -1,0 +1,75 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32",
+  "family": "qwen3-8b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-32 stack under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-06",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 21.65,
+      "tokensPerSecond": 46.19,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256/TR=32 model library, K=4, one compute pass, submit every 32 dispatches",
+        "baselineMsPerToken": 25.497,
+        "candidateMsPerToken": 21.65,
+        "speedup": 1.187
+      },
+      "loadAvg": [
+        16.09,
+        18.46
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path with equal completion-token counts",
+        "qualityCorpusExact": "4/4 tuned outputs byte-identical to local K=1 full-vocabulary argmax; published temperature-zero sampler was nondeterministic on the math item",
+        "throughputQuartilesTokensPerSecond": [
+          45.61,
+          47.308
+        ],
+        "throughputMad": 0.97,
+        "pairedRatioQuartiles": [
+          1.154,
+          1.216
+        ],
+        "pairedRatioMad": 0.035
+      },
+      "notes": "21.65 ms/token is the reciprocal of the measured 46.19 tokens/s median. The paired 1.187x statistic is the median of per-round ratios and need not equal the ratio of independent medians.",
+      "source": "webnn-workbench@045f6f00a86e436416644d98cb13d8aa5b6d8c92 bench/results/qwen-qwen8-published-vs-tuned-f32-orca.json"
+    }
+  ],
+  "baselines": {
+    "publishedBaseUnderOrcaSmoke": {
+      "tokensPerSecond": 35.68,
+      "notes": "Single warm smoke, recorded for completeness; not the paired baseline."
+    },
+    "publishedSubgroup32UnderOrca": {
+      "warmDecodeMsPerToken": 25.497,
+      "tokensPerSecond": 39.22,
+      "notes": "Paired six-round published WebLLM 0.2.84 subgroup-32 baseline under ORCA."
+    }
+  },
+  "sources": [
+    "webnn-workbench@045f6f00a86e436416644d98cb13d8aa5b6d8c92 docs/qwen8-m5-webgpu-report.md",
+    "webnn-workbench@045f6f00a86e436416644d98cb13d8aa5b6d8c92 bench/results/qwen-qwen8-published-vs-tuned-f32-orca.json",
+    "webnn-workbench@045f6f00a86e436416644d98cb13d8aa5b6d8c92 bench/results/qwen-qwen8-quality-k1-vs-f32-orca.json",
+    "webnn-workbench@045f6f00a86e436416644d98cb13d8aa5b6d8c92 bench/results/qwen-qwen8-quality-published-vs-tuned-f32-orca.json"
+  ],
+  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline. There is no historical quiet 8B number and no quiet projection is claimed."
+}
