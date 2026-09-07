@@ -4,7 +4,7 @@ The [README](README.md) is for consuming the catalog. This file is for adding to
 it: a timing row from your machine, an entry for new hardware, or a new family.
 
 Entries come in two kinds, and `runtimeKind` discriminates them. A **WebNN**
-entry carries a recipe — the exact `MLGraphBuilder` call sequence — plus a
+entry carries a recipe (the exact `MLGraphBuilder` call sequence) plus a
 constants blob. A **WebLLM** entry names hash-pinned runtime JavaScript and
 model-library WASM plus a revision-pinned upstream model repository.
 
@@ -25,11 +25,11 @@ node scripts/add-measurement.mjs --entry <family>/<entry-id> \
 Each row carries its own host fingerprint, so one entry accumulates timings from
 several machines without becoming several entries.
 
-**Rules that are not negotiable.** A number without a machine, an OS, a browser
+**Non-negotiable rules.** A number without a machine, an OS, a browser
 build and a protocol is not a measurement. A row's load average is never borrowed
 from another moment. A projection is labelled as one and never presented as
-measured. And do not record what else was running on your machine by name —
-describe load generically or not at all.
+measured. And do not record what else was running on your machine by name.
+Describe load generically or not at all.
 
 ## 2. An entry
 
@@ -86,7 +86,7 @@ add one without both.
 
 ### Every entry needs a ledger
 
-`provenance.md` is not optional and not a formality. It records what was folded
+`provenance.md` is required. It is not a formality. It records what was folded
 and what it was worth; what was tried and rejected, with the number that killed
 it; and what the backend turned out to be like.
 
@@ -100,18 +100,19 @@ scripts/publish-weights.sh <family>/<entry-id>
 ```
 
 `chunk-manifest.mjs` tiles a blob into Range-sized chunks at a 64 MiB target,
-putting every boundary on a constant start — and for a blob several recipes read,
-on a constant start in all of them — so nothing straddles a seam and every view
-stays zero-copy. The host must answer Range requests and be CORS-open.
+putting every boundary on a constant start. For a blob several recipes read,
+every boundary is a constant start in all of them, so nothing straddles a seam
+and every view stays zero-copy. The host must answer Range requests and be
+CORS-open.
 
 ## 3. A family
 
 `family.json` is authored by hand. A tool that guessed at a contract would be
 guessing at the one thing entries are not allowed to disagree about.
 
-A family is one model, one task, one I/O contract. Every entry meets it exactly.
-**If a change would falsify any of it, that is a new family, not a new entry** —
-different resolution, step count, tokenizer or output shape all qualify.
+A family is one model, one task, and one I/O contract. Every entry meets it exactly.
+**If a change would falsify any of it, that is a new family, not a new entry.**
+Different resolution, step count, tokenizer or output shape all qualify.
 
 ## Checks
 
@@ -141,8 +142,8 @@ SD-Turbo entry's
 [`provenance.md`](families/sd-turbo-512-1step/entries/coreml-apple-m5-pro-macos26-chrome152/provenance.md#the-optional-fast-variant).
 
 **Every entry targets Apple silicon.** A DirectML or TFLite WebNN entry, or a
-WebLLM entry on a non-Apple GPU, would be the highest-value contribution here —
-it is the case the family/entry split exists to serve, and nothing exercises it.
+WebLLM entry on a non-Apple GPU, would be the highest-value contribution here.
+That is what the family/entry split exists to serve, and nothing exercises it.
 
 **Recipe schema v1 cannot distinguish call forms.** The recorder flattens
 positional non-operand arguments into the options bag, so the JSON alone cannot

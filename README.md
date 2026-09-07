@@ -1,24 +1,24 @@
 # webnn-catalog
 
 Pre-tuned browser inference, published as data. Point a loader at an entry and
-get a running model — no build step, no server, no native install.
+get a running model. You don't need a build step, a server, or a native install.
 
 SD-Turbo generates a 512×512 image from a new prompt in **68 ms** on an M5 Pro
 in Chrome. ONNX Runtime Web on WebGPU takes 916 ms on the same machine for the
 same model; native PyTorch on MPS takes 94.5 ms.
 
-That gap is the point. This is not a new runtime — it is the WebNN and WebGPU
-your browser already ships, driven in an order somebody tuned by hand and then
-recorded so you do not have to.
+That gap is the point. This is not a new runtime. The WebNN and WebGPU your
+browser already ships are driven in an order somebody tuned by hand and then
+recorded so you don't have to.
 
-There is no npm package. `runtime/` holds two dependency-free ES modules —
-vendor them, or serve them from your own static host.
+There is no npm package. `runtime/` holds two dependency-free ES modules.
+Vendor them, or serve them from your own static host.
 
 ---
 
 ## What you can run
 
-### Image and LaTeX — WebNN / Core ML
+### Image and LaTeX: WebNN / Core ML
 
 | family | task | in → out | download | new prompt |
 |---|---|---|---:|---:|
@@ -34,7 +34,7 @@ tokens identical to fp32 Hugging Face on 15/15 items.
 For Texo, LatexGen's own ONNX Runtime Web path takes 770 ms per image on WASM
 fp32 or 780 ms on WebGPU, against this catalog's 25.9 ms.
 
-### Chat — WebLLM / WebGPU
+### Chat: WebLLM / WebGPU
 
 OpenAI-compatible chat, exact greedy decode. Every family ships two entries
 except the 8B; they share a model library and differ in decode tuning.
@@ -55,8 +55,8 @@ four.
 
 Every number on this page was measured on Apple M5 Pro / macOS 26.6.2 /
 Chrome 152. Each entry directory carries its own `measurements.json` and
-`provenance.md` with the baseline, the protocol, the host and the conditions —
-read those before quoting a figure anywhere it matters.
+`provenance.md` with the baseline, the protocol, the host and the conditions.
+Read those before quoting a figure anywhere it matters.
 
 Machine-readable index: [`catalog.json`](catalog.json).
 
@@ -64,7 +64,7 @@ Machine-readable index: [`catalog.json`](catalog.json).
 
 - **Chrome 152 or newer.**
 - **WebNN entries:** WebNN enabled, and a **non-incognito profile**. Chromium
-  gates the Core ML backend on it — an off-the-record profile silently falls
+  gates the Core ML backend on it. An off-the-record profile silently falls
   back to CPU and runs about 50× slower with no error. Call
   `assertCoreMLFingerprint(ctx)` and fail loudly instead.
 - **WebLLM entries:** WebGPU with `shader-f16` and subgroup size 32. The loader
@@ -73,14 +73,14 @@ Machine-readable index: [`catalog.json`](catalog.json).
   so peak resident memory stays ~64–98 MiB regardless of blob size.
 
 Every entry here was tuned on Apple silicon. `entry.compat.requires` states what
-must hold for an entry to work at all — filter on that, and see
+must hold for an entry to work at all. Filter on that, and see
 [choosing an entry](#choosing-an-entry).
 
 ## Using it
 
 Two loaders, selected by an entry's `runtimeKind`.
 
-### Chat — `runtimeKind: "webllm"`
+### Chat: `runtimeKind: "webllm"`
 
 ```js
 import { loadWebLLMFromUrl } from "./runtime/webllm-loader.js";
@@ -100,15 +100,16 @@ await rig.dispose();
 `loadWebLLMFromUrl()` checks subgroup-32 support, fetches the entry's artifact
 manifest, verifies the byte count and SHA-256 of both the runtime JavaScript and
 the model-library WASM, and only then exposes them through temporary blob URLs.
-Model weights come from a revision-pinned upstream Hugging Face repository — the
+Model weights come from a revision-pinned upstream Hugging Face repository. The
 catalog never rehosts them. `dispose()` unloads the engine and revokes the URLs.
 
 The exact-greedy fast path applies when `temperature` is 0 and no logprobs,
 penalties, logit bias, grammar, structured output, or custom logit processor is
-active. Anything else transparently uses WebLLM's ordinary sampler with the same
-API. `isGreedyBurstEligible()` exposes that rule if you want to check first.
+active. Anything else transparently uses WebLLM's ordinary sampler with the
+same API.
+`isGreedyBurstEligible()` exposes that rule if you want to check first.
 
-### Image and LaTeX — `runtimeKind: "webnn"`
+### Image and LaTeX: `runtimeKind: "webnn"`
 
 ```js
 import {
@@ -151,8 +152,8 @@ const { tokens } = await autoregressive(
 );
 ```
 
-Input names differ per family — Texo's encoder takes `image`, Texify's takes
-`pixel_values`, IntelliTeX's takes `input_ids` plus `pad_bias` — so read the
+Input names differ per family. Texo's encoder takes `image`, Texify's takes
+`pixel_values`, IntelliTeX's takes `input_ids` plus `pad_bias`. Read the
 family's `contract.graphs` block rather than copying names.
 
 Full API: [`runtime/README.md`](runtime/README.md).
@@ -185,19 +186,19 @@ The verification set holds what Chrome's canvas actually produced, byte for byte
 
 ## Choosing an entry
 
-**Nothing here picks an entry for you.** No ranking function, no fallback chain,
-no "best entry" field. The catalog publishes facts; which entry a given user gets
-is product policy, it changes per product, and it rots when frozen into a data
-repo.
+**Nothing here picks an entry for you.** There is no ranking function, no
+fallback chain, and no "best entry" field. The catalog publishes facts. Which
+entry a given user gets is product policy. It changes per product, and it rots
+when frozen into a data repo.
 
-Filter on `entry.compat.requires` — what must hold for the entry to work at all.
+Filter on `entry.compat.requires`: what must hold for the entry to work at all.
 Then prefer by your own policy: same GPU vendor, then browser major, then OS
 major. Decide deliberately what you do when nothing matches, and whether an
 approximating `variant` is acceptable to your users.
 
 `entry.target` is where an entry was built and tuned. It is a hint about
-performance, not a requirement, and every field is tagged with how it was
-observed — `backend.name`, `gpu.vendor` and `browser.major` are readable in the
+performance, not a requirement. Every field is tagged with how it was
+observed. `backend.name`, `gpu.vendor` and `browser.major` are readable in the
 page; `host.chip` is not, and no product should pretend otherwise.
 
 ## How it is organized
@@ -207,7 +208,7 @@ families/<family-id>/family.json                    the contract
 families/<family-id>/entries/<entry-id>/entry.json  one configuration
 ```
 
-A **family** is one model, one task, one I/O contract. Every entry of a family
+A **family** is one model, one task, and one I/O contract. Every entry of a family
 meets it exactly; if a change would falsify any of it, that is a new family.
 
 An **entry** is that family built and tuned for one configuration. Two entries of
@@ -221,13 +222,13 @@ blob. A **WebLLM** entry instead names hash-pinned runtime JavaScript and
 model-library WASM plus a revision-pinned upstream model repository. The catalog
 does not pretend a model library is a recipe.
 
-A recipe is not a model format — no autodiff, no training metadata, no graph
-optimizer. It is the *output* of optimization, with the folds and rewrites
+A recipe is not a model format. It has no autodiff, no training metadata, and no
+graph optimizer. It is the *output* of optimization, with the folds and rewrites
 already baked in.
 
 ## Reading a recipe yourself
 
-You do not have to use the loader. A WebNN recipe is JSON and replaying it is a
+You don't have to use the loader. A WebNN recipe is JSON and replaying it is a
 loop. Four things the schema says that a reader must act on, all recorded in
 `recipe.schema.json` under `x-callForms`:
 
@@ -242,7 +243,7 @@ positional list.
 **Some `options` keys are really positional arguments.** The recorder flattens
 positional non-operand arguments into the options bag, so the JSON alone cannot
 tell `softmax(x, 2)` from `softmax(x, {axis: 2})`. `x-callForms.positional` is
-that table, inverted — plus `variadic` (`concat`) and `multiOutput` (`split`).
+that table, inverted, plus `variadic` (`concat`) and `multiOutput` (`split`).
 
 **Constants index the blob by byte offset, in increasing order.** That is what
 lets a chunked reader release each range as it goes.
@@ -281,7 +282,7 @@ importing it, and takes `?entry=` to load any Qwen family.
 ## Upstream models
 
 Each family is a hand-tuned rebuild of a published model. The upstream license
-governs its weights — check it before shipping, particularly commercially.
+governs its weights. Check it before shipping, particularly commercially.
 
 | family | upstream | license |
 |---|---|---|
