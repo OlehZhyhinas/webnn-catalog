@@ -56,7 +56,7 @@
         ]
       },
       "notes": "12.7397 ms/token is the reciprocal of the measured 78.50 tokens/s median. Bundle swap alone (K=4/flush 32 on the lookahead bundle vs the shipped bundle, same run): 1.008x (1.004-1.030), confirming the two bundles are equivalent outside the lookahead path. A 4B decode step is roughly twice the GPU work of a 1.7B step, so the fixed per-burst cost the lookahead hides is a smaller fraction of the token, which is why this paired ratio (1.063x) is below the 1.7B sibling entry's 1.136x; treat that as an upper bound for a quiet machine, not a claim about a quiet number.",
-      "source": "webnn-workbench@c5dddad840d92b93318e2cc9a0df51b94afcd018 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead; Explicit record of this pass)"
+      "source": "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead; Explicit record of this pass)"
     },
     {
       "kind": "measured",
@@ -110,7 +110,7 @@
         ]
       },
       "notes": "Run A isolates the lookahead effect against the sibling's own K=4/flush-32 baseline, all cases on the lookahead bundle: K=1 lookahead 1 is the headline configuration; K=1 lookahead 2 and K=2 lookahead 1 are the two runner-up variants, both 12/12 byte-identical. Run C is the quality corpus (math/prose/code/low-margin prompts), decode-only mixed-corpus ratio.",
-      "source": "webnn-workbench@c5dddad840d92b93318e2cc9a0df51b94afcd018 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead; Explicit record of this pass)"
+      "source": "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead; Explicit record of this pass)"
     }
   ],
   "baselines": {
@@ -121,7 +121,7 @@
     }
   },
   "sources": [
-    "webnn-workbench@c5dddad840d92b93318e2cc9a0df51b94afcd018 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead (2026-09-06); Explicit record of this pass)"
+    "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead (2026-09-06); Explicit record of this pass)"
   ],
   "caveat": "All absolutes were taken while ORCA saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.063x is an upper bound for a quiet machine. A 4B decode step is roughly twice the GPU work of the 1.7B sibling entry's step, so the fixed per-burst cost the lookahead hides is a smaller fraction of the token; that is the reason this ratio is smaller than the 1.7B entry's 1.136x. No quiet-machine number or projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#16, branch qwen4-fable) that recorded this pass is not yet merged."
 }

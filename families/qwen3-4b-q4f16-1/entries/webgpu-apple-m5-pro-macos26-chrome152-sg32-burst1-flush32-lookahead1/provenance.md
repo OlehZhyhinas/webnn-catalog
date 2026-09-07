@@ -9,13 +9,11 @@ entry, whose greedy decode keeps one step queued on the GPU while the current
 burst is read back, run here with a burst of one token instead of four. The
 complete experiment record, including the ordered steps and the full
 per-round data, is in
-`OlehZhyhinas/webnn-workbench@c5dddad840d92b93318e2cc9a0df51b94afcd018`,
+`OlehZhyhinas/webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989`,
 `docs/results.md`, section "Qwen3-4B second pass: K=1 with GPU lookahead
-(2026-09-06)" and its "Explicit record of this pass". That commit sits on
-branch `qwen4-fable` under workbench PR
-[OlehZhyhinas/webnn-workbench#16](https://github.com/OlehZhyhinas/webnn-workbench/pull/16),
-**which is not merged as of this writing**; the commit hash above is the
-authoritative pin regardless of the PR's merge state.
+(2026-09-06)" and its "Explicit record of this pass". That commit is the merge of workbench PR
+[OlehZhyhinas/webnn-workbench#16](https://github.com/OlehZhyhinas/webnn-workbench/pull/16)
+into `main`.
 
 ## Shipped stack
 
