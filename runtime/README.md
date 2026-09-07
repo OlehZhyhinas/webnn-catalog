@@ -151,7 +151,16 @@ about to be built, then released:
 
 Peak resident bytes become one chunk instead of the whole blob. Chunk
 boundaries do not have to respect constant boundaries: a constant that straddles
-a seam is copied out and stitched when the next range arrives.
+a seam is copied out and stitched when the next range arrives. They must,
+however, tile the blob with no gaps, because the walk advances through the
+constants in offset order as the ranges arrive.
+
+Every WebNN entry in this catalog ships a chunk list already, written by
+`scripts/chunk-manifest.mjs` at a 64 MiB target. It puts every boundary on a
+constant start, and for a blob several recipes read, on a constant start in
+all of them, so nothing straddles a seam and every view stays zero-copy. A
+constant larger than the target is a chunk of its own; the two big embedding
+matrices in the catalog are why a couple of chunks are ~97 MiB.
 
 Constants are always created in `byteOffset` order, whatever order the ops use
 them in. That is what makes releasing each chunk safe.
