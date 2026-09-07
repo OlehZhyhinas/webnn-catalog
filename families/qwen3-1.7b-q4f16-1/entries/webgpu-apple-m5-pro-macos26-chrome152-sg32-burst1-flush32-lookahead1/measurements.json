@@ -102,6 +102,60 @@
       },
       "notes": "Lookahead alone at K=4 is a ~3% effect; most of the headline comes from K=1 removing the burst's past-EOS tail once the sync bubble is gone. K=8 with lookahead loses (0.933x, wide spread). loadAvg is the observed 1-minute range across the three runs.",
       "source": "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-final-orca.json, qwen-qwen17-fable-final12-orca.json, qwen-qwen17-fable-quality-la1-orca.json"
+    },
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=1/lookahead-1/flush-32 versus the published runtime and subgroup-32 model library, under sustained background CPU load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-07",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 5.8961,
+      "tokensPerSecond": 169.605,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256/TR=32 model library, K=1 with one-step GPU lookahead, GPU argmax, one compute pass per batch, submit every 32 dispatches",
+        "baselineMsPerToken": 9.4576,
+        "candidateMsPerToken": 5.8961,
+        "speedup": 1.587
+      },
+      "loadAvg": [
+        13.5,
+        17.0
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path",
+        "throughputQuartilesTokensPerSecond": [
+          164.952,
+          170.718
+        ],
+        "throughputMad": 2.54,
+        "pairedRatioQuartiles": [
+          1.575,
+          1.603
+        ],
+        "pairedRatioMad": 0.017,
+        "pairedRatioRange": [
+          1.546,
+          1.614
+        ]
+      },
+      "notes": "5.8961 ms/token is the reciprocal of the measured 169.605 tokens/s median. The paired 1.587x statistic is the median of per-round ratios and need not equal the ratio of independent medians. The published case ran the published WebLLM runtime bundle and the published subgroup-32 model library with the one-step sampler.",
+      "source": "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-17b-la1.json"
     }
   ],
   "baselines": {
@@ -114,6 +168,11 @@
       "warmDecodeMsPerToken": 8.9,
       "tokensPerSecond": 113,
       "notes": "Same-machine quiet baseline recorded by the sibling entry; not directly comparable to the loaded absolutes above."
+    },
+    "publishedSubgroup32UnderLoad": {
+      "warmDecodeMsPerToken": 9.4576,
+      "tokensPerSecond": 105.735,
+      "notes": "Paired six-round published runtime and subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
@@ -123,7 +182,8 @@
     "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-final-orca.json",
     "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-quality-la1-orca.json",
     "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-gemv-ts-orca.json",
-    "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-shipped-bundle-orca.json"
+    "webnn-workbench@1ff3cdaaab10a9ce740db208974974552f2ca719 bench/results/qwen-qwen17-fable-shipped-bundle-orca.json",
+    "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-17b-la1.json"
   ],
   "caveat": "All absolutes were taken while unrelated work saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.136x is an upper bound for a quiet machine; the K=1 burst-tail component is load-independent but shrinks with output length. No quiet-machine number or projection is claimed."
 }

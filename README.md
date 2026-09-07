@@ -42,22 +42,21 @@ how decode is tuned.
 
 | family | entry | download | throughput | vs stock WebLLM |
 |---|---|---:|---:|---:|
-| [`qwen3-0.6b-q4f16-1`](families/qwen3-0.6b-q4f16-1/) | `…-sg32-burst4` | 359 MB | 250.7 tok/s | |
-| | `…-sg32-burst4-flush64` | 359 MB | **312.6 tok/s** | |
+| [`qwen3-0.6b-q4f16-1`](families/qwen3-0.6b-q4f16-1/) | `…-sg32-burst4` | 359 MB | 250.7 tok/s | 1.504× |
+| | `…-sg32-burst4-flush64` | 359 MB | **312.6 tok/s** | 1.934× |
 | [`qwen3-1.7b-q4f16-1`](families/qwen3-1.7b-q4f16-1/) | `…-sg32-burst4-flush32` | 996 MB | 139.9 tok/s | 1.371× |
-| | `…-burst1-flush32-lookahead1` | 996 MB | **158.7 tok/s** | |
+| | `…-burst1-flush32-lookahead1` | 996 MB | **158.7 tok/s** | 1.587× |
 | [`qwen3-4b-q4f16-1`](families/qwen3-4b-q4f16-1/) | `…-sg32-burst4-flush32` | 2.29 GB | 73.9 tok/s | 1.285× |
-| | `…-burst1-flush32-lookahead1` | 2.29 GB | **78.5 tok/s** | |
+| | `…-burst1-flush32-lookahead1` | 2.29 GB | **78.5 tok/s** | 1.332× |
 | [`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) | `…-sg32-burst4-flush32` | 4.64 GB | **46.2 tok/s** | 1.187× |
 
 The last column is a paired, interleaved measurement against the published
-WebLLM 0.2.84 subgroup-32 path on the same machine. It's filled in only for the
-entries that were measured that way. The other entries were paired against their
-sibling in the same family, and those ratios are in each entry's
-`measurements.json` rather than here, since they don't compare across rows.
-Output is byte-identical to whatever each entry was paired with. The `lookahead1`
-entries stream one token at a time; the `burst4` entries produce tokens in groups
-of four.
+WebLLM 0.2.84 subgroup-32 path on the same machine, with byte-identical output
+required. For the 1.7B and 4B `flush32` entries and the 8B, throughput and ratio
+come from the same run. For the other four, the throughput is the entry's
+recorded headline and the ratio comes from a later paired run; each entry's
+`measurements.json` has both. The `lookahead1` entries stream one token at a
+time; the `burst4` entries produce tokens in groups of four.
 
 All of these numbers come from one machine: Apple M5 Pro, macOS 26.6.2, Chrome
 152. Each entry directory has a `measurements.json` and a `provenance.md` that

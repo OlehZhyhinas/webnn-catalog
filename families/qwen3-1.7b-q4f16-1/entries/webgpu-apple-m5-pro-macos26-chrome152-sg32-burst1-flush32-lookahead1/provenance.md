@@ -77,6 +77,8 @@ pass, flush 32), not its recorded numbers. Unrelated work kept the CPU saturated
 - GEMV schedule probe under this roll (`TS`, `VEC_C`, shared activation):
   0.981–1.004x, all byte-identical; the model library is unchanged.
 
+A later paired run (2026-09-07) measured this stack against the published WebLLM 0.2.84 runtime and subgroup-32 model library directly, six rotating rounds with a fresh prompt each, one-step sampler on the published side. The tuned stack decoded at 169.605 tokens/s against 105.735 for the published path, a paired median of 1.587x (quartiles 1.575 to 1.603), with byte-identical output in 6 of 6 rounds. The CPU carried an unrelated load of 13.5 to 17.0 throughout; the paired design is what makes the ratio usable under it.
+
 ## Caveat
 
 Lookahead hides CPU-side gaps (readback wake-up, detokenization, the first

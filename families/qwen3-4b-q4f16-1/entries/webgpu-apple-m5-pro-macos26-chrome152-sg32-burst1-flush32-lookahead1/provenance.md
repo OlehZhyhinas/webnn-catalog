@@ -73,6 +73,8 @@ the same round, and identical to the six fresh-prompt hashes the sibling
 entry lists against the published path, with equal completion-token counts
 (47, 16, 42, 23, 51, 19).
 
+A later paired run (2026-09-07) measured this stack against the published WebLLM 0.2.84 runtime and subgroup-32 model library directly, six rotating rounds with a fresh prompt each, one-step sampler on the published side. The tuned stack decoded at 78.1 tokens/s against 60.105 for the published path, a paired median of 1.332x (quartiles 1.308 to 1.35), with byte-identical output in 6 of 6 rounds. The CPU carried an unrelated load of 16.0 to 17.7 throughout; the paired design is what makes the ratio usable under it.
+
 ## Caveat
 
 Lookahead hides CPU-side gaps behind GPU execution, and a saturated CPU

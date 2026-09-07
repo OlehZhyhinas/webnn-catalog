@@ -111,6 +111,60 @@
       },
       "notes": "Run A isolates the lookahead effect against the sibling's own K=4/flush-32 baseline, all cases on the lookahead bundle: K=1 lookahead 1 is the headline configuration; K=1 lookahead 2 and K=2 lookahead 1 are the two runner-up variants, both 12/12 byte-identical. Run C is the quality corpus (math/prose/code/low-margin prompts), decode-only mixed-corpus ratio.",
       "source": "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead; Explicit record of this pass)"
+    },
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=1/lookahead-1/flush-32 versus the published runtime and subgroup-32 model library, under sustained background CPU load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-07",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 12.8041,
+      "tokensPerSecond": 78.1,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256/TR=32 model library, K=1 with one-step GPU lookahead, GPU argmax, one compute pass per batch, submit every 32 dispatches",
+        "baselineMsPerToken": 16.6376,
+        "candidateMsPerToken": 12.8041,
+        "speedup": 1.332
+      },
+      "loadAvg": [
+        16.0,
+        17.7
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path",
+        "throughputQuartilesTokensPerSecond": [
+          76.192,
+          81.515
+        ],
+        "throughputMad": 3.025,
+        "pairedRatioQuartiles": [
+          1.308,
+          1.35
+        ],
+        "pairedRatioMad": 0.025,
+        "pairedRatioRange": [
+          1.144,
+          1.39
+        ]
+      },
+      "notes": "12.8041 ms/token is the reciprocal of the measured 78.1 tokens/s median. The paired 1.332x statistic is the median of per-round ratios and need not equal the ratio of independent medians. The published case ran the published WebLLM runtime bundle and the published subgroup-32 model library with the one-step sampler.",
+      "source": "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-4b-la1.json"
     }
   ],
   "baselines": {
@@ -118,10 +172,16 @@
       "warmDecodeMsPerToken": 13.4825,
       "tokensPerSecond": 74.17,
       "notes": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush32 measured live as the baseline case of the headline run, on its own bundle d36ca3f7 (K=4, batch pass, flush 32)."
+    },
+    "publishedSubgroup32UnderLoad": {
+      "warmDecodeMsPerToken": 16.6376,
+      "tokensPerSecond": 60.105,
+      "notes": "Paired six-round published runtime and subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
-    "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead (2026-09-06); Explicit record of this pass)"
+    "webnn-workbench@21e1e562b40fa551b9eeabffc092d54605f28989 docs/results.md (Qwen3-4B second pass: K=1 with GPU lookahead (2026-09-06); Explicit record of this pass)",
+    "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-4b-la1.json"
   ],
   "caveat": "All absolutes were taken while unrelated work saturated the CPU. Lookahead hides CPU-side gaps behind GPU execution and a saturated CPU widens them, so the paired 1.063x is an upper bound for a quiet machine. A 4B decode step is roughly twice the GPU work of the 1.7B sibling entry's step, so the fixed per-burst cost the lookahead hides is a smaller fraction of the token; that is the reason this ratio is smaller than the 1.7B entry's 1.136x. No quiet-machine number or projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#16, branch qwen4-fable) that recorded this pass is not yet merged."
 }

@@ -72,6 +72,60 @@
       },
       "source": "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 docs/qwen-m5-webgpu-report.md",
       "notes": "Projection only. Do not present these values as measured."
+    },
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4 versus the published runtime and subgroup-32 model library, under sustained background CPU load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-07",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 4.4523,
+      "tokensPerSecond": 224.605,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256/TR=32 model library, K=4 greedy burst, GPU argmax",
+        "baselineMsPerToken": 6.5867,
+        "candidateMsPerToken": 4.4523,
+        "speedup": 1.504
+      },
+      "loadAvg": [
+        15.1,
+        15.7
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path",
+        "throughputQuartilesTokensPerSecond": [
+          217.403,
+          228.417
+        ],
+        "throughputMad": 7.165,
+        "pairedRatioQuartiles": [
+          1.492,
+          1.542
+        ],
+        "pairedRatioMad": 0.031,
+        "pairedRatioRange": [
+          1.458,
+          1.555
+        ]
+      },
+      "notes": "4.4523 ms/token is the reciprocal of the measured 224.605 tokens/s median. The paired 1.504x statistic is the median of per-round ratios and need not equal the ratio of independent medians. The published case ran the published WebLLM runtime bundle and the published subgroup-32 model library with the one-step sampler. The entry pins runtime bundle 483b1aba; this run served the overlap bundle d36ca3f7 with batch pass, submit cadence and bind-group cache all off, since the pinned build was not on disk. The overlap patches are flag-gated and default off.",
+      "source": "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-06b-burst4.json"
     }
   ],
   "baselines": {
@@ -84,12 +138,18 @@
       "warmDecodeMsPerToken": 5.97,
       "tokensPerSecond": 167.6,
       "notes": "Last quiet direct timing before the background load."
+    },
+    "publishedSubgroup32UnderLoad": {
+      "warmDecodeMsPerToken": 6.5867,
+      "tokensPerSecond": 151.82,
+      "notes": "Paired six-round published runtime and subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
     "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 docs/qwen-m5-webgpu-report.md",
     "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-fresh-prompts-burst-orca.json",
-    "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-quality-corpus-burst-orca.json"
+    "webnn-workbench@f6123364c8f20433b487ebcdc3cd65401279f177 bench/results/qwen-webllm-quality-corpus-burst-orca.json",
+    "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-06b-burst4.json"
   ],
   "caveat": "Absolute measured throughput was taken while unrelated work saturated the CPU. The paired ratio is the robust headline; quiet numbers remain a projection until directly rerun."
 }

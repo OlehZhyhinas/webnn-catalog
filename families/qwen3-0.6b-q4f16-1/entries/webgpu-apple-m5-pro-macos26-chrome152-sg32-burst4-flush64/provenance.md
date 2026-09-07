@@ -58,6 +58,8 @@ Chained through the sibling entry's own paired K=4/K=1 ratio (1.692x, and
 0.613x K=1/K=4 reproduced live in this pass), this entry is roughly 2.0x the
 sibling's K=1 tuned library.
 
+A later paired run (2026-09-07) measured this stack against the published WebLLM 0.2.84 runtime and subgroup-32 model library directly, six rotating rounds with a fresh prompt each, one-step sampler on the published side. The tuned stack decoded at 283.18 tokens/s against 146.52 for the published path, a paired median of 1.934x (quartiles 1.818 to 2.108), with byte-identical output in 6 of 6 rounds. The CPU carried an unrelated load of 14.0 to 15.0 throughout; the paired design is what makes the ratio usable under it.
+
 ## Caveat
 
 The overlap flags hide JS command encoding behind GPU execution, and a

@@ -22,13 +22,13 @@
       "runs": 6,
       "warmup": 1,
       "statistic": "Median of six rotating paired observations; each observation reloads browser and model, resets KV state, and uses a different prompt. Ratio is the median of per-round ratios against the live baseline case.",
-      "warmDecodeMsPerToken": 3.1990,
+      "warmDecodeMsPerToken": 3.199,
       "tokensPerSecond": 312.6,
       "pairedSpeedup": {
         "baseline": "sibling entry webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4 run live in the same rotation (same WASM, K=4, overlap flags off); 251.5 tok/s median in this run",
         "candidate": "same JS/WASM/model, K=4, batchPass + flushEvery 64 + bindGroupCache",
         "baselineMsPerToken": 3.9761,
-        "candidateMsPerToken": 3.1990,
+        "candidateMsPerToken": 3.199,
         "speedup": 1.243
       },
       "loadAvg": [
@@ -102,6 +102,60 @@
       },
       "notes": "Cadence plateaus at 16-64 dispatches per submit; 8 pays for the extra submits. Batch pass alone is the floor of the effect (~1.05x). loadAvg is the observed 1-minute range across the three runs.",
       "source": "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushevery-orca.json, qwen-fable-flushsmall-orca.json, qwen-fable-batchpass-orca.json"
+    },
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, K=4/flush-64/bind-cache versus the published runtime and subgroup-32 model library, under sustained background CPU load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-07",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 3.5313,
+      "tokensPerSecond": 283.18,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256/TR=32 model library, K=4 greedy burst, GPU argmax, one compute pass per batch, submit every 64 dispatches, bind-group cache",
+        "baselineMsPerToken": 6.825,
+        "candidateMsPerToken": 3.5313,
+        "speedup": 1.934
+      },
+      "loadAvg": [
+        14.0,
+        15.0
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path",
+        "throughputQuartilesTokensPerSecond": [
+          267.928,
+          299.985
+        ],
+        "throughputMad": 20.135,
+        "pairedRatioQuartiles": [
+          1.818,
+          2.108
+        ],
+        "pairedRatioMad": 0.168,
+        "pairedRatioRange": [
+          1.451,
+          2.57
+        ]
+      },
+      "notes": "3.5313 ms/token is the reciprocal of the measured 283.18 tokens/s median. The paired 1.934x statistic is the median of per-round ratios and need not equal the ratio of independent medians. The published case ran the published WebLLM runtime bundle and the published subgroup-32 model library with the one-step sampler.",
+      "source": "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-06b-flush64.json"
     }
   ],
   "baselines": {
@@ -114,6 +168,11 @@
       "warmDecodeMsPerToken": 6.4,
       "tokensPerSecond": 157,
       "notes": "Same-machine quiet baseline recorded by the sibling entry; not directly comparable to the loaded absolutes above."
+    },
+    "publishedSubgroup32UnderLoad": {
+      "warmDecodeMsPerToken": 6.825,
+      "tokensPerSecond": 146.52,
+      "notes": "Paired six-round published runtime and subgroup-32 baseline under sustained background CPU load."
     }
   },
   "sources": [
@@ -121,7 +180,8 @@
     "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-bindcache-orca.json",
     "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushevery-orca.json",
     "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-flushsmall-orca.json",
-    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-batchpass-orca.json"
+    "webnn-workbench@6ec63b8eeeb846380e302afd82397025cb2fdedd bench/results/qwen-fable-batchpass-orca.json",
+    "webnn-workbench@d3d2e1eeb188c002a5d591493de20e2fc2e54ec2 bench/results/qwen-stock-06b-flush64.json"
   ],
   "caveat": "All absolutes were taken while unrelated work saturated the CPU. The overlap flags hide JS command encoding behind GPU execution, and a saturated CPU inflates encode time, so the paired 1.22-1.24x is an upper bound for a quiet machine; the floor is the ~1.05x from batch pass alone. No quiet-machine number or projection is claimed."
 }
