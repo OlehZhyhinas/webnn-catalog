@@ -8,7 +8,136 @@
       "usedBytes": 1730075196,
       "sha256": "329d16b641923069ed42d0d1802d7f4e78cc9bacd2019c24ecbaba3263f0c2da",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo/resolve/main/sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152/image-pass4.bin",
-      "chunks": null,
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 66170880
+        },
+        {
+          "byteOffset": 66170880,
+          "byteLength": 40334080
+        },
+        {
+          "byteOffset": 106504960,
+          "byteLength": 59338240
+        },
+        {
+          "byteOffset": 165843200,
+          "byteLength": 42629120
+        },
+        {
+          "byteOffset": 208472320,
+          "byteLength": 62282240
+        },
+        {
+          "byteOffset": 270754560,
+          "byteLength": 64258560
+        },
+        {
+          "byteOffset": 335013120,
+          "byteLength": 62277120
+        },
+        {
+          "byteOffset": 397290240,
+          "byteLength": 58997760
+        },
+        {
+          "byteOffset": 456288000,
+          "byteLength": 58997760
+        },
+        {
+          "byteOffset": 515285760,
+          "byteLength": 57697280
+        },
+        {
+          "byteOffset": 572983040,
+          "byteLength": 42629120
+        },
+        {
+          "byteOffset": 615612160,
+          "byteLength": 59002880
+        },
+        {
+          "byteOffset": 674615040,
+          "byteLength": 58990080
+        },
+        {
+          "byteOffset": 733605120,
+          "byteLength": 36060160
+        },
+        {
+          "byteOffset": 769665280,
+          "byteLength": 58990080
+        },
+        {
+          "byteOffset": 828655360,
+          "byteLength": 36060160
+        },
+        {
+          "byteOffset": 864715520,
+          "byteLength": 58990080
+        },
+        {
+          "byteOffset": 923705600,
+          "byteLength": 62266880
+        },
+        {
+          "byteOffset": 985972480,
+          "byteLength": 26224640
+        },
+        {
+          "byteOffset": 1012197120,
+          "byteLength": 58990080
+        },
+        {
+          "byteOffset": 1071187200,
+          "byteLength": 64253440
+        },
+        {
+          "byteOffset": 1135440640,
+          "byteLength": 42634240
+        },
+        {
+          "byteOffset": 1178074880,
+          "byteLength": 58990080
+        },
+        {
+          "byteOffset": 1237064960,
+          "byteLength": 64253440
+        },
+        {
+          "byteOffset": 1301318400,
+          "byteLength": 42631680
+        },
+        {
+          "byteOffset": 1343950080,
+          "byteLength": 44244480
+        },
+        {
+          "byteOffset": 1388194560,
+          "byteLength": 62615040
+        },
+        {
+          "byteOffset": 1450809600,
+          "byteLength": 55733760
+        },
+        {
+          "byteOffset": 1506543360,
+          "byteLength": 61451520
+        },
+        {
+          "byteOffset": 1567994880,
+          "byteLength": 60998400
+        },
+        {
+          "byteOffset": 1628993280,
+          "byteLength": 62475520
+        },
+        {
+          "byteOffset": 1691468800,
+          "byteLength": 38606400
+        }
+      ],
       "note": "The trailing 4 bytes are alignment padding; the recipe indexes 1730075196."
     },
     "text": {
@@ -16,7 +145,52 @@
       "bytes": 680787544,
       "sha256": "8b8f4a909233f183389bd5fc9f9537c46f699d7c2fd91ba809ba07d605713e8a",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog-sd-turbo/resolve/main/sd-turbo-512-1step/coreml-apple-m5-pro-macos26-chrome152/textenc-best.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 101187584
+        },
+        {
+          "byteOffset": 101187584,
+          "byteLength": 58959448
+        },
+        {
+          "byteOffset": 160147032,
+          "byteLength": 58781696
+        },
+        {
+          "byteOffset": 218928728,
+          "byteLength": 65077248
+        },
+        {
+          "byteOffset": 284005976,
+          "byteLength": 60884992
+        },
+        {
+          "byteOffset": 344890968,
+          "byteLength": 65077248
+        },
+        {
+          "byteOffset": 409968216,
+          "byteLength": 60884992
+        },
+        {
+          "byteOffset": 470853208,
+          "byteLength": 65077248
+        },
+        {
+          "byteOffset": 535930456,
+          "byteLength": 60884992
+        },
+        {
+          "byteOffset": 596815448,
+          "byteLength": 65077248
+        },
+        {
+          "byteOffset": 661892696,
+          "byteLength": 18894848
+        }
+      ]
     }
   },
   "recipeHashes": {

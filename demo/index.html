@@ -56,7 +56,11 @@
       // entry suits a given visitor is a product's job, and the catalog has no
       // opinion about it.
       const params = new URLSearchParams(location.search);
-      const WEIGHTS = params.get("weights") ?? "/weights";
+      // With no ?weights= the constants come from wherever the manifest says
+      // they are published, in the chunks it names. ?weights=/weights points at
+      // a local mount instead, which is what serve.mjs --weights sets up and
+      // what an unpublished entry needs.
+      const WEIGHTS = params.get("weights") ?? null;
 
       const $ = (id) => document.getElementById(id);
       const status = (s, cls = "") => { $("status").textContent = s; $("status").className = cls; };

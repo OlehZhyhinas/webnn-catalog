@@ -7,14 +7,52 @@
       "bytes": 182872160,
       "sha256": "aa9ad04bc667b66bc6406a66e8db18dcac8bbef844c8c029594ac35d6598e1a4",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/texify-420/coreml-apple-m5-pro-macos26-chrome152/texify-encoder.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 65107816
+        },
+        {
+          "byteOffset": 65107816,
+          "byteLength": 65286392
+        },
+        {
+          "byteOffset": 130394208,
+          "byteLength": 52477952
+        }
+      ]
     },
     "decode": {
       "file": "texify-decode.bin",
       "bytes": 443707464,
       "sha256": "f4a1122c7bb68109e4532333a06f55cb9ce934a70efd21968ec110ec7607bae4",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/texify-420/coreml-apple-m5-pro-macos26-chrome152/texify-decode.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 102400008
+        },
+        {
+          "byteOffset": 102400008,
+          "byteLength": 62537744
+        },
+        {
+          "byteOffset": 164937752,
+          "byteLength": 65087504
+        },
+        {
+          "byteOffset": 230025256,
+          "byteLength": 65095704
+        },
+        {
+          "byteOffset": 295120960,
+          "byteLength": 46186504
+        },
+        {
+          "byteOffset": 341307464,
+          "byteLength": 102400000
+        }
+      ]
     }
   },
   "recipeHashes": {

@@ -7,28 +7,100 @@
       "bytes": 247549840,
       "sha256": "40ef6748f1a12f00a098e3a6488d9d8ba4d514c328081de75a7adcd083de91d9",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L32.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 67029552
+        },
+        {
+          "byteOffset": 67029552,
+          "byteLength": 62535312
+        },
+        {
+          "byteOffset": 129564864,
+          "byteLength": 66075808
+        },
+        {
+          "byteOffset": 195640672,
+          "byteLength": 51909168
+        }
+      ]
     },
     "decode32": {
       "file": "intellitex-decode-L32.bin",
       "bytes": 298684504,
       "sha256": "a439640946032ef7979e39fde4ad785bfa6e2921759245ea593d438071ffbf6b",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-decode-L32.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 62941744
+        },
+        {
+          "byteOffset": 62941744,
+          "byteLength": 66078912
+        },
+        {
+          "byteOffset": 129020656,
+          "byteLength": 66078912
+        },
+        {
+          "byteOffset": 195099568,
+          "byteLength": 54279336
+        },
+        {
+          "byteOffset": 249378904,
+          "byteLength": 49305600
+        }
+      ]
     },
     "encoder64": {
       "file": "intellitex-encoder-L64.bin",
       "bytes": 247623568,
       "sha256": "650a2b002fb96f9d2350a10a57dc4051eac788f072d4458369987c534db263d1",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L64.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 67103280
+        },
+        {
+          "byteOffset": 67103280,
+          "byteLength": 62535312
+        },
+        {
+          "byteOffset": 129638592,
+          "byteLength": 66075808
+        },
+        {
+          "byteOffset": 195714400,
+          "byteLength": 51909168
+        }
+      ]
     },
     "encoder128": {
       "file": "intellitex-encoder-L128.bin",
       "bytes": 247918480,
       "sha256": "dfe7642ce514a78816a1edc75ab674628dac8f510b44bad8985ae60fbbb01796",
       "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/main/intellitex-t5-220m/coreml-apple-m5-pro-macos26-chrome152/intellitex-encoder-L128.bin",
-      "chunks": null
+      "chunks": [
+        {
+          "byteOffset": 0,
+          "byteLength": 63859248
+        },
+        {
+          "byteOffset": 63859248,
+          "byteLength": 66074256
+        },
+        {
+          "byteOffset": 129933504,
+          "byteLength": 66075808
+        },
+        {
+          "byteOffset": 196009312,
+          "byteLength": 51909168
+        }
+      ]
     }
   },
   "recipeHashes": {
