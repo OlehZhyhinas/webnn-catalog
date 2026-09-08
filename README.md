@@ -37,8 +37,9 @@ If you want a comparison for Texo, LatexGen's own ONNX Runtime Web path takes
 ### Chat: WebLLM / WebGPU
 
 OpenAI-compatible chat with exact greedy decode. Most families have two
-entries; the 8B, Qwen3.5-0.8B and MiniCPM5-2B each have one. Entries within a
-family share a model library and differ in how decode is tuned.
+entries; the 8B, Qwen3.5-0.8B, MiniCPM5-2B and Qwen3.5-9B each have one.
+Entries within a family share a model library and differ in how decode is
+tuned.
 
 | family | entry | download | throughput | vs stock WebLLM |
 |---|---|---:|---:|---:|
@@ -51,15 +52,16 @@ family share a model library and differ in how decode is tuned.
 | [`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) | `…-sg32-burst4-flush32` | 4.64 GB | **46.2 tok/s** | 1.187× |
 | [`qwen3.5-0.8b-q4f16-1`](families/qwen3.5-0.8b-q4f16-1/) | `…-sg32-burst5-flush32` | 460 MB | **190.8 tok/s** | 1.738× |
 | [`minicpm5-2b-q4f16-1`](families/minicpm5-2b-q4f16-1/) | `…-burst1-flush32-lookahead1` | 1.45 GB | **102.7 tok/s** | 1.362× |
+| [`qwen3.5-9b-q4f16-1`](families/qwen3.5-9b-q4f16-1/) | `…-sg32-burst4-flush64` | 5.07 GB | **37.45 tok/s** | 1.070× |
 
 The last column is a paired, interleaved measurement against the published
 WebLLM 0.2.84 subgroup-32 path on the same machine, with byte-identical output
-required. For the 1.7B and 4B `flush32` entries, the 8B, the Qwen3.5-0.8B and
-the MiniCPM5-2B, throughput and ratio come from the same run. For the other
-four, the throughput is the entry's recorded headline and the ratio comes
-from a later paired run; each entry's `measurements.json` has both. The
-`lookahead1` entries stream one token at a time; the `burst4` entries produce
-tokens in groups of four.
+required. For the 1.7B and 4B `flush32` entries, the 8B, the Qwen3.5-0.8B, the
+MiniCPM5-2B and the Qwen3.5-9B, throughput and ratio come from the same run.
+For the other four, the throughput is the entry's recorded headline and the
+ratio comes from a later paired run; each entry's `measurements.json` has
+both. The `lookahead1` entries stream one token at a time; the `burst4`
+entries produce tokens in groups of four.
 
 All of these numbers come from one machine: Apple M5 Pro, macOS 26.6.2, Chrome
 152. Each entry directory has a `measurements.json` and a `provenance.md` that

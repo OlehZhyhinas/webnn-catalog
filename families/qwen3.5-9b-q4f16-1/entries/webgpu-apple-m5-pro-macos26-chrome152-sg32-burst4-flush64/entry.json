@@ -151,7 +151,7 @@
       "gpu.subgroupMinSize": 32,
       "gpu.subgroupMaxSize": 32
     },
-    "notes": "The tuned model library requires shader-f16 plus subgroup size 32. The verified loader checks WebGPU and subgroup support before downloading model weights. It must also raise ChatOptions.max_history_size to at least burst+1 (5) before creating the engine, or a burst that overshoots a stop crashes the hybrid RNNState."
+    "notes": "The tuned model library requires shader-f16 plus subgroup size 32. The verified loader checks WebGPU and subgroup support before downloading model weights. It must also raise model.config.overrides.max_history_size to at least burst+1 (5) before creating the engine, or a burst that overshoots a stop crashes the hybrid RNNState. The loader reads that override path directly; runtime.config.maxHistorySize is informational only."
   },
   "artifacts": "artifacts.json",
   "model": {
@@ -168,7 +168,7 @@
   },
   "runtime": {
     "name": "WebLLM",
-    "version": "0.2.84-qwen-m5-overlap",
+    "version": "0.2.84-qwen-m5-lookahead",
     "abi": {
       "webllm": "0.2.84",
       "wasmSystemLibPrefix": "Qwen3.5-9B-q4f16_1-MLC",

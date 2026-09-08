@@ -37,8 +37,8 @@
   "tokenizer": null,
   "verification": {
     "case": "Six rotating fresh LaTeX prompts plus four math/prose/code/low-margin quality prompts.",
-    "bar": "Eight of eight fresh-prompt pairs are byte-identical to the published subgroup-32 path, with matching completion-token counts. Four of four quality prompts are byte-identical to local K=1 full-vocabulary argmax. The published temperature-zero sampler is not deterministic on the prose quality item, so that item is not a published-path exactness claim.",
-    "runner": "WEBNN_MAX_LOAD=0 node bench/webnn/qwen/run-webllm-interleaved.mjs"
+    "bar": "Six fresh prompts over eight rounds (rounds 7-8 repeat prompts 1-2), 8/8 pairs byte-identical to the published subgroup-32 path, with matching completion-token counts. Four of four quality prompts are byte-identical to local K=1 full-vocabulary argmax. The published temperature-zero sampler is not deterministic on the prose quality item, so that item is not a published-path exactness claim.",
+    "runner": "WEBNN_MAX_LOAD=0 npm run verify:webllm"
   },
-  "notes": "Weights and tokenizer remain in the immutable upstream MLC repository. The catalog entry carries metadata plus verified runtime JS and model-library WASM references. This model is a GatedDeltaNet hybrid (recurrent RNNState on 75% of layers, paged GQA KV cache on 25%); the published max_history_size:1 cannot survive a burst rollback, so the loader must raise ChatOptions.max_history_size to at least burst+1 for this family (see the entry's provenance ledger). TVM_WEBGPU_GEMV_TR is a verified no-op for this model's compiled kernels."
+  "notes": "Weights and tokenizer remain in the immutable upstream MLC repository. The catalog entry carries metadata plus verified runtime JS and model-library WASM references. This model is a GatedDeltaNet hybrid (recurrent RNNState on 75% of layers, paged GQA KV cache on 25%); the published max_history_size:1 cannot survive a burst rollback, so the loader must raise model.config.overrides.max_history_size to at least burst+1 for this family (see the entry's provenance ledger). The loader reads that override path directly (runtime/webllm-loader.js); runtime.config.maxHistorySize is informational only and does not itself change engine behavior. TVM_WEBGPU_GEMV_TR is a verified no-op for this model's compiled kernels."
 }

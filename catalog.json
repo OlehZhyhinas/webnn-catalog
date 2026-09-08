@@ -377,5 +377,5 @@
     "provenance": "Every entry has a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like.",
     "index": "Summary rows only. The entry directory is authoritative for every field copied here."
   },
-  "generatedAt": "2026-09-08T12:02:21.000Z"
+  "generatedAt": "2026-09-08T12:11:16.000Z"
 }

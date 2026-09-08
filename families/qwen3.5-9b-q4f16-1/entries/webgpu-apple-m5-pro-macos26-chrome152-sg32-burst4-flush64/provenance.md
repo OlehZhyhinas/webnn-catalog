@@ -42,9 +42,13 @@ overshoots a stop by even one token then crashes calling
 `vm.builtin.kv_state_popn` on the RNN state
 (`RNNStateImpObj::PopN: n <= available_history_num`). This is a runtime
 `ChatConfig` field, not a property of the compiled WASM, so any consumer of
-this entry's model library **must** raise `ChatOptions.max_history_size` to
-at least `burst + 1` (5, for this entry's K=4) before creating the engine,
-or bursts will crash on essentially every prompt. With that override in
+this entry's model library **must** raise
+`model.config.overrides.max_history_size` to at least `burst + 1` (5, for
+this entry's K=4) before creating the engine, or bursts will crash on
+essentially every prompt. The loader (`runtime/webllm-loader.js`) reads
+that override path directly when it builds the WebLLM model record; the
+mirrored `runtime.config.maxHistorySize` field on the entry is
+informational only and has no effect by itself. With the override in
 place, a continued-generation (no-reset) check confirmed the RNN state and
 paged KV cache both roll back correctly and produce byte-identical output
 across a second turn.
@@ -68,8 +72,9 @@ round before taking the median.
 - Median paired ratio: **1.070x**.
 - Ratio IQR: 1.032-1.163.
 - One-minute load-average range: approximately 15-20 (heavier than the
-  single-agent loads recorded for the smaller Qwen3 sizes, because three
-  sibling rolls shared the GPU lock).
+  loads recorded for the smaller Qwen3 sizes when only that one
+  model-roll benchmark held the GPU lock, because here three other
+  model-roll benchmarks shared it).
 - Eight of eight fresh outputs, including completion-token counts, were
   byte-identical to the published path.
 - Four of four quality outputs were byte-identical to local K=1

@@ -50,7 +50,7 @@
         ],
         "pairedRatioMad": 0.071
       },
-      "notes": "26.7 ms/token is the reciprocal of the measured 37.45 tokens/s median. The paired 1.070x statistic is the median of per-round ratios and need not equal the ratio of independent medians. Three sibling model rolls (Qwen3.5-0.8B, MiniCPM5-2B, Qwen3.5-4B) shared the machine and GPU lock for the entire run, so one-minute load averages ran 15-20, heavier than the single-agent loads recorded for the smaller Qwen3 sizes.",
+      "notes": "26.7 ms/token is the reciprocal of the measured 37.45 tokens/s median. The paired 1.070x statistic is the median of per-round ratios and need not equal the ratio of independent medians. Three sibling model rolls (Qwen3.5-0.8B, MiniCPM5-2B, Qwen3.5-4B) shared the machine and GPU lock for the entire run, so one-minute load averages ran 15-20, heavier than the loads recorded for the smaller Qwen3 sizes when only that one model-roll benchmark held the GPU lock.",
       "source": "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-published-vs-final.json"
     }
   ],
@@ -71,5 +71,5 @@
     "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-quality-k1-vs-final.json",
     "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-quality-published-vs-final.json"
   ],
-  "caveat": "Absolute measured throughput was taken while three sibling agents' benchmarks saturated the same GPU lock and CPU. The paired ratio is the robust headline. There is no historical quiet 9B number and no quiet projection is claimed."
+  "caveat": "Absolute measured throughput was taken while three other model-roll benchmarks shared the GPU lock and saturated the CPU. The paired ratio is the robust headline. There is no historical quiet 9B number and no quiet projection is claimed."
 }
