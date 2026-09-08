@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "description": "Deterministic greedy corpus used to compare the final MiniCPM5-2B catalog stack with the published WebLLM 0.2.84 path (the stock, self-compiled model library LatexGen ships) byte-for-byte.",
+  "generation": {
+    "temperature": 0,
+    "max_tokens": 96,
+    "logprobs": false,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "repetition_penalty": 1
+  },
+  "cases": [
+    {
+      "id": "fresh-quadratic",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe quadratic formula for a x squared plus b x plus c equals zero"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe quadratic formula for \\(ax^2 + bx + c = 0\\) is \\[ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\].",
+      "expectedSha256": "34fbb203d6c8f714ec1e5b2bee22ca41eb5bfe7424c043487529feaa11938f4d"
+    },
+    {
+      "id": "fresh-derivative",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe derivative with respect to x of sine squared x"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe derivative with respect to \\(x\\) of \\(\\sin^2 x\\) is \\(\\frac{d}{dx}(\\sin^2 x) = 2\\sin x \\cos x = \\sin 2x\\).",
+      "expectedSha256": "f91b40f77415a49c375d8ac651628018d473397c5ca98a2f0dc41cb6dba31a12"
+    },
+    {
+      "id": "fresh-sum",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe sum from k equals one to n of k cubed"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n\\[ \\sum_{k=1}^{n} k^3 \\]",
+      "expectedSha256": "83b290cf1f45756cc416328074cbb3fa4327e78b41d7a53fc1683ffe57c79c23"
+    },
+    {
+      "id": "fresh-matrix",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe matrix with first row a b and second row c d"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe matrix with first row \\(a\\) \\(b\\) and second row \\(c\\) \\(d\\) is\n\\[\n\\begin{pmatrix}\na & b \\\\\nc & d\n\\end{pmatrix}.\n\\]",
+      "expectedSha256": "354c41ff27394fe0ef1287b90909951289d6e774d53ecbcc30213177cf0b4983"
+    },
+    {
+      "id": "fresh-probability",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe probability of A union B in terms of A, B, and their intersection"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe probability of \\(A \\cup B\\) in terms of \\(A\\), \\(B\\), and their intersection is given by\n\\[ P(A \\cup B) = P(A) + P(B) - P(A \\cap B) \\].",
+      "expectedSha256": "e15b935c5203ae47f3c22735c2a8b98f1b80237f6dacf1b4d53aa8c0ea95f453"
+    },
+    {
+      "id": "fresh-limit",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe limit as x approaches zero of sine x over x"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n\\(\\lim_{x \\to 0} \\frac{\\sin x}{x}\\)",
+      "expectedSha256": "add077055f3c1a075ce9d82c556c612592d7e124ed6b02ed217295dac96eabd2"
+    },
+    {
+      "id": "quality-math-latex",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe integral from zero to infinity of e to the minus x squared dx"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n\\[ \\int_0^\\infty e^{-x^2}\\,dx \\]",
+      "expectedSha256": "6c277f5d5d39843e49dfd825868058d0174442ea4ef8399f01683cb4b49b8ae6"
+    },
+    {
+      "id": "quality-prose",
+      "generation": {
+        "max_tokens": 64
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "Reply with one short paragraph. No markdown."
+        },
+        {
+          "role": "user",
+          "content": "Describe rain on a city street at night."
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nAt night, the rain on a city street feels like a quiet, persistent drizzle. It falls softly, turning the pavement into a shimmering film that reflects the empty sky. The sound is a gentle patter, a constant whisper against the concrete, while the cool, damp air brings a sense of calm.",
+      "expectedSha256": "4b6093695fb9876bf07d0a02a3628476c4a2fbb42e1790765a15585d9b162758"
+    },
+    {
+      "id": "quality-code",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Output only Python. No explanation."
+        },
+        {
+          "role": "user",
+          "content": "Write a function fib(n) that returns the nth Fibonacci number."
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n```python\ndef fib(n):\n    \"\"\"\n    Returns the nth Fibonacci number using an iterative approach.\n    fib(0) = 0, fib(1) = 1, fib(2) = 1, etc.\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b",
+      "expectedSha256": "45923c72992dbcb04654455c52257e6b7343cc9a4033ec33fb427765a60d9bce"
+    },
+    {
+      "id": "quality-low-margin",
+      "generation": {
+        "max_tokens": 32
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "Complete the sentence with exactly three words."
+        },
+        {
+          "role": "user",
+          "content": "The best color is"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nKeep it simple.",
+      "expectedSha256": "a4d9e82b796aa084b24a10ae8e892f447cc4fa3968847d16d3f6ccc82a479cb0"
+    }
+  ]
+}

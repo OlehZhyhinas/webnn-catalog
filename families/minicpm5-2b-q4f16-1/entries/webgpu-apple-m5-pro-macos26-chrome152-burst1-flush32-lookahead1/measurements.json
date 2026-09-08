@@ -1,0 +1,138 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-burst1-flush32-lookahead1",
+  "family": "minicpm5-2b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=1 + lookahead 1 + flush 32 stack under sustained background CPU load, paired live against the published path",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 8,
+      "warmup": 1,
+      "statistic": "Median of eight rotating paired observations; each observation resets KV state and uses a different prompt. Ratio is the median of per-round ratios against the live published baseline.",
+      "warmDecodeMsPerToken": 9.7404,
+      "tokensPerSecond": 102.665,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and published (stock, self-compiled) model library; 74.885 tok/s median in this run",
+        "candidate": "this entry's model library, K=1 burst, GPU lookahead 1, batch pass, flush 32",
+        "baselineMsPerToken": 13.3541,
+        "candidateMsPerToken": 9.7404,
+        "speedup": 1.362
+      },
+      "loadAvg": [
+        15.04,
+        17.6
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "8/8 outputs byte-identical to the paired published baseline in the same round, with equal completion-token counts, cycling through all six fresh prompts",
+        "pairedRatioQuartiles": [
+          1.357,
+          1.378
+        ],
+        "pairedRatioRange": [
+          1.32,
+          1.406
+        ],
+        "pairedEndToEndSpeedup": 1.281,
+        "pairedEndToEndNote": "End-to-end (TTFT + decode) against the same published baseline exceeded the pre-lookahead K=4/flush-32 stack's end-to-end ratio (1.229x median) in every one of the 8 rounds."
+      },
+      "notes": "9.7404 ms/token is the reciprocal of the measured 102.665 tokens/s median. The same rotation also measured a pre-lookahead K=4/flush-32 stack at 95.73 tok/s, 1.273x published, 8/8 exact -- kept as the baseline the lookahead adoption decision is measured against, not a separate catalog entry.",
+      "source": "webnn-workbench@minicpm5-2b-roll docs/results.md (MiniCPM5-2B exact-greedy WebGPU stack); bench/results/qwen-minicpm5-2b-published-vs-winner-vs-final.json"
+    },
+    {
+      "kind": "measured",
+      "label": "GPU lookahead second pass: K=1 lookahead 1 paired live against the K=4/flush-32 pre-lookahead winner, same model library and runtime bundle",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 12,
+      "warmup": 1,
+      "statistic": "Medians of per-round ratios against the live K=4/flush-32 sibling stack: fresh run, 8 rounds (load 14.87-20.02); quality-corpus run, 4 rounds (load 14.6-15.03).",
+      "warmDecodeMsPerToken": null,
+      "tokensPerSecond": null,
+      "loadAvg": [
+        14.6,
+        20.02
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "8/8 fresh outputs byte-identical to the paired live K=4 baseline",
+        "qualityCorpusExact": "4/4 quality outputs plus the fresh convert item byte-identical to the live K=4 baseline, every one of 4 rounds",
+        "decodeSpeedup": 1.068,
+        "decodeQuartiles": [
+          1.052,
+          1.093
+        ],
+        "decodeRange": [
+          0.992,
+          1.179
+        ],
+        "ttftDeltaMs": 7.7,
+        "ttftDeltaRangeMs": [
+          7.3,
+          8.3
+        ],
+        "pairedEndToEndFreshSpeedup": 1.031,
+        "pairedEndToEndFreshQuartiles": [
+          1.025,
+          1.051
+        ],
+        "pairedEndToEndFreshRange": [
+          0.977,
+          1.081
+        ],
+        "pairedEndToEndQualitySpeedup": 1.022,
+        "pairedEndToEndQualityQuartiles": [
+          1.017,
+          1.029
+        ]
+      },
+      "notes": "Decode gain (1.068x, IQR clear of parity) clears the 1.05x adoption bar the 8B pass's 1.043x missed. The next-request TTFT cost (+7.7ms average) is the same orphaned-speculative-step mechanism documented for the 8B pass, but smaller in absolute terms because a MiniCPM5-2B decode step (~10.4ms) is itself much shorter than 8B's (~19ms). Paired end-to-end stays net positive on both the fresh corpus (1.031x) and the quality corpus (1.022x), unlike the 8B pass's flat 1.006x fresh-corpus result. Decision: adopted -- see row 1's pairedEndToEndNote for the decisive published-path comparison.",
+      "source": "webnn-workbench@minicpm5-2b-roll docs/results.md (MiniCPM5-2B second pass: K=1 with GPU lookahead); bench/results/qwen-minicpm5-2b-lookahead-k1la1.json; bench/results/qwen-minicpm5-2b-quality-k1la1.json"
+    }
+  ],
+  "baselines": {
+    "publishedLive": {
+      "warmDecodeMsPerToken": 13.3541,
+      "tokensPerSecond": 74.885,
+      "notes": "Paired eight-round published WebLLM 0.2.84 baseline (stock, self-compiled model library) under sustained background CPU load, measured live in the same rotation as this entry."
+    },
+    "preLookaheadWinnerLive": {
+      "tokensPerSecond": 95.73,
+      "notes": "K=4, batch pass, flush 32, same model library, measured live in the same rotation as this entry; 1.273x the published baseline. Kept as the pre-lookahead baseline this entry's adoption decision is measured against; not a separate catalog entry."
+    }
+  },
+  "sources": [
+    "webnn-workbench@minicpm5-2b-roll docs/minicpm5-2b-m5-webgpu-report.md",
+    "webnn-workbench@minicpm5-2b-roll docs/results.md (MiniCPM5-2B exact-greedy WebGPU stack; MiniCPM5-2B second pass)",
+    "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-published-vs-winner-vs-final.json",
+    "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-lookahead-k1la1.json",
+    "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-quality-k1la1.json",
+    "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-quality-k1-vs-final.json"
+  ],
+  "caveat": "Absolute measured throughput was taken while other model-roll benchmarks shared the machine concurrently. The paired ratio is the robust headline. There is no historical quiet MiniCPM5-2B number and no quiet projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#21, branch minicpm5-2b-roll) that recorded this pass is not yet merged."
+}
