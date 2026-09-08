@@ -1,0 +1,120 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1",
+  "family": "qwen3.5-4b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=1 + lookahead 1 stack vs published sg32 on the stock runtime, under concurrent machine load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.76,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 6,
+      "warmup": 1,
+      "statistic": "Median of six rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 15.616,
+      "tokensPerSecond": 64.06,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256 model library, K=1, one speculative GPU lookahead step, no flush cadence",
+        "baselineMsPerToken": 19.782,
+        "candidateMsPerToken": 15.616,
+        "speedup": 1.276
+      },
+      "loadAvg": [
+        14.79,
+        15.82
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "6/6 tuned outputs byte-identical to the paired published path with equal completion-token counts (21, 16, 16, 20, 24, 20)",
+        "qualityCorpusExact": "4/4 tuned outputs byte-identical to local K=1 full-vocabulary argmax",
+        "throughputQuartilesTokensPerSecond": [
+          63.54,
+          64.78
+        ],
+        "throughputMad": 0.715,
+        "pairedRatioQuartiles": [
+          1.252,
+          1.296
+        ],
+        "pairedRatioMad": 0.027,
+        "pairedRatioRange": [
+          1.242,
+          1.309
+        ]
+      },
+      "notes": "15.616 ms/token is the reciprocal of the measured 64.06 tokens/s median. The paired 1.276x statistic is the median of per-round ratios and need not equal the ratio of independent medians. This is simultaneously the baseline-vs-final headline and the final-vs-stock-published-runtime comparison (the harness's --published-runtime case).",
+      "source": "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-published-vs-tuned-final.json"
+    },
+    {
+      "kind": "measured",
+      "label": "Second-pass adoption check: K=1 lookahead 1 vs the best plain-burst roll (K=8, flush cadence 32), same model library, under concurrent machine load",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.76,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 8,
+      "warmup": 1,
+      "statistic": "Median of eight rotating paired observations against the K=8/flush32 burst roll run live in the same rotation.",
+      "warmDecodeMsPerToken": null,
+      "tokensPerSecond": 63.91,
+      "pairedSpeedup": {
+        "baseline": "K=8 burst, flush cadence 32, batch pass (58.16 tok/s median in this run)",
+        "candidate": "K=1, lookahead 1, no flush cadence",
+        "baselineMsPerToken": 17.192,
+        "candidateMsPerToken": 15.647,
+        "speedup": 1.103
+      },
+      "loadAvg": null,
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "8/8 outputs byte-identical to the paired K=8/flush32 baseline case in the same round",
+        "pairedRatioQuartiles": [
+          1.097,
+          1.112
+        ],
+        "pairedRatioRange": [
+          1.073,
+          1.133
+        ]
+      },
+      "notes": "This is the adoption measurement described in the report's second-pass section: 1.103x clears the 1.05x adoption bar with an IQR clear of parity, so lookahead was adopted and is this entry's shipped configuration (unlike the 8B and Qwen3.5-0.8B rungs, which rejected lookahead). A follow-up check found flush cadence adds nothing once lookahead is running (1.002x, IQR crossing parity), which is why this entry's runtime.config.flushEvery is 0.",
+      "source": "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-lookahead-vs-k8.json, bench/results/qwen-qwen35-4b-lookahead-flush.json"
+    }
+  ],
+  "baselines": {
+    "publishedSubgroup32StockRuntime": {
+      "warmDecodeMsPerToken": 19.782,
+      "tokensPerSecond": 50.55,
+      "notes": "Paired six-round published WebLLM 0.2.84 subgroup-32 baseline on the stock runtime, measured live in the same rotation as the headline row."
+    }
+  },
+  "sources": [
+    "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 docs/qwen35-4b-m5-webgpu-report.md",
+    "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-published-vs-tuned-final.json",
+    "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-lookahead-vs-k8.json",
+    "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-quality-k1-vs-final.json"
+  ],
+  "caveat": "Absolute measured throughput was taken under sustained background ORCA/NEB load. The paired ratio is the robust headline. There is no historical quiet baseline for this model and no quiet projection is claimed. GEMV TR is a no-op for this model (byte-identical compiled WASM at 16/32/64/128); the artifact keeps its build-time -tr32 filename for traceability only."
+}
