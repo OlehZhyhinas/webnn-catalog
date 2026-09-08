@@ -1,0 +1,71 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst5-flush32",
+  "family": "qwen3.5-0.8b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=5/flush-32 stack under ORCA",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.76,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 8,
+      "warmup": 1,
+      "statistic": "Median of eight rotating paired observations; each observation resets KV state and uses a different prompt (six distinct prompts, two repeated).",
+      "warmDecodeMsPerToken": 5.24,
+      "tokensPerSecond": 190.83,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256 model library, K=5, one compute pass, submit every 32 dispatches",
+        "baselineMsPerToken": 9.185,
+        "candidateMsPerToken": 5.24,
+        "speedup": 1.738
+      },
+      "loadAvg": [
+        14.4,
+        15.22
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "8/8 tuned outputs byte-identical to the paired published path with equal completion-token counts",
+        "qualityCorpusExact": "4/4 tuned outputs byte-identical to local K=1 full-vocabulary argmax and to the published path directly; no published-sampler instability observed on this corpus for this model",
+        "throughputQuartilesTokensPerSecond": [
+          186.697,
+          191.8
+        ],
+        "throughputMad": null,
+        "pairedRatioQuartiles": [
+          1.705,
+          1.769
+        ],
+        "pairedRatioMad": null
+      },
+      "notes": "5.24 ms/token is the reciprocal of the measured 190.83 tokens/s median. The paired 1.738x statistic is the median of per-round ratios and need not equal the ratio of independent medians.",
+      "source": "webnn-workbench@63c47b91c5619b76443da81322ee78de168a087c bench/results/qwen-qwen35-08-published-vs-final-orca.json"
+    }
+  ],
+  "baselines": {
+    "publishedSubgroup32UnderOrca": {
+      "warmDecodeMsPerToken": 9.185,
+      "tokensPerSecond": 108.88,
+      "notes": "Paired eight-round published WebLLM 0.2.84 subgroup-32 baseline on the stock runtime under ORCA."
+    }
+  },
+  "sources": [
+    "webnn-workbench@63c47b91c5619b76443da81322ee78de168a087c docs/qwen35-08-m5-webgpu-report.md",
+    "webnn-workbench@63c47b91c5619b76443da81322ee78de168a087c bench/results/qwen-qwen35-08-published-vs-final-orca.json",
+    "webnn-workbench@63c47b91c5619b76443da81322ee78de168a087c bench/results/qwen-qwen35-08-quality-k1-vs-final-orca.json",
+    "webnn-workbench@63c47b91c5619b76443da81322ee78de168a087c bench/results/qwen-qwen35-08-quality-published-vs-final-orca.json"
+  ],
+  "caveat": "Absolute measured throughput was taken while ORCA saturated the CPU. The paired ratio is the robust headline. There is no historical quiet baseline for this model and no quiet projection is claimed. A second-pass lookahead measurement (K=1, lookahead 1) was 1.032x this entry with an IQR crossing parity and was not adopted; the runtime bundle already carries the lookahead pipeline (disabled via runtime.config.lookahead=0), so no separate bundle is needed to reproduce either result."
+}
