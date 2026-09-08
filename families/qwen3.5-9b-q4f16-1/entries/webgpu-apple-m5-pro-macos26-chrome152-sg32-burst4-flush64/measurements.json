@@ -1,0 +1,75 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+  "family": "qwen3.5-9b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "Warm model and pipelines, fresh uncached prompts, final K=4/flush-64 stack while three sibling model rolls shared the machine's GPU lock",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.77",
+        "os": "macOS 26.6.2 (25G83)",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "gpuCores": 20,
+        "memoryGB": 64,
+        "f16TflopsMeasured": 5.69,
+        "sameAsTarget": true
+      },
+      "date": "2026-09-08",
+      "protocol": "interleaved-ab",
+      "runs": 8,
+      "warmup": 1,
+      "statistic": "Median of eight rotating paired observations; each observation resets KV state and uses a different prompt.",
+      "warmDecodeMsPerToken": 26.7,
+      "tokensPerSecond": 37.45,
+      "pairedSpeedup": {
+        "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
+        "candidate": "local subgroup-32/chunk-256-argmax model library, K=4, one compute pass, submit every 64 dispatches",
+        "baselineMsPerToken": 28.716,
+        "candidateMsPerToken": 26.7,
+        "speedup": 1.07
+      },
+      "loadAvg": [
+        15.0,
+        20.0
+      ],
+      "outputSha256": null,
+      "quality": {
+        "freshPromptExact": "8/8 tuned outputs byte-identical to the paired published path with equal completion-token counts",
+        "qualityCorpusExact": "4/4 tuned outputs byte-identical to local K=1 full-vocabulary argmax; published temperature-zero sampler was nondeterministic on the prose item",
+        "throughputQuartilesTokensPerSecond": [
+          36.01,
+          40.227
+        ],
+        "throughputMad": 2.585,
+        "pairedRatioQuartiles": [
+          1.032,
+          1.163
+        ],
+        "pairedRatioMad": 0.071
+      },
+      "notes": "26.7 ms/token is the reciprocal of the measured 37.45 tokens/s median. The paired 1.070x statistic is the median of per-round ratios and need not equal the ratio of independent medians. Three sibling model rolls (Qwen3.5-0.8B, MiniCPM5-2B, Qwen3.5-4B) shared the machine and GPU lock for the entire run, so one-minute load averages ran 15-20, heavier than the single-agent loads recorded for the smaller Qwen3 sizes.",
+      "source": "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-published-vs-final.json"
+    }
+  ],
+  "baselines": {
+    "publishedBaseUnderLoadSmoke": {
+      "tokensPerSecond": 33.22,
+      "notes": "Single warm smoke, recorded for completeness; not the paired baseline."
+    },
+    "publishedSubgroup32UnderLoad": {
+      "warmDecodeMsPerToken": 28.716,
+      "tokensPerSecond": 34.83,
+      "notes": "Paired eight-round published WebLLM 0.2.84 subgroup-32 baseline while three sibling model rolls shared the machine's GPU lock."
+    }
+  },
+  "sources": [
+    "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 docs/qwen35-9b-m5-webgpu-report.md",
+    "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-published-vs-final.json",
+    "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-quality-k1-vs-final.json",
+    "webnn-workbench@7bc7d4778f4bf9f6b1cba51b5b6c19e1e6fdf5c1 bench/results/qwen-qwen35-9b-quality-published-vs-final.json"
+  ],
+  "caveat": "Absolute measured throughput was taken while three sibling agents' benchmarks saturated the same GPU lock and CPU. The paired ratio is the robust headline. There is no historical quiet 9B number and no quiet projection is claimed."
+}

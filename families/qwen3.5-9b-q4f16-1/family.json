@@ -1,0 +1,44 @@
+{
+  "id": "qwen3.5-9b-q4f16-1",
+  "name": "Qwen3.5-9B q4f16_1, OpenAI-compatible chat",
+  "runtimeKind": "webllm",
+  "summary": "Qwen3.5-9B (GatedDeltaNet hybrid: 75% recurrent linear-attention layers, 25% GQA) quantized to q4f16_1 for WebLLM/WebGPU. Entries preserve the OpenAI-compatible chat contract while tuning runtime and model-library artifacts for a specific browser/GPU configuration.",
+  "task": "text-generation",
+  "source": {
+    "model": "mlc-ai/Qwen3.5-9B-q4f16_1-MLC",
+    "revision": "c7c5d3f5a81e37b8facbb72970940a1b131314a8",
+    "repository": "https://huggingface.co/mlc-ai/Qwen3.5-9B-q4f16_1-MLC",
+    "commit": "c7c5d3f5a81e37b8facbb72970940a1b131314a8",
+    "license": {
+      "name": "Apache License 2.0",
+      "spdx": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "precision": "q4f16_1 weights, float16 activations and KV cache",
+    "resolution": null,
+    "steps": null
+  },
+  "chat": {
+    "api": "openai.chat.completions",
+    "request": {
+      "messages": "Array of OpenAI role/content messages.",
+      "tools": "Optional OpenAI-compatible tool declarations; they disable the catalog's exact-greedy fast path when they install a grammar or logit processor.",
+      "stream": "Boolean. Streaming chunks follow WebLLM's OpenAI-compatible delta shape."
+    },
+    "response": {
+      "text": "choices[0].message.content for non-streaming, or concatenated choices[0].delta.content for streaming.",
+      "usage": "OpenAI-compatible prompt/completion token counts plus WebLLM latency fields when enabled."
+    },
+    "generation": {
+      "fastPath": "Exact greedy GPU-resident decode (burst size per entry) only when temperature is zero and no logprobs, penalties, grammar, logit bias, structured output, or custom logit processor is active.",
+      "fallback": "All other requests use the normal WebLLM one-token sampler and keep the same API contract."
+    }
+  },
+  "tokenizer": null,
+  "verification": {
+    "case": "Six rotating fresh LaTeX prompts plus four math/prose/code/low-margin quality prompts.",
+    "bar": "Eight of eight fresh-prompt pairs are byte-identical to the published subgroup-32 path, with matching completion-token counts. Four of four quality prompts are byte-identical to local K=1 full-vocabulary argmax. The published temperature-zero sampler is not deterministic on the prose quality item, so that item is not a published-path exactness claim.",
+    "runner": "WEBNN_MAX_LOAD=0 node bench/webnn/qwen/run-webllm-interleaved.mjs"
+  },
+  "notes": "Weights and tokenizer remain in the immutable upstream MLC repository. The catalog entry carries metadata plus verified runtime JS and model-library WASM references. This model is a GatedDeltaNet hybrid (recurrent RNNState on 75% of layers, paged GQA KV cache on 25%); the published max_history_size:1 cannot survive a burst rollback, so the loader must raise ChatOptions.max_history_size to at least burst+1 for this family (see the entry's provenance ledger). TVM_WEBGPU_GEMV_TR is a verified no-op for this model's compiled kernels."
+}
