@@ -8,7 +8,7 @@
     "workbench": "OlehZhyhinas/webnn-workbench@minicpm5-2b-roll",
     "date": "2026-09-08",
     "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
-    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under sustained background CPU load from other agents' concurrent runs. Context window override 4096."
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under sustained background CPU load from other model-roll benchmarks sharing the machine. Context window override 4096."
   },
   "title": "MiniCPM5-2B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, K=1 with GPU lookahead",
   "summary": "Chunk-256 two-stage full-vocabulary GPU argmax, GEMV TR=64 (TVM's unmodified default), no WebGPU subgroups (subgroups and TR=32 each independently break exact-greedy parity on this model), a burst of one token with one decode step kept queued on the GPU across each readback, one compute pass, and a submit every 32 dispatches. Measured 102.665 tokens/s and 1.362x paired versus the published WebLLM 0.2.84 path, byte-identical output, adopted over a plain K=4 burst (1.273x) after a second pass confirmed the lookahead gain clears the adoption bar and stays ahead of the published path end-to-end in every tested round.",
@@ -141,7 +141,7 @@
     "requires": {
       "backend.name": "webgpu"
     },
-    "notes": "The tuned model library requires shader-f16 but does not use WebGPU subgroups (unlike the Qwen3 entries in this catalog): subgroup GEMV reduction changes the accumulation order enough to flip a near-tie logit on one tested prompt for this model. The verified loader checks WebGPU support before downloading model weights. The lookahead flag needs runtime/webllm-loader.js at or after the commit that introduced runtime.config.lookahead; an older loader ignores the field and falls back to a plain K=1 burst."
+    "notes": "The tuned model library requires shader-f16 but does not use WebGPU subgroups (unlike the Qwen3 entries in this catalog): subgroup GEMV reduction changes the accumulation order enough to flip a near-tie logit on one tested prompt for this model. This is the same class of cosmetic base-vs-sg32 divergence already seen on the Qwen3 catalog entries (identical LaTeX, unequal token count on the flipped prompt), not a MiniCPM5-2B-specific defect; there is no mlc-ai/subgroup-32 publication for this model, so exactness was defined against the only published (no-subgroup) library. The verified loader checks WebGPU support before downloading model weights. The lookahead flag needs runtime/webllm-loader.js at or after the commit that introduced runtime.config.lookahead; an older loader ignores the field and falls back to a plain K=1 burst."
   },
   "artifacts": "artifacts.json",
   "model": {

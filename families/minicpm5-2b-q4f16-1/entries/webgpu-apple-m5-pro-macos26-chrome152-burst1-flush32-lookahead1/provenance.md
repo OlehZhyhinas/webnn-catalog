@@ -24,7 +24,11 @@ The authoritative experiment record is
   default, not retuned). Subgroups and `TR=32` each independently break
   exact-greedy parity on this model: subgroup GEMV reduction changes the
   accumulation order enough to flip a near-tie logit on one of six tested
-  fresh prompts.
+  fresh prompts. This is the same class of cosmetic base-vs-sg32 divergence
+  already documented for the Qwen3 catalog entries (identical LaTeX,
+  unequal token count on the flipped prompt), not a MiniCPM5-2B-specific
+  defect; there is no `mlc-ai`/subgroup-32 publication for this model, so
+  exactness was defined against the only published (no-subgroup) library.
 - Exact-greedy GPU-resident decode with a burst of one token and one
   decode step kept queued on the GPU across each readback (`K=1` + GPU
   lookahead 1), adopted after a second pass measured against a plain
@@ -38,13 +42,16 @@ count and SHA-256 in `artifacts.json`. The runtime JS is reused from the
 existing 1.7B lookahead artifact at revision
 `2efcfd5804a39bc2c1af40389e16d8a0a4e73d4a` rather than duplicated. Weights,
 tokenizer and the published (stock) model library stay in the immutable
-upstream model revision. Catalog runs used `context_window_size` 4096.
+upstream model revision. The published baseline library's SHA-256 is
+`ef11c667aec8fa65525aaa0a3e11c9f9dedb18d513162a07a111accca4bd84e9`
+(`MiniCPM5-2B-q4f16_1-MLC-webgpu.wasm`). Catalog runs used
+`context_window_size` 4096.
 
 ## Methodology and measured result
 
 Every browser run used a separate real Google Chrome persistent context, a
 dedicated Chrome profile, a dedicated port, and the shared machine GPU lock.
-Other agents' work continued concurrently on the shared machine;
+Other model-roll benchmarks shared the machine concurrently;
 `WEBNN_MAX_LOAD=0` disabled load gating rather than stopping or starving
 that work. There is no `mlc-ai`-published library and no subgroup-32
 variant for this model, so the published self-compiled library is the only

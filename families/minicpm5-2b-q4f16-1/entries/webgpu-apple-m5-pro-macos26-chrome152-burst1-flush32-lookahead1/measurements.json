@@ -134,5 +134,5 @@
     "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-quality-k1la1.json",
     "webnn-workbench@minicpm5-2b-roll bench/results/qwen-minicpm5-2b-quality-k1-vs-final.json"
   ],
-  "caveat": "Absolute measured throughput was taken while other agents' work continued concurrently on the shared machine. The paired ratio is the robust headline. There is no historical quiet MiniCPM5-2B number and no quiet projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#21, branch minicpm5-2b-roll) that recorded this pass is not yet merged."
+  "caveat": "Absolute measured throughput was taken while other model-roll benchmarks shared the machine concurrently. The paired ratio is the robust headline. There is no historical quiet MiniCPM5-2B number and no quiet projection is claimed. As of this writing the workbench PR (OlehZhyhinas/webnn-workbench#21, branch minicpm5-2b-roll) that recorded this pass is not yet merged."
 }
