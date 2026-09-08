@@ -88,15 +88,17 @@ Each retained choice was measured independently on this model:
   byte-identical WASM;
 - K=8 beat K=1/4/5 on the sweep and on an eight-round K4/K5/K8 confirmation
   (1.043x K4, IQR clear of parity); K=5 confirmed below K4;
-- flush 32 beat "ordinary" K=8 by 1.021x; flush 128's nominal 1.031x lead
-  confirmed at 1.022x (IQR 1.009-1.032) over eight rounds -- a real but
-  modest win inside the K=8 branch, made moot once lookahead superseded that
-  branch entirely;
-- bind-group caching was inconclusive (1.003x / 0.993x over two round
-  counts, both IQRs crossing parity) -- not adopted, consistent with every
-  earlier Qwen3/3.5 pass;
-- **K=1 with GPU lookahead 1: 1.095x over the K=8/flush32 burst winner
-  (IQR 1.082-1.108, clear of parity) -- adopted.** This clears the 1.05x
+- flush 32 beat "ordinary" K=8 by 1.021x; flush 128 was behind flush32 on
+  the 4-round sweep (0.990x, IQR below parity) but ahead on an eight-round
+  follow-up (1.022x, IQR 1.009-1.032) -- the two runs reverse each other,
+  so neither is trusted at this effect size, and the question was moot once
+  lookahead superseded the K=8 branch entirely;
+- bind-group caching measured 1.020x over four rounds (IQR 1.012-1.023,
+  clear of parity) but 1.002x over an eight-round confirmation (IQR
+  0.988-1.018, crossing parity) -- the confirmation settles the reject,
+  consistent with every earlier Qwen3/3.5 pass;
+- **K=1 with GPU lookahead 1: 1.103x over the K=8/flush32 burst winner
+  (IQR 1.097-1.112, clear of parity) -- adopted.** This clears the 1.05x
   adoption bar decisively, the same call the Qwen3-4B rung made at 1.063x,
   and the opposite of the 8B (1.043x) and Qwen3.5-0.8B (1.032x) rungs, both
   of which crossed or approached parity and were rejected;

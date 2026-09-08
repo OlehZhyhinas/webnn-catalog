@@ -84,22 +84,22 @@
         "candidate": "K=1, lookahead 1, no flush cadence",
         "baselineMsPerToken": 17.192,
         "candidateMsPerToken": 15.647,
-        "speedup": 1.095
+        "speedup": 1.103
       },
       "loadAvg": null,
       "outputSha256": null,
       "quality": {
         "freshPromptExact": "8/8 outputs byte-identical to the paired K=8/flush32 baseline case in the same round",
         "pairedRatioQuartiles": [
-          1.082,
-          1.108
+          1.097,
+          1.112
         ],
         "pairedRatioRange": [
           1.073,
-          1.124
+          1.133
         ]
       },
-      "notes": "This is the adoption measurement described in the report's second-pass section: 1.095x clears the 1.05x adoption bar with an IQR clear of parity, so lookahead was adopted and is this entry's shipped configuration (unlike the 8B and Qwen3.5-0.8B rungs, which rejected lookahead). A follow-up check found flush cadence adds nothing once lookahead is running (1.002x, IQR crossing parity), which is why this entry's runtime.config.flushEvery is 0.",
+      "notes": "This is the adoption measurement described in the report's second-pass section: 1.103x clears the 1.05x adoption bar with an IQR clear of parity, so lookahead was adopted and is this entry's shipped configuration (unlike the 8B and Qwen3.5-0.8B rungs, which rejected lookahead). A follow-up check found flush cadence adds nothing once lookahead is running (1.002x, IQR crossing parity), which is why this entry's runtime.config.flushEvery is 0.",
       "source": "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-lookahead-vs-k8.json, bench/results/qwen-qwen35-4b-lookahead-flush.json"
     }
   ],
