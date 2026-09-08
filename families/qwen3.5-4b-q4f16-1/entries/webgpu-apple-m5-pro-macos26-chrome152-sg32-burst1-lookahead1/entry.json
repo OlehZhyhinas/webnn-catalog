@@ -1,0 +1,221 @@
+{
+  "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1",
+  "family": "qwen3.5-4b-q4f16-1",
+  "runtimeKind": "webllm",
+  "variant": "exact-greedy",
+  "created": "2026-09-08",
+  "producedBy": {
+    "workbench": "OlehZhyhinas/webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4",
+    "date": "2026-09-08",
+    "recorder": "bench/webnn/qwen/run-webllm-interleaved.mjs",
+    "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under concurrent machine load. Context window override 4096. As of this writing workbench PR OlehZhyhinas/webnn-workbench#23 (branch qwen35-4b-roll) is not yet merged."
+  },
+  "title": "Qwen3.5-4B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, K=1 with GPU lookahead",
+  "summary": "Subgroup-32, chunk-256 two-stage GPU argmax, exact-greedy burst of one token with one speculative GPU lookahead step, batch pass, no mid-burst flush cadence, no bind-group cache. Measured 64.06 tokens/s and 1.276x paired versus the published WebLLM 0.2.84 subgroup-32 path on the stock runtime. GEMV TR is a no-op for this model. GatedDeltaNet recurrent state is rolled back on over-issued bursts/lookahead via a max_history_size override.",
+  "target": {
+    "generatedAt": "2026-09-08T15:20:00.000Z",
+    "tool": "webnn-workbench bench/webnn/qwen/run-webllm-interleaved.mjs",
+    "backend": {
+      "name": "webgpu",
+      "deviceType": "gpu",
+      "webgpu": {
+        "api": "Dawn over Metal 3",
+        "wgslLanguageFeatures": [],
+        "requirements": {
+          "features": [
+            "shader-f16",
+            "subgroups",
+            "subgroup-size-control"
+          ],
+          "limits": {
+            "minSubgroupSize": 32,
+            "maxSubgroupSize": 32
+          },
+          "subgroups": {
+            "required": true,
+            "minSize": 32,
+            "maxSize": 32,
+            "features": [
+              "subgroups",
+              "subgroup-size-control"
+            ]
+          }
+        }
+      },
+      "observable": "browser"
+    },
+    "browser": {
+      "name": "Chrome",
+      "version": "152.0.7977.77",
+      "major": 152,
+      "engine": "Chromium 152.0.7977.77",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "flags": [
+        "--enable-unsafe-webgpu",
+        "--enable-features=WebGPUExperimentalFeatures",
+        "--enable-dawn-features=allow_unsafe_apis"
+      ],
+      "profile": "persistent",
+      "observable": "browser"
+    },
+    "os": {
+      "name": "macOS",
+      "version": "26.6.2",
+      "major": 26,
+      "build": "25G83",
+      "browserReported": {
+        "platform": "macOS",
+        "platformVersion": "26.6.2",
+        "architecture": "arm",
+        "bitness": "64"
+      },
+      "observable": "browser(partial)/host"
+    },
+    "gpu": {
+      "vendor": "apple",
+      "architecture": "metal-3",
+      "device": "",
+      "description": "",
+      "subgroupMinSize": 32,
+      "subgroupMaxSize": 32,
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxBindGroups": 4,
+        "maxStorageBuffersPerShaderStage": 10
+      },
+      "observable": "browser"
+    },
+    "host": {
+      "platform": "darwin",
+      "chip": "Apple M5 Pro",
+      "gpuCores": 20,
+      "memoryGB": 64,
+      "cpuThreads": 18,
+      "loadAvg": [
+        14.78955078125,
+        15.20654296875,
+        15.82373046875
+      ],
+      "unavailable": [],
+      "observable": "host"
+    },
+    "perfClass": {
+      "f16TflopsMeasured": 5.76,
+      "method": "WGSL tiled f16 matmul 2048x2048x2048, 128x128 workgroup tile, 8x8 per invocation, f32 accumulate; lower bound, not peak. Reused from the Qwen3.5-0.8B catalog entry measured on the same host the same day; this pass did not rerun the probe.",
+      "shape": [
+        2048,
+        2048,
+        2048
+      ],
+      "iterations": 52,
+      "elapsedMs": 155.2,
+      "checked": true,
+      "error": null,
+      "observable": "browser(probe)"
+    }
+  },
+  "compat": {
+    "requires": {
+      "backend.name": "webgpu",
+      "gpu.subgroupMinSize": 32,
+      "gpu.subgroupMaxSize": 32
+    },
+    "notes": "The tuned model library requires shader-f16 plus subgroup size 32. The verified loader checks WebGPU and subgroup support before downloading model weights. The lookahead flag needs runtime/webllm-loader.js at or after the commit that introduced runtime.config.lookahead; an older loader ignores the field and runs an ordinary K=1 burst."
+  },
+  "artifacts": "artifacts.json",
+  "model": {
+    "id": "Qwen3.5-4B-q4f16_1-MLC",
+    "revision": "44b42469f9e192814bfd90440e3b377d89ba7a13",
+    "config": {
+      "vramRequiredMB": 3867.82,
+      "lowResourceRequired": false,
+      "overrides": {
+        "context_window_size": 4096,
+        "max_history_size": 4
+      }
+    }
+  },
+  "runtime": {
+    "name": "WebLLM",
+    "version": "0.2.84-qwen-m5-overlap-lookahead",
+    "abi": {
+      "webllm": "0.2.84",
+      "wasmSystemLibPrefix": "Qwen3.5-4B-q4f16_1-MLC",
+      "tvmjs": "MLC WebLLM 0.2.84"
+    },
+    "config": {
+      "greedyBurst": 1,
+      "greedyArgmax": true,
+      "deferDecodeCleanup": false,
+      "argmaxChunk": 256,
+      "gemvThreadRows": 32,
+      "batchPass": true,
+      "flushEvery": 0,
+      "bindGroupCache": false,
+      "engineConfig": {},
+      "lookahead": 1
+    }
+  },
+  "source": {
+    "repository": "https://github.com/OlehZhyhinas/web-llm-qwen",
+    "commit": "21698fd421d278ad0f7b3cc4e23abe3eaf4a042d"
+  },
+  "license": {
+    "name": "Apache License 2.0",
+    "spdx": "Apache-2.0",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0"
+  },
+  "capabilities": {
+    "fastPath": {
+      "eligible": true,
+      "requirements": [
+        "temperature == 0",
+        "logprobs disabled",
+        "no grammar or structured-output matcher",
+        "no logit bias or custom logit processor",
+        "frequency_penalty == 0",
+        "presence_penalty == 0",
+        "repetition_penalty == 1"
+      ],
+      "fallback": {
+        "available": true,
+        "kind": "webllm-one-step-sampler",
+        "notes": "The runtime checks each request and retains the normal one-token sampler whenever any exact-greedy eligibility condition fails."
+      }
+    }
+  },
+  "verification": "verification/corpus.json",
+  "measurements": "measurements.json",
+  "provenance": "provenance.md"
+}

@@ -341,6 +341,31 @@
         }
       ]
     },
+    "qwen3.5-4b-q4f16-1": {
+      "path": "families/qwen3.5-4b-q4f16-1",
+      "family": "families/qwen3.5-4b-q4f16-1/family.json",
+      "name": "Qwen3.5-4B q4f16_1, OpenAI-compatible chat",
+      "runtimeKind": "webllm",
+      "task": "text-generation",
+      "model": "mlc-ai/Qwen3.5-4B-q4f16_1-MLC",
+      "entries": [
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1",
+          "path": "families/qwen3.5-4b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1",
+          "entry": "families/qwen3.5-4b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-08",
+          "measuredHosts": 1,
+          "artifactBytes": 2403629865
+        }
+      ]
+    },
     "qwen3.5-9b-q4f16-1": {
       "path": "families/qwen3.5-9b-q4f16-1",
       "family": "families/qwen3.5-9b-q4f16-1/family.json",
