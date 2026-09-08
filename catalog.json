@@ -117,7 +117,7 @@
     "texify-420": {
       "path": "families/texify-420",
       "family": "families/texify-420/family.json",
-      "name": "Texify, 420\u00d7420, Donut-Swin + mBART",
+      "name": "Texify, 420×420, Donut-Swin + mBART",
       "task": "image-to-latex",
       "model": "vikp/texify",
       "entries": [
@@ -340,6 +340,31 @@
           "artifactBytes": 1445824515
         }
       ]
+    },
+    "qwen3.5-9b-q4f16-1": {
+      "path": "families/qwen3.5-9b-q4f16-1",
+      "family": "families/qwen3.5-9b-q4f16-1/family.json",
+      "name": "Qwen3.5-9B q4f16_1, OpenAI-compatible chat",
+      "runtimeKind": "webllm",
+      "task": "text-generation",
+      "model": "mlc-ai/Qwen3.5-9B-q4f16_1-MLC",
+      "entries": [
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+          "path": "families/qwen3.5-9b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64",
+          "entry": "families/qwen3.5-9b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst4-flush64/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-08",
+          "measuredHosts": 1,
+          "artifactBytes": 5074602478
+        }
+      ]
     }
   },
   "conventions": {
@@ -352,5 +377,5 @@
     "provenance": "Every entry has a ledger: what was folded, what was rejected and by which number, and what the backend turned out to be like.",
     "index": "Summary rows only. The entry directory is authoritative for every field copied here."
   },
-  "generatedAt": "2026-09-08T12:02:21.000Z"
+  "generatedAt": "2026-09-08T12:11:16.000Z"
 }
