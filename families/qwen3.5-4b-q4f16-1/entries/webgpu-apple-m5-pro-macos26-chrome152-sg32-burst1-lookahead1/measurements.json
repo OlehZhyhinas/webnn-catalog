@@ -26,7 +26,7 @@
       "tokensPerSecond": 64.06,
       "pairedSpeedup": {
         "baseline": "published WebLLM 0.2.84 runtime and subgroup-32 model library, one-step sampler",
-        "candidate": "local subgroup-32/chunk-256 model library, K=1, one speculative GPU lookahead step, batch pass, no flush cadence",
+        "candidate": "local subgroup-32/chunk-256 model library, K=1, one speculative GPU lookahead step, no flush cadence",
         "baselineMsPerToken": 19.782,
         "candidateMsPerToken": 15.616,
         "speedup": 1.276
@@ -81,7 +81,7 @@
       "tokensPerSecond": 63.91,
       "pairedSpeedup": {
         "baseline": "K=8 burst, flush cadence 32, batch pass (58.16 tok/s median in this run)",
-        "candidate": "K=1, lookahead 1, batch pass, no flush cadence",
+        "candidate": "K=1, lookahead 1, no flush cadence",
         "baselineMsPerToken": 17.192,
         "candidateMsPerToken": 15.647,
         "speedup": 1.095
@@ -116,5 +116,5 @@
     "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-lookahead-vs-k8.json",
     "webnn-workbench@1c7c5a62c6c74d796aeb5081cf0756ca900c68f4 bench/results/qwen-qwen35-4b-quality-k1-vs-final.json"
   ],
-  "caveat": "Absolute measured throughput was taken on a machine shared with other concurrent agents. The paired ratio is the robust headline. There is no historical quiet baseline for this model and no quiet projection is claimed. GEMV TR is a no-op for this model (byte-identical compiled WASM at 16/32/64/128); the artifact keeps its build-time -tr32 filename for traceability only."
+  "caveat": "Absolute measured throughput was taken under sustained background ORCA/NEB load. The paired ratio is the robust headline. There is no historical quiet baseline for this model and no quiet projection is claimed. GEMV TR is a no-op for this model (byte-identical compiled WASM at 16/32/64/128); the artifact keeps its build-time -tr32 filename for traceability only."
 }

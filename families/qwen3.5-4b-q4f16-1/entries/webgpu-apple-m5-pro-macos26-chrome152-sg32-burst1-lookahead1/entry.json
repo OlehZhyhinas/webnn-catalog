@@ -11,7 +11,7 @@
     "note": "Warm model and pipelines, explicit KV reset, rotating fresh prompts, persistent real Chrome profile, WEBNN_MAX_LOAD=0 under concurrent machine load. Context window override 4096. As of this writing workbench PR OlehZhyhinas/webnn-workbench#23 (branch qwen35-4b-roll) is not yet merged."
   },
   "title": "Qwen3.5-4B q4f16_1: exact greedy WebLLM/WebGPU on Apple M5 Pro, K=1 with GPU lookahead",
-  "summary": "Subgroup-32, chunk-256 two-stage GPU argmax, exact-greedy burst of one token with one speculative GPU lookahead step, batch pass, no mid-burst flush cadence, no bind-group cache. Measured 64.06 tokens/s and 1.276x paired versus the published WebLLM 0.2.84 subgroup-32 path on the stock runtime. GEMV TR is a no-op for this model. GatedDeltaNet recurrent state is rolled back on over-issued bursts/lookahead via a max_history_size override.",
+  "summary": "Subgroup-32, chunk-256 two-stage GPU argmax, exact-greedy burst of one token with one speculative GPU lookahead step, no mid-burst flush cadence, no bind-group cache. Measured 64.06 tokens/s and 1.276x paired versus the published WebLLM 0.2.84 subgroup-32 path on the stock runtime. GEMV TR is a no-op for this model. GatedDeltaNet recurrent state is rolled back on over-issued bursts/lookahead via a max_history_size override.",
   "target": {
     "generatedAt": "2026-09-08T15:20:00.000Z",
     "tool": "webnn-workbench bench/webnn/qwen/run-webllm-interleaved.mjs",
@@ -168,7 +168,7 @@
   },
   "runtime": {
     "name": "WebLLM",
-    "version": "0.2.84-qwen-m5-overlap-lookahead",
+    "version": "0.2.84-qwen-m5-lookahead",
     "abi": {
       "webllm": "0.2.84",
       "wasmSystemLibPrefix": "Qwen3.5-4B-q4f16_1-MLC",
@@ -180,7 +180,7 @@
       "deferDecodeCleanup": false,
       "argmaxChunk": 256,
       "gemvThreadRows": 32,
-      "batchPass": true,
+      "batchPass": false,
       "flushEvery": 0,
       "bindGroupCache": false,
       "engineConfig": {},

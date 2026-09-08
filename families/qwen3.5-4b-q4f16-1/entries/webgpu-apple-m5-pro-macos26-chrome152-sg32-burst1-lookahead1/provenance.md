@@ -24,8 +24,8 @@ against `main`, not yet merged as of this writing.
   at every `TR` value 16/32/64/128, same finding as Qwen3.5-0.8B).
 - Exact-greedy GPU-resident decode with a burst of one token and one
   speculative lookahead step kept queued on the GPU across each readback,
-  batch pass, no mid-burst flush cadence, no bind-group cache. Flush cadence
-  and bind-group caching were both measured on top of this configuration and
+  no mid-burst flush cadence, no bind-group cache. Flush cadence and
+  bind-group caching were both measured on top of this configuration and
   neither improved on it (see below).
 - A `max_history_size` override (4: burst 1 + lookahead 1 + margin 2) on the
   model record so `vm.builtin.kv_state_popn` can correctly roll back this
@@ -48,8 +48,8 @@ runs used `context_window_size` 4096.
 
 Every browser run used a separate real Google Chrome persistent context, the
 dedicated `bench/.chrome-profile-qwen35-4b` profile, port 8912, and the
-shared machine GPU lock. `WEBNN_MAX_LOAD=0` disabled load gating; other
-agents' concurrent load remained active throughout.
+shared machine GPU lock. `WEBNN_MAX_LOAD=0` disabled load gating; the
+machine's sustained background ORCA/NEB load remained active throughout.
 
 The headline uses six rotating paired rounds, one fresh prompt per round.
 The model and GPU pipelines are warm, but each measured observation calls
