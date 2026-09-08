@@ -1,0 +1,44 @@
+{
+  "id": "minicpm5-2b-q4f16-1",
+  "name": "MiniCPM5-2B q4f16_1, OpenAI-compatible chat",
+  "runtimeKind": "webllm",
+  "summary": "MiniCPM5-2B quantized to q4f16_1 for WebLLM/WebGPU. Entries preserve the OpenAI-compatible chat contract while tuning runtime and model-library artifacts for a specific browser/GPU configuration.",
+  "task": "text-generation",
+  "source": {
+    "model": "ozhyhinas/MiniCPM5-2B-q4f16_1-MLC",
+    "revision": "2318f37d9c39277ff01dc64086491028c95d4db4",
+    "repository": "https://huggingface.co/ozhyhinas/MiniCPM5-2B-q4f16_1-MLC",
+    "commit": "2318f37d9c39277ff01dc64086491028c95d4db4",
+    "license": {
+      "name": "Apache License 2.0",
+      "spdx": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "precision": "q4f16_1 weights, float16 activations and KV cache",
+    "resolution": null,
+    "steps": null
+  },
+  "chat": {
+    "api": "openai.chat.completions",
+    "request": {
+      "messages": "Array of OpenAI role/content messages.",
+      "tools": "Optional OpenAI-compatible tool declarations; they disable the catalog's exact-greedy fast path when they install a grammar or logit processor.",
+      "stream": "Boolean. Streaming chunks follow WebLLM's OpenAI-compatible delta shape."
+    },
+    "response": {
+      "text": "choices[0].message.content for non-streaming, or concatenated choices[0].delta.content for streaming.",
+      "usage": "OpenAI-compatible prompt/completion token counts plus WebLLM latency fields when enabled."
+    },
+    "generation": {
+      "fastPath": "Exact greedy GPU-resident decode (burst size 1 with GPU lookahead 1 for this entry) only when temperature is zero and no logprobs, penalties, grammar, logit bias, structured output, or custom logit processor is active.",
+      "fallback": "All other requests use the normal WebLLM one-token sampler and keep the same API contract."
+    }
+  },
+  "tokenizer": null,
+  "verification": {
+    "case": "Six rotating fresh LaTeX prompts plus four math/prose/code/low-margin quality prompts.",
+    "bar": "Six of six fresh prompts are byte-identical to the published path on every tested round. Four of four quality prompts are byte-identical to a local plain K=1 reference. No published-sampler nondeterminism was observed for this model.",
+    "runner": "WEBNN_MAX_LOAD=0 node bench/webnn/qwen/run-webllm-interleaved.mjs"
+  },
+  "notes": "Weights and tokenizer remain in the immutable upstream repository. The catalog entry carries metadata plus verified runtime JS and model-library WASM references. Unlike every Qwen3 family in this catalog, the model library does not use WebGPU subgroups: subgroup GEMV reduction changes the accumulation order enough to flip a near-tie logit on one tested prompt, so exact-greedy parity requires dropping subgroups and keeping TVM's default GEMV TR=64. The reused runtime JS is the 1.7B/4B/8B lookahead bundle."
+}

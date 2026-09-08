@@ -315,6 +315,31 @@
           "artifactBytes": 460004621
         }
       ]
+    },
+    "minicpm5-2b-q4f16-1": {
+      "path": "families/minicpm5-2b-q4f16-1",
+      "family": "families/minicpm5-2b-q4f16-1/family.json",
+      "name": "MiniCPM5-2B q4f16_1, OpenAI-compatible chat",
+      "runtimeKind": "webllm",
+      "task": "text-generation",
+      "model": "ozhyhinas/MiniCPM5-2B-q4f16_1-MLC",
+      "entries": [
+        {
+          "id": "webgpu-apple-m5-pro-macos26-chrome152-burst1-flush32-lookahead1",
+          "path": "families/minicpm5-2b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-burst1-flush32-lookahead1",
+          "entry": "families/minicpm5-2b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-burst1-flush32-lookahead1/entry.json",
+          "runtimeKind": "webllm",
+          "variant": "exact-greedy",
+          "backend": "webgpu",
+          "browser": "Chrome 152",
+          "os": "macOS 26",
+          "gpu": "apple/metal-3",
+          "chip": "Apple M5 Pro",
+          "created": "2026-09-08",
+          "measuredHosts": 1,
+          "artifactBytes": 1445824515
+        }
+      ]
     }
   },
   "conventions": {
