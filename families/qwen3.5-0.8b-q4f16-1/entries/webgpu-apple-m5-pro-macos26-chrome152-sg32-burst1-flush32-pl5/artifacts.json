@@ -33,5 +33,5 @@
       "role": "Immutable upstream weights, tokenizer and MLC chat configuration"
     }
   ],
-  "notes": "The prompt-lookup runtime JS is shared by immutable URL and hash across this entry and the Qwen3.5-4B prompt-lookup entry; one published object is referenced from both manifests without duplication. Quality caveat: output is not byte-identical in general, because batch-verify prefill kernels and decode GEMV kernels differ in low bits and can flip near-tie argmaxes on a few percent of items. Family byte-identical verification corpus result for this entry: 10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (bench/verify-qwen3.5-0.8b-q4f16-1-pl5.json)."
+  "notes": "The prompt-lookup runtime JS is shared by immutable URL and hash across this entry and the Qwen3.5-4B prompt-lookup entry; one published object is referenced from both manifests without duplication. Quality caveat: output is not byte-identical in general, because batch-verify prefill kernels and decode GEMV kernels differ in low bits and can flip near-tie argmaxes on a few percent of items. Family byte-identical verification corpus result for this entry: 10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (verification/verify-pl5.json)."
 }

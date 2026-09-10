@@ -1,0 +1,115 @@
+{
+  "ok": true,
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5",
+  "cases": [
+    {
+      "id": "fresh-quadratic",
+      "exact": true,
+      "actualSha256": "954c19f0f2208bab6210a4e88896ad2ad2d434d3b0805e67ea8621d6f5a9006c",
+      "expectedSha256": "954c19f0f2208bab6210a4e88896ad2ad2d434d3b0805e67ea8621d6f5a9006c",
+      "elapsedMs": 518.7
+    },
+    {
+      "id": "fresh-derivative",
+      "exact": true,
+      "actualSha256": "69871c3dce51ce9233ce0967702b694a44ecb7b2a9310507c20ace12de820b8e",
+      "expectedSha256": "69871c3dce51ce9233ce0967702b694a44ecb7b2a9310507c20ace12de820b8e",
+      "elapsedMs": 181.4
+    },
+    {
+      "id": "fresh-sum",
+      "exact": true,
+      "actualSha256": "e0e83bca5f5fe779809a6e668184bf6a800816056c8e2932b5197eff7ac98899",
+      "expectedSha256": "e0e83bca5f5fe779809a6e668184bf6a800816056c8e2932b5197eff7ac98899",
+      "elapsedMs": 154.6
+    },
+    {
+      "id": "fresh-matrix",
+      "exact": true,
+      "actualSha256": "bf4322222ea1b1c52bd1147c18bde68b84059f6d9c1f30dfb84d198c1e65f0cf",
+      "expectedSha256": "bf4322222ea1b1c52bd1147c18bde68b84059f6d9c1f30dfb84d198c1e65f0cf",
+      "elapsedMs": 277.5
+    },
+    {
+      "id": "fresh-probability",
+      "exact": true,
+      "actualSha256": "f2c005f1758e22e48378756d76fd59bedd9b3686fc4dd7e498238e7e9f37f87a",
+      "expectedSha256": "f2c005f1758e22e48378756d76fd59bedd9b3686fc4dd7e498238e7e9f37f87a",
+      "elapsedMs": 344
+    },
+    {
+      "id": "fresh-limit",
+      "exact": true,
+      "actualSha256": "eddb86a54c97e17e98a5e1ef60b30e173cc0aab4af4b1d83bf59f149995db2df",
+      "expectedSha256": "eddb86a54c97e17e98a5e1ef60b30e173cc0aab4af4b1d83bf59f149995db2df",
+      "elapsedMs": 178.2
+    },
+    {
+      "id": "quality-math-latex",
+      "exact": true,
+      "actualSha256": "b5d0d9dd65bfc65c30fab5db5db1b569d5bfa120dce9653b8372d5d9f159a53b",
+      "expectedSha256": "b5d0d9dd65bfc65c30fab5db5db1b569d5bfa120dce9653b8372d5d9f159a53b",
+      "elapsedMs": 192.7
+    },
+    {
+      "id": "quality-prose",
+      "exact": true,
+      "actualSha256": "4178d5e6424adcc07f6420e170729ccb3419af2c8e79ad35a8a8478aad4d5fdd",
+      "expectedSha256": "4178d5e6424adcc07f6420e170729ccb3419af2c8e79ad35a8a8478aad4d5fdd",
+      "elapsedMs": 359.5
+    },
+    {
+      "id": "quality-code",
+      "exact": true,
+      "actualSha256": "9c9f973dda9612fb5f5ddad013ef91249aa0a0c52129f3b90d1b1f4ca1c4907a",
+      "expectedSha256": "9c9f973dda9612fb5f5ddad013ef91249aa0a0c52129f3b90d1b1f4ca1c4907a",
+      "elapsedMs": 683.2
+    },
+    {
+      "id": "quality-low-margin",
+      "exact": true,
+      "actualSha256": "2a4c353100e9fe319d80c16c71cb506a71e2aee443f909d2ac7d18e19141509a",
+      "expectedSha256": "2a4c353100e9fe319d80c16c71cb506a71e2aee443f909d2ac7d18e19141509a",
+      "elapsedMs": 65.6
+    }
+  ],
+  "capabilities": {
+    "features": [
+      "bgra8unorm-storage",
+      "chromium-experimental-subgroup-matrix",
+      "clip-distances",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "dual-source-blending",
+      "float32-blendable",
+      "float32-filterable",
+      "indirect-first-instance",
+      "primitive-index",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "subgroup-size-control",
+      "subgroups",
+      "texture-component-swizzle",
+      "texture-compression-astc",
+      "texture-compression-astc-sliced-3d",
+      "texture-compression-bc",
+      "texture-compression-bc-sliced-3d",
+      "texture-compression-etc2",
+      "texture-compression-unaligned",
+      "texture-formats-tier1",
+      "texture-formats-tier2",
+      "timestamp-query"
+    ],
+    "minSubgroupSize": 32,
+    "maxSubgroupSize": 32
+  },
+  "entryUrl": "https://raw.githubusercontent.com/OlehZhyhinas/webnn-catalog/prompt-lookup-entries/families/qwen3.5-0.8b-q4f16-1/entries/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5/entry.json",
+  "verifiedAt": "2026-09-10T23:23:03.532Z",
+  "chrome": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+  "loadAvg": [
+    6.27978515625,
+    5.4658203125,
+    5.140625
+  ]
+}

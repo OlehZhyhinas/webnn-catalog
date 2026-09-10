@@ -73,4 +73,4 @@ Output is **not** byte-identical in general. The `batch_verify` prefill kernels
 and the decode GEMV kernels differ in low bits, so near-tie argmaxes flip on a
 few percent of items.
 
-Family byte-identical verification corpus result for this entry: **10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (bench/verify-qwen3.5-4b-q4f16-1-pl5.json)**.
+Family byte-identical verification corpus result for this entry: **10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (verification/verify-pl5.json)**.
