@@ -1,0 +1,53 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5",
+  "family": "qwen3.5-0.8b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "qwen35-08b-arxiv-k5-shipped",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.83",
+        "os": "macOS 26.6",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "sameAsTarget": false
+      },
+      "date": "2026-09-10",
+      "protocol": "paired-ab-within-session",
+      "runs": 120,
+      "warmup": null,
+      "statistic": "Median of per-item treatment/baseline ratios for ms per output character, with IQR. Each item was generated once per side in the same Chrome session with alternating order and resetChat between sides.",
+      "warmDecodeMsPerToken": null,
+      "tokensPerSecond": null,
+      "loadAvg": null,
+      "outputSha256": null,
+      "quality": {
+        "baseline": "Previous entry knobs (burst5 + batchPass + flush32) with max_history_size 8 history slots",
+        "msPerCharRatioMedian": 0.818,
+        "msPerCharRatioQ25": 0.74,
+        "msPerCharRatioQ75": 0.907,
+        "speedupX": 1.22,
+        "tokensPerSecondRatioMedian": 1.223,
+        "rawOutputByteIdenticalItems": 119,
+        "rawOutputTotalItems": 120,
+        "tokensCommittedPerDecodePass": 2.96,
+        "draftedPassShare": 0.58,
+        "fullAcceptanceShareAmongDraftedPasses": 0.67,
+        "baselineDecodeMsPerToken": 6.1,
+        "verifyCostC6InBaselineDecodeSteps": 2.75,
+        "divergentItemsJudged": 1,
+        "divergentTreatmentWorse": 0,
+        "divergentBothCorrect": 1,
+        "divergentBothWrong": 0
+      },
+      "notes": "Load gate was disabled (WEBNN_MAX_LOAD=0). One divergent item was judged and both sides were correct.",
+      "source": "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-08b-arxiv-k5-shipped.json"
+    }
+  ],
+  "sources": [
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-08b-arxiv-k5-shipped.json"
+  ],
+  "caveat": "Output is not byte-identical in general: batch-verify prefill kernels and decode GEMV kernels differ in low bits, so near-tie argmaxes can flip on a few percent of items. Family byte-identical verification corpus result for this entry: PENDING."
+}

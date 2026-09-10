@@ -7,6 +7,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const {
   fetchVerifiedArtifact,
   isGreedyBurstEligible,
+  parsePromptLookup,
   sha256Hex,
 } = await import("../runtime/webllm-loader.js");
 
@@ -61,4 +62,53 @@ test("non-HTTPS artifacts are rejected", async () => {
     }),
     /must use HTTPS/,
   );
+});
+
+test("promptLookup parser accepts full spec and defaults", () => {
+  assert.deepEqual(parsePromptLookup("5:3:2:fork"), {
+    k: 5,
+    nMax: 3,
+    nMin: 2,
+    hybrid: "fork",
+  });
+  assert.deepEqual(parsePromptLookup("5"), {
+    k: 5,
+    nMax: 3,
+    nMin: 2,
+  });
+  assert.deepEqual(parsePromptLookup("5:4"), {
+    k: 5,
+    nMax: 4,
+    nMin: 2,
+  });
+});
+
+test("promptLookup parser clamps nMin to nMax", () => {
+  assert.deepEqual(parsePromptLookup("5:2:7"), {
+    k: 5,
+    nMax: 2,
+    nMin: 2,
+  });
+  assert.deepEqual(parsePromptLookup("5:fork"), {
+    k: 5,
+    nMax: 3,
+    nMin: 2,
+    hybrid: "fork",
+  });
+});
+
+test("promptLookup parser rejects malformed specs", () => {
+  for (const value of [
+    null,
+    undefined,
+    "",
+    "0",
+    "5:0",
+    "5::2",
+    "5:3:2:fork:extra",
+    "5:3:2:Fork",
+    " 5:3:2 ",
+  ]) {
+    assert.equal(parsePromptLookup(value), null);
+  }
 });

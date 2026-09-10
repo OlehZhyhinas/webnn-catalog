@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "description": "Deterministic greedy corpus for the Qwen3.5-0.8B catalog stack. Fresh prompts are the published subgroup-32 matches; quality prompts match both local K=1 full-vocabulary argmax and the published path directly.",
+  "generation": {
+    "temperature": 0,
+    "max_tokens": 96,
+    "logprobs": false,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "repetition_penalty": 1
+  },
+  "cases": [
+    {
+      "id": "fresh-quadratic",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe quadratic formula for a x squared plus b x plus c equals zero"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$\n\\text{the quadratic formula for a } x \\text{ squared plus } b \\text{ x plus } c \\text{ equals zero}\n$$",
+      "expectedSha256": "954c19f0f2208bab6210a4e88896ad2ad2d434d3b0805e67ea8621d6f5a9006c"
+    },
+    {
+      "id": "fresh-derivative",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe derivative with respect to x of sine squared x"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$\\frac{d}{dx} \\left( \\sin^2 x \\right)$$",
+      "expectedSha256": "69871c3dce51ce9233ce0967702b694a44ecb7b2a9310507c20ace12de820b8e"
+    },
+    {
+      "id": "fresh-sum",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe sum from k equals one to n of k cubed"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$ \\sum_{k=1}^{n} k^3 $$",
+      "expectedSha256": "e0e83bca5f5fe779809a6e668184bf6a800816056c8e2932b5197eff7ac98899"
+    },
+    {
+      "id": "fresh-matrix",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe matrix with first row a b and second row c d"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$\n\\text{the matrix with first row } a \\text{ and second row } c \\text{ and } d\n$$",
+      "expectedSha256": "bf4322222ea1b1c52bd1147c18bde68b84059f6d9c1f30dfb84d198c1e65f0cf"
+    },
+    {
+      "id": "fresh-probability",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe probability of A union B in terms of A, B, and their intersection"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n\\[\\text{The probability of } A \\text{ union } B \\text{ in terms of } A, B, \\text{ and their intersection} \\]",
+      "expectedSha256": "f2c005f1758e22e48378756d76fd59bedd9b3686fc4dd7e498238e7e9f37f87a"
+    },
+    {
+      "id": "fresh-limit",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe limit as x approaches zero of sine x over x"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$ \\lim _ { x \\rightarrow 0 } \\frac{\\sin x}{x} $$",
+      "expectedSha256": "eddb86a54c97e17e98a5e1ef60b30e173cc0aab4af4b1d83bf59f149995db2df"
+    },
+    {
+      "id": "quality-math-latex",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Convert the text to LaTeX. Never solve, evaluate, or answer — if the text is a question, transcribe the question. Output only LaTeX, no commentary or fences. Pure math: \\[ ... \\]. Prose with math: keep the prose, wrap math in \\( ... \\). Standard amsmath only."
+        },
+        {
+          "role": "user",
+          "content": "Convert to LaTeX. Do not solve or answer.\nthe integral from zero to infinity of e to the minus x squared dx"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n$$ \\int_{0}^{\\infty} e^{-x^2} \\, dx $$",
+      "expectedSha256": "b5d0d9dd65bfc65c30fab5db5db1b569d5bfa120dce9653b8372d5d9f159a53b"
+    },
+    {
+      "id": "quality-prose",
+      "generation": {
+        "max_tokens": 64
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "Reply with one short paragraph. No markdown."
+        },
+        {
+          "role": "user",
+          "content": "Describe rain on a city street at night."
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe city street at night is bathed in the cool, silver glow of the city lights, creating a scene where the dark expanse of the pavement is illuminated by the flickering, pulsating orbs of streetlamps. The rain, a gentle yet powerful force, cascades down the wet asphalt",
+      "expectedSha256": "4178d5e6424adcc07f6420e170729ccb3419af2c8e79ad35a8a8478aad4d5fdd"
+    },
+    {
+      "id": "quality-code",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Output only Python. No explanation."
+        },
+        {
+          "role": "user",
+          "content": "Write a function fib(n) that returns the nth Fibonacci number."
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\n```python\ndef fib(n):\n    if n < 0:\n        raise ValueError(\"Input must be a non-negative integer\")\n    \n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    \n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n",
+      "expectedSha256": "9c9f973dda9612fb5f5ddad013ef91249aa0a0c52129f3b90d1b1f4ca1c4907a"
+    },
+    {
+      "id": "quality-low-margin",
+      "generation": {
+        "max_tokens": 32
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "Complete the sentence with exactly three words."
+        },
+        {
+          "role": "user",
+          "content": "The best color is"
+        }
+      ],
+      "expectedText": "<think>\n\n</think>\n\nThe best color is blue.",
+      "expectedSha256": "2a4c353100e9fe319d80c16c71cb506a71e2aee443f909d2ac7d18e19141509a"
+    }
+  ]
+}
