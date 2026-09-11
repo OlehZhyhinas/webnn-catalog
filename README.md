@@ -37,9 +37,8 @@ If you want a comparison for Texo, LatexGen's own ONNX Runtime Web path takes
 ### Chat: WebLLM / WebGPU
 
 OpenAI-compatible chat with exact greedy decode. Most families have two
-entries; the 8B, Qwen3.5-0.8B, MiniCPM5-2B, Qwen3.5-4B and Qwen3.5-9B each
-have one. Entries within a family share a model library and differ in how
-decode is tuned.
+entries; the 8B, MiniCPM5-2B, and Qwen3.5-9B each have one. Entries within a
+family share a model library and differ in how decode is tuned.
 
 | family | entry | download | throughput | vs stock WebLLM |
 |---|---|---:|---:|---:|
@@ -51,9 +50,18 @@ decode is tuned.
 | | `…-burst1-flush32-lookahead1` | 2.29 GB | **78.5 tok/s** | 1.332× |
 | [`qwen3-8b-q4f16-1`](families/qwen3-8b-q4f16-1/) | `…-sg32-burst4-flush32` | 4.64 GB | **46.2 tok/s** | 1.187× |
 | [`qwen3.5-0.8b-q4f16-1`](families/qwen3.5-0.8b-q4f16-1/) | `…-sg32-burst5-flush32` | 460 MB | **190.8 tok/s** | 1.738× |
+| | `…-sg32-burst1-flush32-pl5` | 460 MB | — | 0.818× ms/char vs `…-burst5-flush32`¹ |
 | [`minicpm5-2b-q4f16-1`](families/minicpm5-2b-q4f16-1/) | `…-burst1-flush32-lookahead1` | 1.45 GB | **102.7 tok/s** | 1.362× |
 | [`qwen3.5-4b-q4f16-1`](families/qwen3.5-4b-q4f16-1/) | `…-sg32-burst1-lookahead1` | 2.24 GB | **64.1 tok/s** | 1.276× |
+| | `…-sg32-burst1-flush32-pl5` | 2.24 GB | — | 0.863× ms/char vs burst1-flush32¹ |
 | [`qwen3.5-9b-q4f16-1`](families/qwen3.5-9b-q4f16-1/) | `…-sg32-burst4-flush64` | 5.07 GB | **37.45 tok/s** | 1.070× |
+
+¹ Prompt-lookup drafting (`pl5`) is measured differently: the paired ratio of
+time per output character, treatment over baseline, over 120 real arXiv pastes
+run once per side in the same session (lower is faster), so it has no warm
+tok/s cell; the ratio is against the family's previous default, not stock.
+Its output is not byte-identical to the baseline on every item (see each
+entry's provenance).
 
 The last column is a paired, interleaved measurement against the published
 WebLLM 0.2.84 subgroup-32 path on the same machine, with byte-identical output

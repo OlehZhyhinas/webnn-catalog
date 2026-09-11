@@ -1,0 +1,91 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5",
+  "family": "qwen3.5-4b-q4f16-1",
+  "rows": [
+    {
+      "kind": "measured",
+      "label": "qwen35-4b-arxiv-k5-shipped",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.83",
+        "os": "macOS 26.6",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "sameAsTarget": false
+      },
+      "date": "2026-09-10",
+      "protocol": "paired-ab-within-session",
+      "runs": 120,
+      "warmup": null,
+      "statistic": "Median of per-item treatment/baseline ratios for ms per output character, with IQR. Each item was generated once per side in the same Chrome session with alternating order and resetChat between sides.",
+      "warmDecodeMsPerToken": null,
+      "tokensPerSecond": null,
+      "loadAvg": null,
+      "outputSha256": null,
+      "quality": {
+        "baseline": "This entry's knobs with promptLookup disabled (burst1 + batchPass + flush32)",
+        "msPerCharRatioMedian": 0.863,
+        "msPerCharRatioQ25": 0.79,
+        "msPerCharRatioQ75": 0.954,
+        "speedupX": 1.16,
+        "tokensPerSecondRatioMedian": 1.159,
+        "rawOutputByteIdenticalItems": 116,
+        "rawOutputTotalItems": 120,
+        "tokensCommittedPerDecodePass": 2.23,
+        "draftedPassShare": 0.4,
+        "fullAcceptanceShareAmongDraftedPasses": 0.47,
+        "baselineDecodeMsPerToken": 22.2,
+        "verifyCostC6InBaselineDecodeSteps": 2.63,
+        "divergentItemsJudged": 4,
+        "divergentTreatmentWorse": 0,
+        "divergentBothCorrect": 1,
+        "divergentBothWrong": 3
+      },
+      "notes": "Load gate was disabled (WEBNN_MAX_LOAD=0). Divergent items were judged with the qwen-local judge, three repeats each.",
+      "source": "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-arxiv-k5-shipped.json"
+    },
+    {
+      "kind": "measured",
+      "label": "qwen35-4b-arxiv-k5",
+      "host": {
+        "backend": "webgpu",
+        "deviceType": "gpu",
+        "browser": "Chrome 152.0.7977.83",
+        "os": "macOS 26.6",
+        "chip": "Apple M5 Pro",
+        "gpu": "apple/metal-3",
+        "sameAsTarget": false
+      },
+      "date": "2026-09-10",
+      "protocol": "paired-ab-within-session",
+      "runs": 120,
+      "warmup": null,
+      "statistic": "Median of per-item treatment/baseline ratios for ms per output character, with IQR. Each item was generated once per side in the same Chrome session with alternating order and resetChat between sides.",
+      "warmDecodeMsPerToken": null,
+      "tokensPerSecond": null,
+      "loadAvg": null,
+      "outputSha256": null,
+      "quality": {
+        "baseline": "Plain single-step decode (promptLookup off, no batchPass, no flush cadence)",
+        "msPerCharRatioMedian": 0.789,
+        "msPerCharRatioQ25": 0.727,
+        "msPerCharRatioQ75": 0.882,
+        "rawOutputByteIdenticalItems": 119,
+        "rawOutputTotalItems": 120,
+        "baselineDecodeMsPerToken": 18.2,
+        "verifyCostC6InBaselineDecodeSteps": 2.29
+      },
+      "notes": "This row isolates prompt-lookup against plain decode, without the batch-pass/flush stack.",
+      "source": "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-arxiv-k5.json"
+    }
+  ],
+  "sources": [
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-arxiv-k5-shipped.json",
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-arxiv-k5.json",
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-arxiv-k10.json",
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-pdf-k10.json",
+    "webnn-workbench branch prompt-lookup, bench/results/prompt-lookup-ab-qwen35-4b-pdf-k5.json"
+  ],
+  "caveat": "Output is not byte-identical in general: batch-verify prefill kernels and decode GEMV kernels differ in low bits, so near-tie argmaxes can flip on a few percent of items. Family byte-identical verification corpus result for this entry: 10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (verification/verify-pl5.json)."
+}

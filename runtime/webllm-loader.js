@@ -5,6 +5,7 @@
 // URLs. Model weights remain in the revision-pinned upstream MLC repository.
 
 const HEX_256 = /^[0-9a-f]{64}$/;
+const PROMPT_LOOKUP_SPEC = /^[1-9]\d*(?::[1-9]\d*){0,2}(?::fork)?$/;
 
 const joinUrl = (base, value) =>
   new URL(value, String(base).endsWith("/") ? base : `${base}/`).href;
@@ -113,6 +114,23 @@ export function isGreedyBurstEligible(request = {}) {
   );
 }
 
+export function parsePromptLookup(spec) {
+  if (typeof spec !== "string") return null;
+  if (!PROMPT_LOOKUP_SPEC.test(spec)) return null;
+  const parts = spec.split(":");
+  const hybrid = parts.at(-1) === "fork" ? parts.pop() : null;
+  const [kText, nMaxText, nMinText] = parts;
+  const k = Number(kText);
+  const nMax = Number(nMaxText ?? 3);
+  const nMin = Math.min(Number(nMinText ?? 2), nMax);
+  return {
+    k,
+    nMax,
+    nMin,
+    ...(hybrid === "fork" ? { hybrid: "fork" } : {}),
+  };
+}
+
 async function fetchJson(url, fetchImpl) {
   const response = await fetchImpl(url, {
     mode: "cors",
@@ -178,6 +196,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
     flushEvery: globalThis.__tvmjsWebGPUFlushEvery,
     bindCache: globalThis.__tvmjsWebGPUBindGroupCache,
     lookahead: globalThis.__webllmBurstLookahead,
+    promptLookup: globalThis.__webllmPromptLookup,
   };
   globalThis.__webllmGreedyBurst = entry.runtime.config.greedyBurst;
   globalThis.__webllmGreedyArgmax = true;
@@ -194,6 +213,9 @@ export async function loadWebLLMEntry(entry, options = {}) {
     Number(entry.runtime.config.lookahead) > 0
       ? Number(entry.runtime.config.lookahead)
       : 0;
+  globalThis.__webllmPromptLookup = parsePromptLookup(
+    entry.runtime.config.promptLookup,
+  );
 
   let engine;
   try {
@@ -230,6 +252,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
           globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
           globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
           globalThis.__webllmBurstLookahead = previous.lookahead;
+          globalThis.__webllmPromptLookup = previous.promptLookup;
         }
       },
     };
@@ -243,6 +266,7 @@ export async function loadWebLLMEntry(entry, options = {}) {
     globalThis.__tvmjsWebGPUFlushEvery = previous.flushEvery;
     globalThis.__tvmjsWebGPUBindGroupCache = previous.bindCache;
     globalThis.__webllmBurstLookahead = previous.lookahead;
+    globalThis.__webllmPromptLookup = previous.promptLookup;
     throw error;
   }
 }

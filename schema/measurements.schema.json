@@ -68,8 +68,8 @@
         },
         "date": { "type": "string" },
         "protocol": {
-          "enum": ["e2e", "interleaved-ab", "isolated-block", "replay"],
-          "description": "e2e: a whole generation, timed. interleaved-ab: A,B,A,B in blocks, which is the only protocol a DELTA may come from. isolated-block: one subgraph in isolation. replay: the catalog's own loader reproducing the entry."
+          "enum": ["e2e", "interleaved-ab", "paired-ab-within-session", "isolated-block", "replay"],
+          "description": "e2e: a whole generation, timed. interleaved-ab: A,B,A,B in blocks, which is the only protocol a DELTA may come from. paired-ab-within-session: each item is run once per side in one browser session with alternating order. isolated-block: one subgraph in isolation. replay: the catalog's own loader reproducing the entry."
         },
         "runs": { "type": ["integer", "null"], "minimum": 1 },
         "warmup": { "type": ["integer", "null"], "minimum": 0 },

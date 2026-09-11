@@ -1,0 +1,37 @@
+{
+  "entry": "webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5",
+  "family": "qwen3.5-4b-q4f16-1",
+  "runtimeJs": [
+    {
+      "name": "web-llm-0.2.84-qwen-m5-prompt-lookup.js",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/a5bf1e8b8f15bd3983a364aeeb7e733fa3f66f0c/qwen3.5-4b-q4f16-1/v1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-flush32-pl5/web-llm-0.2.84-qwen-m5-prompt-lookup.js",
+      "bytes": 6619637,
+      "sha256": "6f529d9b66c1326bdafaf78b3a8b040d02f06ba7720d5fd7e06b06d5a700dae4",
+      "mediaType": "text/javascript",
+      "role": "Hash-verified WebLLM ESM runtime with prompt-lookup speculative decoding and forked verify-pass replay for recurrent-state safety on Qwen3.5."
+    }
+  ],
+  "modelWasm": [
+    {
+      "name": "qwen35-4b-argmax-chunk256-sg32-tr32.wasm",
+      "url": "https://huggingface.co/datasets/ozhyhinas/webnn-catalog/resolve/24bc4549e529d7e7c159d29c6415fc6f50663af4/qwen3.5-4b-q4f16-1/v1/webgpu-apple-m5-pro-macos26-chrome152-sg32-burst1-lookahead1/qwen35-4b-argmax-chunk256-sg32-tr32.wasm",
+      "bytes": 6534052,
+      "sha256": "5b13f1de06bb205b87ccbcdd565859fc9ef4cb39f1cee161149f3dc956b20829",
+      "mediaType": "application/wasm",
+      "role": "Qwen3.5-4B model library with subgroup-32 and chunk-256 two-stage full-vocabulary GPU argmax. WebGPU GEMV TR is a no-op for this model (byte-identical compiled output at every TR value 16/32/64/128), so no TR is functionally distinguished; the filename keeps its build-time -tr32 label for traceability."
+    }
+  ],
+  "modelResources": [
+    {
+      "name": "mlc-ai/Qwen3.5-4B-q4f16_1-MLC snapshot",
+      "url": "https://huggingface.co/mlc-ai/Qwen3.5-4B-q4f16_1-MLC/resolve/44b42469f9e192814bfd90440e3b377d89ba7a13/",
+      "repository": "mlc-ai/Qwen3.5-4B-q4f16_1-MLC",
+      "revision": "44b42469f9e192814bfd90440e3b377d89ba7a13",
+      "bytes": 2390497405,
+      "license": "Apache-2.0",
+      "mediaType": "application/vnd.huggingface.repository",
+      "role": "Immutable upstream weights, tokenizer and MLC chat configuration"
+    }
+  ],
+  "notes": "The prompt-lookup runtime JS is shared by immutable URL and hash across this entry and the Qwen3.5-0.8B prompt-lookup entry; one published object is referenced from both manifests without duplication. Quality caveat: output is not byte-identical in general, because batch-verify prefill kernels and decode GEMV kernels differ in low bits and can flip near-tie argmaxes on a few percent of items. Family byte-identical verification corpus result for this entry: 10/10 corpus cases byte-identical, verified 2026-09-10 with scripts/verify-webllm.mjs against this branch's raw entry URL (verification/verify-pl5.json)."
+}
